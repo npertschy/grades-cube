@@ -3,10 +3,8 @@
     <li @click="toggleClicked">
       <span class="caret">{{ course.name }}</span>
       <ul v-show="clicked">
-        <li 
-        v-for="subject in course.subjects" 
-        :key="subject.id">
-        {{ subject.name }}
+        <li v-for="subject in course.subjects" :key="subject.id">
+          {{ subject.name }}
         </li>
       </ul>
     </li>
@@ -21,7 +19,7 @@ export default defineComponent({
   name: "CourseElement",
 
   props: {
-      course: Course,
+    course: Course,
   },
 
   setup() {
@@ -40,7 +38,8 @@ export default defineComponent({
 </script>
 
 <style scoped>
-ul, #root {
+ul,
+#root {
   list-style-type: none;
 }
 
