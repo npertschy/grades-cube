@@ -1,12 +1,11 @@
-import Subject from "./Subject";
+import Subject from './Subject'
 
 export default class Course {
+  name: string
+  subjects: Subject[]
 
-    name: string;
-    subjects: Subject[];
-
-    constructor(name: string, subjects: Subject[]) {
-        this.name = name;
-        this.subjects = subjects;
-    }
+  constructor(name: string, subjects: Subject[]) {
+    this.name = name
+    this.subjects = subjects
+  }
 }

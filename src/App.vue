@@ -3,14 +3,14 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import CoursesOutline from "./components/CoursesOutline.vue";
+import { defineComponent } from 'vue'
+import CoursesOutline from './components/CoursesOutline.vue'
 export default defineComponent({
-  name: "App",
+  name: 'App',
   components: {
     CoursesOutline
-  },
-});
+  }
+})
 </script>
 
 <style>

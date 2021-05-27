@@ -12,29 +12,29 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from "vue";
-import Course from "@/model/Course";
+import { defineComponent, ref } from 'vue'
+import Course from '@/model/Course'
 
 export default defineComponent({
-  name: "CourseElement",
+  name: 'CourseElement',
 
   props: {
-    course: Course,
+    course: Course
   },
 
   setup() {
-    const clicked = ref(false);
+    const clicked = ref(false)
 
     function toggleClicked() {
-      clicked.value = !clicked.value;
+      clicked.value = !clicked.value
     }
 
     return {
       clicked,
-      toggleClicked,
-    };
-  },
-});
+      toggleClicked
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -54,7 +54,7 @@ ul,
 }
 
 .caret::before {
-  content: "\25B6";
+  content: '\25B6';
   color: black;
   display: inline-block;
   margin-right: 6px;

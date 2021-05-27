@@ -1,13 +1,9 @@
-import { expect } from 'chai'
 import { shallowMount } from '@vue/test-utils'
-import HelloWorld from '@/components/HelloWorld.vue'
+import CoursesOutline from '@/components/CoursesOutline.vue'
 
-describe('HelloWorld.vue', () => {
+describe('CourseOutline.vue', () => {
   it('renders props.msg when passed', () => {
-    const msg = 'new message'
-    const wrapper = shallowMount(HelloWorld, {
-      props: { msg }
-    })
-    expect(wrapper.text()).to.include(msg)
+    const wrapper = shallowMount(CoursesOutline)
+    expect(wrapper.text()).toMatch('9a')
   })
 })

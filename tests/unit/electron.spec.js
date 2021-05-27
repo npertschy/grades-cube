@@ -1,45 +1,32 @@
-import testWithSpectron from 'vue-cli-plugin-electron-builder/lib/testWithSpectron'
-import chai from 'chai'
-import chaiAsPromised from 'chai-as-promised'
-// eslint-disable-next-line no-undef
-const spectron = __non_webpack_require__('spectron')
+/**
+ * @jest-environment node
+ */
+import spectron from 'spectron'
+import { testWithSpectron } from 'vue-cli-plugin-electron-builder'
+jest.setTimeout(50000)
 
-chai.should()
-chai.use(chaiAsPromised)
+test('Window Loads Properly', async () => {
+  // Wait for dev server to start
+  const { app, stopServe } = await testWithSpectron(spectron)
+  const win = app.browserWindow
+  const client = app.client
 
-describe('Application launch', function () {
-  this.timeout(30000)
+  // Window was created
+  expect(await client.getWindowCount()).toBe(1)
+  // It is not minimized
+  expect(await win.isMinimized()).toBe(false)
+  // Window is visible
+  expect(await win.isVisible()).toBe(true)
+  // Size is correct
+  const { width, height } = await win.getBounds()
+  expect(width).toBeGreaterThan(0)
+  expect(height).toBeGreaterThan(0)
+  // App is loaded properly
+  //  expect(
+  //    /Welcome to Your Vue\.js (\+ TypeScript )?App/.test(
+  //      await (await app.client.$("#app")).getHTML()
+  //    )
+  //  ).toBe(true);
 
-  beforeEach(function () {
-    return testWithSpectron(spectron).then((instance) => {
-      this.app = instance.app
-      this.stopServe = instance.stopServe
-    })
-  })
-
-  beforeEach(function () {
-    chaiAsPromised.transferPromiseness = this.app.transferPromiseness
-  })
-
-  afterEach(function () {
-    if (this.app && this.app.isRunning()) {
-      return this.stopServe()
-    }
-  })
-
-  it('opens a window', function () {
-    return Promise.all([
-      this.app.client.getWindowCount().should.eventually.have.at.least(1),
-      this.app.client.browserWindow.isMinimized().should.eventually.be.false,
-      this.app.client.browserWindow.isVisible().should.eventually.be.true,
-      this.app.client.browserWindow
-        .getBounds()
-        .should.eventually.have.property('width')
-        .and.be.above(0),
-      this.app.client.browserWindow
-        .getBounds()
-        .should.eventually.have.property('height')
-        .and.be.above(0)
-    ])
-  })
+  await stopServe()
 })
