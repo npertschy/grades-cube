@@ -1,14 +1,23 @@
 <template>
-  <CoursesOutline />
+  <CourseTree :courses="courses" />
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import CoursesOutline from './components/CoursesOutline.vue'
+import { defineComponent, ref } from 'vue'
+import Course from './model/Course'
+import CourseTree from './sidebar/components/CourseTree.vue'
+import Subject from './model/Subject'
 export default defineComponent({
   name: 'App',
   components: {
-    CoursesOutline
+    CourseTree
+  },
+  setup: () => {
+    const courses = ref([new Course('9a', [new Subject(1, 'Deutsch'), new Subject(2, 'Englisch')])])
+
+    return {
+      courses
+    }
   }
 })
 </script>
