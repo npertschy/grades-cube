@@ -12,5 +12,7 @@
   "plugins": [
     "vue"
   ],
-  "rules": {}
+  "rules": {
+    "vue/require-default-prop": 0
+  }
 }
