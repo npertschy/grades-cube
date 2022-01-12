@@ -1,22 +1,34 @@
 <template>
-  <CourseTree :courses="courses" />
+  <div class="p-grid">
+    <GroupOutline class="p-col-fixed" :groups="groups" :subjects="subjects" style="width: 250px"></GroupOutline>
+  </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import Course from './model/Course'
-import CourseTree from './sidebar/components/CourseTree.vue'
+import { defineComponent, Ref, ref } from 'vue'
+import GroupOutline from './sidebar/components/GroupOutline.vue'
+import axios from 'axios'
+import Group from './model/Group'
 import Subject from './model/Subject'
+
 export default defineComponent({
   name: 'App',
   components: {
-    CourseTree
+    GroupOutline,
   },
-  setup: () => {
-    const courses = ref([new Course('9a', [new Subject(1, 'Deutsch'), new Subject(2, 'Englisch')])])
+  setup() {
+    let groups: Ref<Group[]> = ref([])
+    let subjects: Ref<Subject[]> = ref([])
+
+    axios.get('data/data.json').then((res) => {
+      groups.value = res.data.groups
+      subjects.value= res.data.subjects
+    })
+
 
     return {
-      courses
+      groups,
+      subjects,
     }
   }
 })
@@ -28,7 +40,6 @@ export default defineComponent({
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
   margin-top: 60px;
 }
 </style>
