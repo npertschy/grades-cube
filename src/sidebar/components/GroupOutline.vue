@@ -8,13 +8,12 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, Ref, toRefs, ref, computed } from 'vue'
+import { defineComponent, PropType, toRefs, computed } from 'vue'
 import Tree, { TreeNode } from 'primevue/tree'
 import Badge from 'primevue/badge'
 import Course from '../../model/Course'
 import Subject from '../../model/Subject'
 import Group from '@/model/Group'
-import GroupNode from '../model/GroupNode'
 export default defineComponent({
   name: 'GroupOutline',
   components: { Tree, Badge },
