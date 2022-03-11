@@ -1,9 +1,9 @@
-import Group from "./Group";
-import Pupil from "./Pupil";
-import Subject from "./Subject";
+import type Group from './Group'
+import type Pupil from './Pupil'
+import type Subject from './Subject'
 
 export default interface State {
-    groups: Group[]
-    subjects: Subject[]
-    pupils: Pupil[]
+  groups: Group[]
+  subjects: Subject[]
+  pupils: Pupil[]
 }

@@ -1,5 +1,5 @@
 export default interface Column {
-    field: string
-    header: string
-    style?: string 
+  field: string
+  header: string
+  style?: string
 }

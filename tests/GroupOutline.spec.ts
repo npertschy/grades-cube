@@ -1,7 +1,8 @@
 import { mount } from '@vue/test-utils'
 import GroupOutline from '@/sidebar/components/GroupOutline.vue'
-import Group from '@/model/Group'
-import Subject from '@/model/Subject'
+import type Group from '@/model/Group'
+import type Subject from '@/model/Subject'
+import { test, it, expect } from 'vitest'
 
 const groups: Group[] = [
   {
@@ -32,7 +33,7 @@ const subjects: Subject[] = [
   }
 ]
 
-describe('GroupOutline', () => {
+test('GroupOutline', () => {
   const wrapper = mount(GroupOutline, {
     props: { groups, subjects }
   })
@@ -45,7 +46,7 @@ describe('GroupOutline', () => {
   it('should display subjects', async () => {
     const buttons = wrapper.findAll('button')
 
-    await buttons.forEach(button => button.trigger('click'))
+    await buttons.forEach((button) => button.trigger('click'))
 
     const subjectLabels = wrapper.html()
 

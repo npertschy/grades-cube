@@ -11,6 +11,18 @@
         {
             "id": 3,
             "name": "Niki"
+        },
+        {
+            "id": 4,
+            "name": "Lars"
+        },
+        {
+            "id": 5,
+            "name": "Luisa"
+        },
+        {
+            "id": 6,
+            "name": "Flo"
         }
     ],
     "subjects": [
@@ -47,9 +59,9 @@
             "id": 2,
             "name": "GK",
             "pupils": [
-                1,
-                2,
-                3
+                4,
+                5,
+                6
             ],
             "courses": [
                 {
