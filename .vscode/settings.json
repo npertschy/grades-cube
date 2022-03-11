@@ -2,5 +2,16 @@
     "eslint.validate": [
         "typescript",
         "vue"
+    ],
+    "cSpell.language": "en,de",
+    "cSpell.words": [
+        "Avenir",
+        "axios",
+        "datatable",
+        "esnext",
+        "gridlines",
+        "Niki",
+        "primevue",
+        "vite"
     ]
 }
