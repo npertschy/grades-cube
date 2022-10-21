@@ -1,9 +1,22 @@
 <template>
-  <div class="flex-column">
-    <div class="text-3xl flex font-bold">
+  <div class="grid">
+    <div class="text-3xl col-11 font-bold">
       {{ course }}
     </div>
-    <DataTable :value="rows" show-gridlines class="flex">
+    <Button
+      v-tooltip.bottom="'Neue mündliche Leistung'"
+      icon="pi pi-plus"
+      class="p-button-rounded col-1"
+      style="background-color: lightcoral; border-color: lightcoral"
+      @click="toggleAddOralPerformance"
+    />
+    <OverlayPanel id="add-oral" ref="showAddOral" :show-close-icon="true">
+      <div class="field">
+        <label for="new-oral-performance">Neue mündliche Leistung </label>
+        <InputText id="new-oral-performance" />
+      </div>
+    </OverlayPanel>
+    <DataTable :value="rows" show-gridlines class="col-12">
       <Column
         v-for="column in columns"
         :key="column.field"
@@ -21,11 +34,14 @@
 
 <script setup lang="ts">
 import { toRefs, computed, ref, type Ref } from 'vue'
-import type Pupil from '../../model/Pupil'
+import type Pupil from '@/model/Pupil'
+import { defaultColumns } from '@/composables/defaultColumns'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Checkbox from 'primevue/checkbox'
-import { defaultColumns } from '../../composables/defaultColumns'
+import Button from 'primevue/button'
+import OverlayPanel from 'primevue/overlaypanel'
+import InputText from 'primevue/inputtext'
 
 const props = defineProps<{
   group: string
@@ -58,4 +74,10 @@ const course = computed(() => {
 })
 
 const checked: Ref<Column[]> = ref([])
+
+const showAddOral = ref(false)
+
+const toggleAddOralPerformance = (event: any): void => {
+  showAddOral.value = !showAddOral.value
+}
 </script>
