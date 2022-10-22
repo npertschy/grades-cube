@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import PupilTable from '@/table/components/PupilTable.vue'
 import type Pupil from '@/model/Pupil'
 import { describe, it, expect } from 'vitest'
+import Tooltip from 'primevue/tooltip'
 
 const group = '8c'
 const subject = 'Englisch'
@@ -16,7 +17,12 @@ describe('PupilTable', () => {
   describe('Testing table and columns', () => {
     it('should display all pupils and a header', () => {
       const wrapper = mount(PupilTable, {
-        props: { group: '', subject: '', pupils, gradesOverviewVisible }
+        props: { group: '', subject: '', pupils, gradesOverviewVisible },
+        global: {
+          directives: {
+            tooltip: Tooltip
+          }
+        }
       })
 
       expect(wrapper.findAll('tr')).toHaveLength(pupils.length + 1)
@@ -24,7 +30,12 @@ describe('PupilTable', () => {
 
     it('should display default columns', () => {
       const wrapper = mount(PupilTable, {
-        props: { group: '', subject: '', pupils, gradesOverviewVisible }
+        props: { group: '', subject: '', pupils, gradesOverviewVisible },
+        global: {
+          directives: {
+            tooltip: Tooltip
+          }
+        }
       })
 
       expect(wrapper.findAll('th')).toHaveLength(8)
@@ -34,7 +45,12 @@ describe('PupilTable', () => {
   describe('Testing table title', () => {
     it('should display the name of the selected group', () => {
       const wrapper = mount(PupilTable, {
-        props: { group, subject: '', pupils, gradesOverviewVisible }
+        props: { group, subject: '', pupils, gradesOverviewVisible },
+        global: {
+          directives: {
+            tooltip: Tooltip
+          }
+        }
       })
 
       expect(wrapper.html()).toContain('8c')
@@ -42,7 +58,12 @@ describe('PupilTable', () => {
 
     it('should display the full name of the selected course', () => {
       const wrapper = mount(PupilTable, {
-        props: { group, subject, pupils, gradesOverviewVisible }
+        props: { group, subject, pupils, gradesOverviewVisible },
+        global: {
+          directives: {
+            tooltip: Tooltip
+          }
+        }
       })
 
       expect(wrapper.html()).toContain('8c Englisch')
@@ -52,7 +73,12 @@ describe('PupilTable', () => {
   describe('Column selection', () => {
     it('should display checkboxes to be able to select columns', () => {
       const wrapper = mount(PupilTable, {
-        props: { group, subject: '', pupils, gradesOverviewVisible: true }
+        props: { group, subject: '', pupils, gradesOverviewVisible: true },
+        global: {
+          directives: {
+            tooltip: Tooltip
+          }
+        }
       })
 
       expect(wrapper.findAll('input[type=checkbox]').length).toBeGreaterThan(1)

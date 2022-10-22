@@ -5,8 +5,7 @@
       :groups="groups"
       :subjects="subjects"
       @group-selected="updatePupilTable"
-    >
-    </GroupOutline>
+    />
     <div class="col">
       <div class="grid">
         <PupilTable
@@ -15,7 +14,7 @@
           :subject="selectedSubject"
           :pupils="pupilsOfGroup"
           :grades-overview-visible="columnSelectionVisible"
-        ></PupilTable>
+        />
       </div>
       <Panel
         class="col"
@@ -26,8 +25,8 @@
       >
         <GradesOverview />
       </Panel>
-      </div>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">

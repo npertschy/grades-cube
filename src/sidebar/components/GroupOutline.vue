@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toRefs, computed } from 'vue'
+import { toRefs, computed, type PropType } from 'vue'
 import Tree, { type TreeNode } from 'primevue/tree'
 import Badge from 'primevue/badge'
 import type Course from '../../model/Course'
@@ -10,10 +10,16 @@ const emit = defineEmits<{
   (e: 'groupSelected', selectedGroupNode: TreeNode): void
 }>()
 
-const props = defineProps<{
-  groups: Group[]
-  subjects: Subject[]
-}>()
+const props = defineProps({
+  groups: {
+    type: Array as PropType<Array<Group>>,
+    required: true
+  },
+  subjects: {
+    type: Array as PropType<Array<Subject>>,
+    required: true
+  }
+})
 const { groups, subjects } = toRefs(props)
 
 const nodes = computed(() =>

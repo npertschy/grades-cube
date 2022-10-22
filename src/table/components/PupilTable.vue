@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed, ref, type Ref } from 'vue'
+import { toRefs, computed, ref, type Ref, type PropType } from 'vue'
 import type Pupil from '@/model/Pupil'
 import { defaultColumns } from '@/composables/defaultColumns'
 import DataTable from 'primevue/datatable'
@@ -43,12 +43,24 @@ import Button from 'primevue/button'
 import OverlayPanel from 'primevue/overlaypanel'
 import InputText from 'primevue/inputtext'
 
-const props = defineProps<{
-  group: string
-  subject: string
-  pupils: Pupil[]
-  gradesOverviewVisible: boolean
-}>()
+const props = defineProps({
+  group: {
+    type: String,
+    required: true
+  },
+  subject: {
+    type: String,
+    required: true
+  },
+  pupils: {
+    type: Array as PropType<Array<Pupil>>,
+    required: true
+  },
+  gradesOverviewVisible: {
+    type: Boolean,
+    required: true
+  }
+})
 
 const { group, subject, pupils, gradesOverviewVisible } = toRefs(props)
 
@@ -73,7 +85,7 @@ const course = computed(() => {
   return group.value + ' ' + subject.value
 })
 
-const checked: Ref<Column[]> = ref([])
+const checked: Ref<Column | null> = ref(null)
 
 const showAddOral = ref(false)
 
