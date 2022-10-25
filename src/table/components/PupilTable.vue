@@ -25,7 +25,7 @@
         :style="column.style"
       >
         <template #header="slotProps">
-          <Checkbox v-show="gradesOverviewVisible" v-model="checked" :value="slotProps.column" />
+          <RadioButton v-show="gradesOverviewVisible" v-model="checked" :value="slotProps.column" />
         </template>
       </Column>
     </DataTable>
@@ -33,34 +33,24 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed, ref, type Ref, type PropType } from 'vue'
+import { toRefs, computed, ref, type Ref } from 'vue'
 import type Pupil from '@/model/Pupil'
 import { defaultColumns } from '@/composables/defaultColumns'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Checkbox from 'primevue/checkbox'
+import RadioButton from 'primevue/radiobutton'
 import Button from 'primevue/button'
 import OverlayPanel from 'primevue/overlaypanel'
 import InputText from 'primevue/inputtext'
 
-const props = defineProps({
-  group: {
-    type: String,
-    required: true
-  },
-  subject: {
-    type: String,
-    required: true
-  },
-  pupils: {
-    type: Array as PropType<Array<Pupil>>,
-    required: true
-  },
-  gradesOverviewVisible: {
-    type: Boolean,
-    required: true
-  }
-})
+interface Props {
+  group: string
+  subject: string
+  pupils: Pupil[]
+  gradesOverviewVisible: boolean
+}
+
+const props = defineProps<Props>()
 
 const { group, subject, pupils, gradesOverviewVisible } = toRefs(props)
 
@@ -89,7 +79,7 @@ const checked: Ref<Column | null> = ref(null)
 
 const showAddOral = ref(false)
 
-const toggleAddOralPerformance = (event: any): void => {
+const toggleAddOralPerformance = (_event: any): void => {
   showAddOral.value = !showAddOral.value
 }
 </script>

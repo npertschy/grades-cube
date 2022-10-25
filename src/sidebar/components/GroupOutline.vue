@@ -1,25 +1,23 @@
 <script setup lang="ts">
-import { toRefs, computed, type PropType } from 'vue'
+import { toRefs, computed } from 'vue'
 import Tree, { type TreeNode } from 'primevue/tree'
 import Badge from 'primevue/badge'
 import type Course from '../../model/Course'
 import type Subject from '../../model/Subject'
 import type Group from '@/model/Group'
 
-const emit = defineEmits<{
-  (e: 'groupSelected', selectedGroupNode: TreeNode): void
-}>()
+interface Props {
+  groups: Group[]
+  subjects: Subject[]
+}
 
-const props = defineProps({
-  groups: {
-    type: Array as PropType<Array<Group>>,
-    required: true
-  },
-  subjects: {
-    type: Array as PropType<Array<Subject>>,
-    required: true
-  }
-})
+interface Emits {
+  (e: 'groupSelected', selectedGroupNode: TreeNode): void
+}
+
+const emit = defineEmits<Emits>()
+
+const props = defineProps<Props>()
 const { groups, subjects } = toRefs(props)
 
 const nodes = computed(() =>
