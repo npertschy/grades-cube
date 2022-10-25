@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { toRefs, computed, ref, type Ref } from 'vue'
 import type Pupil from '@/model/Pupil'
-import { defaultColumns } from '@/composables/defaultColumns'
+import { defaultColumns } from '@/model/defaultColumns'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import RadioButton from 'primevue/radiobutton'
@@ -69,7 +69,7 @@ const rows = computed(() =>
   })
 )
 
-const { columns } = defaultColumns()
+const columns = defaultColumns()
 
 const course = computed(() => {
   return group.value + ' ' + subject.value

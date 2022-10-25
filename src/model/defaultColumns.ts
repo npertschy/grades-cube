@@ -1,8 +1,8 @@
 import type Column from '@/model/Column'
-import { type Ref, ref } from 'vue'
+// import { type Ref, ref } from 'vue'
 
-export function defaultColumns() {
-  const columns: Ref<Column[]> = ref([
+export function defaultColumns(): Column[] {
+  return [
     {
       field: 'count',
       header: '#'
@@ -39,9 +39,5 @@ export function defaultColumns() {
       field: 'overall',
       header: 'Gesamt'
     }
-  ])
-
-  return {
-    columns
-  }
+  ]
 }
