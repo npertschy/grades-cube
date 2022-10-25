@@ -1,28 +1,32 @@
 <template>
-  <div class="flex app">
+  <div class="grid app">
     <GroupOutline
-      class="flex-none groupOutline"
+      class="col-fixed groupOutline"
       :groups="groups"
       :subjects="subjects"
       @group-selected="updatePupilTable"
-    >
-    </GroupOutline>
-    <PupilTable
-      class="flex-grow-1 px-3"
-      :group="selectedGroupName"
-      :subject="selectedSubject"
-      :pupils="pupilsOfGroup"
-      :grades-overview-visible="columnSelectionVisible"
-    ></PupilTable>
+    />
+    <div class="col">
+      <div class="grid">
+        <PupilTable
+          class="col px-3"
+          :group="selectedGroupName"
+          :subject="selectedSubject"
+          :pupils="pupilsOfGroup"
+          :grades-overview-visible="columnSelectionVisible"
+        />
+      </div>
+      <Panel
+        class="col"
+        header="Notenspiegel"
+        :collapsed="gradesOverviewCollapsed"
+        :toggleable="true"
+        @toggle="gradesOverviewCollapsed = !gradesOverviewCollapsed"
+      >
+        <GradesOverview />
+      </Panel>
+    </div>
   </div>
-  <Panel
-    header="Notenspiegel"
-    :collapsed="gradesOverviewCollapsed"
-    :toggleable="true"
-    @toggle="gradesOverviewCollapsed = !gradesOverviewCollapsed"
-  >
-    <GradesOverview />
-  </Panel>
 </template>
 
 <script setup lang="ts">

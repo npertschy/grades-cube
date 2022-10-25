@@ -6,14 +6,18 @@ import type Course from '../../model/Course'
 import type Subject from '../../model/Subject'
 import type Group from '@/model/Group'
 
-const emit = defineEmits<{
-  (e: 'groupSelected', selectedGroupNode: TreeNode): void
-}>()
-
-const props = defineProps<{
+interface Props {
   groups: Group[]
   subjects: Subject[]
-}>()
+}
+
+interface Emits {
+  (e: 'groupSelected', selectedGroupNode: TreeNode): void
+}
+
+const emit = defineEmits<Emits>()
+
+const props = defineProps<Props>()
 const { groups, subjects } = toRefs(props)
 
 const nodes = computed(() =>

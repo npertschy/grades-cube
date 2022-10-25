@@ -39,14 +39,14 @@ test('GroupOutline', () => {
   })
 
   it('should display group names', () => {
-    const treeNodeLabels = wrapper.html() 
+    const treeNodeLabels = wrapper.html()
     expect(treeNodeLabels).toContain('9a')
   })
 
   it('should display subjects', async () => {
     const buttons = wrapper.findAll('button')
 
-    await buttons.forEach((button) => button.trigger('click'))
+    buttons.forEach(async (button) => await button.trigger('click'))
 
     const subjectLabels = wrapper.html()
 

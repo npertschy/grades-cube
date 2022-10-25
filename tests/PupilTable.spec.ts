@@ -2,6 +2,7 @@ import { mount } from '@vue/test-utils'
 import PupilTable from '@/table/components/PupilTable.vue'
 import type Pupil from '@/model/Pupil'
 import { describe, it, expect } from 'vitest'
+import Tooltip from 'primevue/tooltip'
 
 const group = '8c'
 const subject = 'Englisch'
@@ -10,40 +11,29 @@ const pupils: Pupil[] = [
   { id: 2, name: 'Max' },
   { id: 3, name: 'Paul' }
 ]
-const gradesOverviewVisible = false
 
 describe('PupilTable', () => {
   describe('Testing table and columns', () => {
-    it('should display all pupils and a header', () => {
-      const wrapper = mount(PupilTable, {
-        props: { group: '', subject: '', pupils, gradesOverviewVisible }
-      })
+    const wrapper = setupComponent('', '', pupils, false)
 
+    it('should display all pupils and a header', () => {
       expect(wrapper.findAll('tr')).toHaveLength(pupils.length + 1)
     })
 
     it('should display default columns', () => {
-      const wrapper = mount(PupilTable, {
-        props: { group: '', subject: '', pupils, gradesOverviewVisible }
-      })
-
       expect(wrapper.findAll('th')).toHaveLength(8)
     })
   })
 
   describe('Testing table title', () => {
     it('should display the name of the selected group', () => {
-      const wrapper = mount(PupilTable, {
-        props: { group, subject: '', pupils, gradesOverviewVisible }
-      })
+      const wrapper = setupComponent(group, '', pupils, false)
 
       expect(wrapper.html()).toContain('8c')
     })
 
     it('should display the full name of the selected course', () => {
-      const wrapper = mount(PupilTable, {
-        props: { group, subject, pupils, gradesOverviewVisible }
-      })
+      const wrapper = setupComponent(group, subject, pupils, false)
 
       expect(wrapper.html()).toContain('8c Englisch')
     })
@@ -51,11 +41,20 @@ describe('PupilTable', () => {
 
   describe('Column selection', () => {
     it('should display checkboxes to be able to select columns', () => {
-      const wrapper = mount(PupilTable, {
-        props: { group, subject: '', pupils, gradesOverviewVisible: true }
-      })
+      const wrapper = setupComponent(group, '', pupils, true)
 
-      expect(wrapper.findAll('input[type=checkbox]').length).toBeGreaterThan(1)
+      expect(wrapper.findAll('input[type=radio]').length).toBeGreaterThan(1)
     })
   })
 })
+
+function setupComponent(group: string, subject: string, pupils: Pupil[], gradesOverviewVisible: boolean) {
+  return mount(PupilTable, {
+    props: { group, subject, pupils, gradesOverviewVisible },
+    global: {
+      directives: {
+        tooltip: Tooltip
+      }
+    }
+  })
+}
