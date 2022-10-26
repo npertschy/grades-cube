@@ -16,23 +16,23 @@ describe('PupilTable', () => {
   describe('Testing table and columns', () => {
     const wrapper = setupComponent('', '', pupils, false)
 
-    it('should display all pupils and a header', () => {
+    it('displays all pupils and a header', () => {
       expect(wrapper.findAll('tr')).toHaveLength(pupils.length + 1)
     })
 
-    it('should display default columns', () => {
+    it('displays default columns', () => {
       expect(wrapper.findAll('th')).toHaveLength(8)
     })
   })
 
   describe('Testing table title', () => {
-    it('should display the name of the selected group', () => {
+    it('displays the name of the selected group', () => {
       const wrapper = setupComponent(group, '', pupils, false)
 
       expect(wrapper.html()).toContain('8c')
     })
 
-    it('should display the full name of the selected course', () => {
+    it('displays the full name of the selected course', () => {
       const wrapper = setupComponent(group, subject, pupils, false)
 
       expect(wrapper.html()).toContain('8c Englisch')
@@ -40,7 +40,7 @@ describe('PupilTable', () => {
   })
 
   describe('Column selection', () => {
-    it('should display checkboxes to be able to select columns', () => {
+    it('displays checkboxes to be able to select columns', () => {
       const wrapper = setupComponent(group, '', pupils, true)
 
       expect(wrapper.findAll('input[type=radio]').length).toBeGreaterThan(1)
