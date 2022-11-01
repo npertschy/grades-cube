@@ -68,14 +68,12 @@ describe('PupilTable', () => {
     })
 
     it('renders a label and an input when the button is clicked', async () => {
-      // await button.trigger('click')
+      await button.trigger('click')
 
       const panel = wrapper.getComponent(OverlayPanel)
+      expect(panel.text()).toContain('Neue mündliche Leistung')
 
-      // const label = panel.find('label')
-      // expect(label.text()).toContain('Neue mündliche Leistung ')
-
-      const input = panel.find('input[type=text]')
+      const input = panel.find('input')
       expect(input.isVisible()).toBeTruthy()
     })
   })
@@ -88,7 +86,10 @@ function setupComponent(group: string, subject: string, pupils: Pupil[], gradesO
       directives: {
         tooltip: Tooltip
       },
-      plugins: [PrimeVue]
+      plugins: [PrimeVue],
+      stubs: {
+        teleport: true
+      }
     }
   })
 }
