@@ -77,9 +77,9 @@ const course = computed(() => {
 
 const checked: Ref<Column | null> = ref(null)
 
-const showAddOral = ref(false)
+const showAddOral: Ref<OverlayPanel | undefined> = ref()
 
-const toggleAddOralPerformance = (_event: any): void => {
-  showAddOral.value = !showAddOral.value
+const toggleAddOralPerformance = (event: Event): void => {
+  showAddOral.value?.show(event)
 }
 </script>
