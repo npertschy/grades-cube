@@ -1,3 +1,12 @@
+<template>
+  <Tree :value="nodes" selection-mode="single" @node-select="emit('groupSelected', $event)">
+    <template #badge="slotProps">
+      <b>{{ slotProps.node.label }}</b>
+      <Badge :value="slotProps.node.data"></Badge>
+    </template>
+  </Tree>
+</template>
+
 <script setup lang="ts">
 import { toRefs, computed } from 'vue'
 import Tree, { type TreeNode } from 'primevue/tree'
@@ -42,15 +51,6 @@ const nodes = computed(() =>
   })
 )
 </script>
-
-<template>
-  <Tree :value="nodes" selection-mode="single" @node-select="emit('groupSelected', $event)">
-    <template #badge="slotProps">
-      <b>{{ slotProps.node.label }}</b>
-      <Badge :value="slotProps.node.data"></Badge>
-    </template>
-  </Tree>
-</template>
 
 <style scoped>
 b {

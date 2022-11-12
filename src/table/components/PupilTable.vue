@@ -11,9 +11,11 @@
       @click="toggleAddOralPerformance"
     />
     <OverlayPanel id="add-oral" ref="showAddOral" :show-close-icon="true">
-      <div class="field">
-        <label for="new-oral-performance">Neue mündliche Leistung </label>
-        <InputText id="new-oral-performance" />
+      <div class="reserve-top-space-for-floating-label">
+        <span class="p-float-label">
+          <InputText id="new-oral-performance" type="text" class="bottom-50" />
+          <label for="new-oral-performance">Neue mündliche Leistung</label>
+        </span>
       </div>
     </OverlayPanel>
     <DataTable :value="rows" show-gridlines class="col-12">
@@ -83,3 +85,13 @@ const toggleAddOralPerformance = (event: Event): void => {
   showAddOral.value?.show(event)
 }
 </script>
+
+<style>
+.reserve-top-space-for-floating-label {
+  margin-top: 1rem;
+}
+
+.p-radiobutton {
+  margin-right: 5px;
+}
+</style>
