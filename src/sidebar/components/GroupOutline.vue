@@ -2,7 +2,7 @@
   <Tree :value="nodes" selection-mode="single" @node-select="emit('groupSelected', $event)">
     <template #badge="slotProps">
       <b>{{ slotProps.node.label }}</b>
-      <Badge :value="slotProps.node.data"></Badge>
+      <Badge :value="slotProps.node.data" />
     </template>
   </Tree>
 </template>

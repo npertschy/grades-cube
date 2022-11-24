@@ -1,6 +1,6 @@
 <template>
   <div class="grid app">
-    <GroupOutline
+    <group-outline
       class="col-fixed groupOutline"
       :groups="groups"
       :subjects="subjects"
@@ -8,7 +8,7 @@
     />
     <div class="col">
       <div class="grid">
-        <PupilTable
+        <pupil-table
           class="col px-3"
           :group="selectedGroupName"
           :subject="selectedSubject"
@@ -23,7 +23,7 @@
         :toggleable="true"
         @toggle="gradesOverviewCollapsed = !gradesOverviewCollapsed"
       >
-        <GradesOverview />
+        <grades-overview />
       </Panel>
     </div>
   </div>
