@@ -64,7 +64,7 @@ describe('PupilTable', () => {
     })
 
     it('renders a button with color lightcoral', () => {
-      expect(button.attributes('style')).toContain('background-color: lightcoral;')
+      expect(button.attributes()['style']).toContain('background-color: lightcoral;')
     })
 
     it('renders a label and an input when the button is clicked', async () => {
