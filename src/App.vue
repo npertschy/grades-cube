@@ -1,5 +1,6 @@
 <template>
-  <div class="grid app">
+  <div class="main-grid app">
+    <main-menu class="sidebar" />
     <group-outline
       class="col-fixed groupOutline"
       :groups="groups"
@@ -38,6 +39,7 @@ import { dataStore } from './composables/dataStore'
 import type { TreeNode } from 'primevue/tree'
 import Panel from 'primevue/panel'
 import GradesOverview from './gradesOverview/components/GradesOverview.vue'
+import MainMenu from '@/menu/MainMenu.vue'
 
 const { groups, subjects, pupils } = dataStore()
 const pupilsOfGroup: Ref<Pupil[]> = ref([])
@@ -63,7 +65,27 @@ const columnSelectionVisible = computed(() => {
   padding-top: 25px;
 }
 
+.sidebar {
+  grid-area: sidebar;
+}
+
+.router-view {
+  grid-area: router-view;
+  overflow-y: auto;
+}
+
 .groupOutline {
+  grid-area: outline;
   width: 250px;
+}
+
+.main-grid {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  /* grid-template-rows: min-content 1fr auto; */
+  grid-template-columns: min-content min-content auto;
+  grid-template-areas: 'sidebar outline router-view';
 }
 </style>

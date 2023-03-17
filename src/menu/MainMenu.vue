@@ -14,11 +14,13 @@ const items: MenuItem[] = [
   },
   {
     label: 'Bewerten',
-    icon: 'pi pi-list'
+    icon: 'pi pi-list',
+    to: '/evaluate'
   },
   {
     label: 'Einstellungen',
-    icon: 'pi pi-cog'
+    icon: 'pi pi-cog',
+    to: '/settings'
   }
 ]
 </script>

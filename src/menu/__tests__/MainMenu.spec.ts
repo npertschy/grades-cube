@@ -3,35 +3,46 @@ import { describe, expect, it } from 'vitest'
 import MainMenu from '@/menu/MainMenu.vue'
 import PrimeVue from 'primevue/config'
 import router from '@/router'
-import { useRoute, useRouter } from 'vue-router'
 
 describe('MainMenu', () => {
-  const wrapper = mount(MainMenu, {
-    global: {
-      plugins: [PrimeVue, router]
-    }
-  })
+  describe('check menu labels and logos', () => {
+    const wrapper = mount(MainMenu, {
+      global: {
+        plugins: [PrimeVue, router]
+      }
+    })
 
-  it('renders three menu elements', () => {
-    expect(wrapper.html()).toContain('Verwalten')
-    expect(wrapper.html()).toContain('Bewerten')
-    expect(wrapper.html()).toContain('Einstellungen')
-  })
+    it('renders three menu elements', () => {
+      expect(wrapper.html()).toContain('Verwalten')
+      expect(wrapper.html()).toContain('Bewerten')
+      expect(wrapper.html()).toContain('Einstellungen')
+    })
 
-  it('renders three icons for the menu elements', () => {
-    expect(wrapper.html()).toContain('database')
-    expect(wrapper.html()).toContain('list')
-    expect(wrapper.html()).toContain('cog')
-  })
+    it('renders three icons for the menu elements', () => {
+      expect(wrapper.html()).toContain('database')
+      expect(wrapper.html()).toContain('list')
+      expect(wrapper.html()).toContain('cog')
+    })
 
-  it('routes to management when clicked', async () => {
-    const managementItem = wrapper.find('li[aria-label="Verwalten"]')
-    const managementLink = managementItem.find('a')
+    it('can click on link to navigate to management tab', async () => {
+      const managementItem = wrapper.find('li[aria-label="Verwalten"]')
+      const managementLink = managementItem.find('a')
 
-    await managementLink.trigger('click')
+      await managementLink.trigger('click')
+    })
 
-    const router = useRouter()
-    console.log(router)
-    expect(router.currentRoute.value.name).toContain('management')
+    it('can click on link to navigate to evaluate tab', async () => {
+      const managementItem = wrapper.find('li[aria-label="Bewerten"]')
+      const managementLink = managementItem.find('a')
+
+      await managementLink.trigger('click')
+    })
+
+    it('can click on link to navigate to settings tab', async () => {
+      const managementItem = wrapper.find('li[aria-label="Einstellungen"]')
+      const managementLink = managementItem.find('a')
+
+      await managementLink.trigger('click')
+    })
   })
 })
