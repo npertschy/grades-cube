@@ -1,19 +1,24 @@
+/* eslint-env node */
 require('@rushstack/eslint-patch/modern-module-resolution')
 
 module.exports = {
   root: true,
-  env: {
-    node: true,
-    'vue/setup-compiler-macros': true
-  },
-  extends: [
-    'plugin:vue/vue3-recommended',
+  'extends': [
+    'plugin:vue/vue3-essential',
     'eslint:recommended',
-    '@vue/eslint-config-typescript/recommended',
-    '@vue/eslint-config-prettier'
+    '@vue/eslint-config-typescript'
   ],
-  plugins: ['vue'],
-  rules: {
-    'vue/require-default-prop': 0
+  overrides: [
+    {
+      files: [
+        'e2e/**/*.{test,spec}.{js,ts,jsx,tsx}'
+      ],
+      'extends': [
+        'plugin:playwright/recommended'
+      ]
+    }
+  ],
+  parserOptions: {
+    ecmaVersion: 'latest'
   }
 }

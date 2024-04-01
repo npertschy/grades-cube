@@ -1,19 +1,19 @@
-import { createApp } from 'vue'
-import App from './App.vue'
-import PrimeVue from 'primevue/config'
+import "primevue/resources/themes/aura-light-green/theme.css";
+import "primeicons/primeicons.css";
+import "/node_modules/primeflex/primeflex.css";
 
-import router from './router'
+import { createApp } from "vue";
+import App from "./App.vue";
+import router from "./router";
+import PrimeVue from "primevue/config";
+import Ripple from "primevue/ripple";
 
-import 'primevue/resources/themes/saga-blue/theme.css' //theme
-import 'primevue/resources/primevue.min.css' //core css
-import 'primeicons/primeicons.css' //icons
+const app = createApp(App);
 
-import '/node_modules/primeflex/primeflex.css'
+app.use(router);
+app.use(PrimeVue, {
+  ripple: true,
+});
+app.directive("ripple", Ripple);
 
-import Tooltip from 'primevue/tooltip'
-
-const app = createApp(App)
-app.use(router)
-app.use(PrimeVue)
-app.directive('tooltip', Tooltip)
-app.mount('#app')
+app.mount("#app");

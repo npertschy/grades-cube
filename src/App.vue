@@ -1,91 +1,68 @@
-<template>
-  <div class="main-grid app">
-    <main-menu class="sidebar" />
-    <group-outline
-      class="col-fixed groupOutline"
-      :groups="groups"
-      :subjects="subjects"
-      @group-selected="updatePupilTable"
-    />
-    <div class="col">
-      <div class="grid">
-        <pupil-table
-          class="col px-3"
-          :group="selectedGroupName"
-          :subject="selectedSubject"
-          :pupils="pupilsOfGroup"
-          :grades-overview-visible="columnSelectionVisible"
-        />
-      </div>
-      <Panel
-        class="col"
-        header="Notenspiegel"
-        :collapsed="gradesOverviewCollapsed"
-        :toggleable="true"
-        @toggle="gradesOverviewCollapsed = !gradesOverviewCollapsed"
-      >
-        <grades-overview />
-      </Panel>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { type Ref, ref, computed } from 'vue'
-import GroupOutline from './sidebar/components/GroupOutline.vue'
-import PupilTable from './table/components/PupilTable.vue'
-import type Pupil from './model/Pupil'
-import { dataStore } from './composables/dataStore'
-import type { TreeNode } from 'primevue/tree'
-import Panel from 'primevue/panel'
-import GradesOverview from './gradesOverview/components/GradesOverview.vue'
-import MainMenu from '@/menu/MainMenu.vue'
+import Menubar from "primevue/menubar";
+import Dropdown from "primevue/dropdown";
+import Avatar from "primevue/avatar";
+import { PrimeIcons } from "primevue/api";
+import { ref } from "vue";
+import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
+import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 
-const { groups, subjects, pupils } = dataStore()
-const pupilsOfGroup: Ref<Pupil[]> = ref([])
-const selectedGroupName: Ref<string> = ref('')
-const selectedSubject: Ref<string> = ref('')
+const items = ref([
+  { label: "Verwalten", icon: PrimeIcons.DATABASE, route: "/management" },
+  { label: "Bewerten", icon: PrimeIcons.CHART_BAR, route: "/evaluation" },
+  { label: "Konfigurieren", icon: PrimeIcons.COG, route: "/configuration" },
+]);
 
-const updatePupilTable = (selectedGroupNode: TreeNode) => {
-  const selectedGroup = groups.value.filter((group) => group.id === selectedGroupNode.data)[0]
-  selectedGroupName.value = selectedGroup.name
-  selectedSubject.value = selectedGroupNode.leaf && selectedGroupNode.label ? selectedGroupNode.label : ''
-  pupilsOfGroup.value = pupils.value.filter((pupil) => selectedGroup.pupils.includes(pupil.id))
+const { schoolYears } = useSchoolYears();
+const selectedSchoolYear = ref<SchoolYear | undefined>();
+
+function format(item: SchoolYear) {
+  return item.id === 0
+    ? "Neues Schuljahr anlegen"
+    : "Schuljahr " +
+        item.firstSemesterStart?.getFullYear() +
+        "/" +
+        item.secondSemesterEnd?.getFullYear();
 }
-
-const gradesOverviewCollapsed = ref(true)
-
-const columnSelectionVisible = computed(() => {
-  return !gradesOverviewCollapsed.value
-})
 </script>
 
-<style>
-.app {
-  padding-top: 25px;
-}
-
-.sidebar {
-  grid-area: sidebar;
-}
-
-.router-view {
-  grid-area: router-view;
-  overflow-y: auto;
-}
-
-.groupOutline {
-  grid-area: outline;
-  width: 250px;
-}
-
-.main-grid {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  display: grid;
-  /* grid-template-rows: min-content 1fr auto; */
-  grid-template-columns: min-content min-content auto;
-  grid-template-areas: 'sidebar outline router-view';
-}
-</style>
+<template>
+  <div>
+    <Menubar :model="items">
+      <template #start>
+        <span :class="PrimeIcons.BOX"></span>
+        <span class="font-bold ml-2 mr-8">Notenwürfel</span>
+      </template>
+      <template #item="{ item, props }">
+        <router-link
+          v-if="item.route"
+          v-slot="{ href, navigate }"
+          :to="item.route"
+          custom
+        >
+          <a v-ripple :href="href" v-bind="props.action" @click="navigate">
+            <span :class="item.icon" />
+            <span class="font-semibold ml-2">{{ item.label }}</span>
+          </a>
+        </router-link>
+      </template>
+      <template #end>
+        <Dropdown v-model="selectedSchoolYear" :options="schoolYears">
+          <template #option="slotProps">
+            {{ format(slotProps.option) }}
+          </template>
+          <template #value="slotProps">
+            <div v-if="slotProps.value">
+              {{ format(slotProps.value) }}
+            </div>
+            <span v-else>Schuljahr auswählen</span>
+          </template>
+        </Dropdown>
+        <Avatar icon="pi pi-user" shape="circle" class="ml-2" />
+      </template>
+    </Menubar>
+    <main class="mt-2">
+      <RouterView />
+    </main>
+  </div>
+</template>
