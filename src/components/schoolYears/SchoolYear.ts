@@ -1,7 +1,9 @@
+import type { Semester } from "./Semester";
+
 export type SchoolYear = {
   id: number | undefined;
-  firstSemesterStart: Date | undefined;
-  firstSemesterEnd: Date | undefined;
-  secondSemesterStart: Date | undefined;
-  secondSemesterEnd: Date | undefined;
+  start: Date | undefined;
+  end: Date | undefined;
+  firstSemester: Semester | undefined;
+  secondSemester: Semester | undefined;
 };

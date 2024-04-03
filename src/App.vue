@@ -13,17 +13,8 @@ const items = ref([
   { label: "Konfigurieren", icon: PrimeIcons.COG, route: "/configuration" },
 ]);
 
-const { schoolYears } = useSchoolYears();
+const { schoolYears, formatSchoolYear } = useSchoolYears();
 const selectedSchoolYear = ref<SchoolYear | undefined>();
-
-function format(item: SchoolYear) {
-  return item.id === 0
-    ? "Neues Schuljahr anlegen"
-    : "Schuljahr " +
-        item.firstSemesterStart?.getFullYear() +
-        "/" +
-        item.secondSemesterEnd?.getFullYear();
-}
 </script>
 
 <template>
@@ -49,11 +40,13 @@ function format(item: SchoolYear) {
       <template #end>
         <Dropdown v-model="selectedSchoolYear" :options="schoolYears">
           <template #option="slotProps">
-            {{ format(slotProps.option) }}
+            <span class="w-full text-center">
+              {{ formatSchoolYear(slotProps.option) }}
+            </span>
           </template>
           <template #value="slotProps">
             <div v-if="slotProps.value">
-              {{ format(slotProps.value) }}
+              {{ formatSchoolYear(slotProps.value) }}
             </div>
             <span v-else>Schuljahr auswählen</span>
           </template>

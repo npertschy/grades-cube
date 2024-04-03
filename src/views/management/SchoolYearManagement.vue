@@ -13,19 +13,27 @@ const firstEndDate = ref<Date>();
 const secondStartDate = ref<Date>();
 const secondEndDate = ref<Date>();
 
-const { schoolYears, addSchoolYear, format, removeSchoolYear } =
+const { schoolYears, addSchoolYear, formatSchoolYear, removeSchoolYear } =
   useSchoolYears();
 
 const selectedSchoolYear = ref<SchoolYear | undefined>();
 
 function handleSave() {
   const id = selectedSchoolYear.value ? selectedSchoolYear.value.id : undefined;
-  const schoolYear = {
+  const schoolYear: SchoolYear = {
     id: id,
-    firstSemesterStart: firstStartDate.value,
-    firstSemesterEnd: firstEndDate.value,
-    secondSemesterStart: secondStartDate.value,
-    secondSemesterEnd: secondEndDate.value,
+    start: firstStartDate.value,
+    end: secondEndDate.value,
+    firstSemester: {
+      id: undefined,
+      start: firstStartDate.value,
+      end: firstEndDate.value,
+    },
+    secondSemester: {
+      id: undefined,
+      start: secondStartDate.value,
+      end: secondEndDate.value,
+    },
   };
 
   addSchoolYear(schoolYear, () => {
@@ -46,10 +54,10 @@ function resetDates() {
 function loadSchoolYear(item: SchoolYear | undefined) {
   resetDates();
   if (item?.id && item.id > 0) {
-    firstStartDate.value = item?.firstSemesterStart;
-    firstEndDate.value = item?.secondSemesterStart;
-    secondStartDate.value = item?.secondSemesterStart;
-    secondEndDate.value = item?.secondSemesterEnd;
+    firstStartDate.value = item?.firstSemester?.start;
+    firstEndDate.value = item?.firstSemester?.end;
+    secondStartDate.value = item?.secondSemester?.start;
+    secondEndDate.value = item?.secondSemester?.end;
   }
 }
 
@@ -73,7 +81,7 @@ function handleRemove() {
           >
             <template #option="slotProps">
               <p class="text-center">
-                {{ format(slotProps.option) }}
+                {{ formatSchoolYear(slotProps.option) }}
               </p>
             </template>
           </Listbox>
