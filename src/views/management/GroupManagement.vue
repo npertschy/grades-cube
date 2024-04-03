@@ -11,40 +11,40 @@ import Divider from "primevue/divider";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
 import { ref, watch } from "vue";
-import type { Pupil } from "@/components/pupils/Pupil";
-import { usePupils } from "@/components/pupils/PupilStore";
+import type { Student } from "@/components/students/Student";
+import { useStudents } from "@/components/students/StudentStore";
 
 const name = ref<string>();
-const pupil = ref<Pupil>();
+const student = ref<Student>();
 
-const { pupils, format } = usePupils();
-const pupilList = ref([...pupils.value]);
+const { students, formatStudent } = useStudents();
+const studentList = ref([...students.value]);
 
 const idCounter = ref(1);
 
 type Group = {
   id: number;
   name: string | undefined;
-  pupils: Pupil[];
+  students: Student[];
 };
 
 const groups = ref<Group[]>([
   {
     id: 0,
     name: undefined,
-    pupils: [],
+    students: [],
   },
 ]);
 
 const selectedGroup = ref<Group | undefined>();
-const selectedPupil = ref<Pupil | undefined>();
+const selectedStudent = ref<Student | undefined>();
 
 function addGroup() {
   if (selectedGroup.value && selectedGroup.value.id > 0) {
     const group = {
       id: selectedGroup.value.id,
       name: name.value,
-      pupils: [],
+      students: [],
     };
 
     const index = groups.value.findIndex((it) => {
@@ -56,7 +56,7 @@ function addGroup() {
     groups.value?.push({
       id: idCounter.value,
       name: name.value,
-      pupils: [],
+      students: [],
     });
 
     idCounter.value++;
@@ -91,18 +91,18 @@ function removeGroup() {
   groups.value.splice(index, 1);
 }
 
-function addPupilToGroup() {
-  if (pupil.value) {
-    selectedGroup.value?.pupils.push(pupil.value);
-    pupil.value = undefined;
+function addStudentToGroup() {
+  if (student.value) {
+    selectedGroup.value?.students.push(student.value);
+    student.value = undefined;
   }
 }
 
-function searchPupils(event: AutoCompleteCompleteEvent) {
+function searchStudents(event: AutoCompleteCompleteEvent) {
   if (event.query === "") {
-    pupilList.value = [...pupils.value];
+    studentList.value = [...students.value];
   } else {
-    pupilList.value = pupils.value.filter((it) => {
+    studentList.value = students.value.filter((it) => {
       return (
         it.firstName?.includes(event.query) ||
         it.lastName?.includes(event.query)
@@ -174,8 +174,8 @@ function searchPupils(event: AutoCompleteCompleteEvent) {
                   <template #title>Schüler</template>
                   <template #content>
                     <DataTable
-                      :value="selectedGroup?.pupils"
-                      v-model:selection="selectedPupil"
+                      :value="selectedGroup?.students"
+                      v-model:selection="selectedStudent"
                       data-key="id"
                       selection-mode="single"
                     >
@@ -199,21 +199,21 @@ function searchPupils(event: AutoCompleteCompleteEvent) {
                         <InputGroup>
                           <AutoComplete
                             input-id="pupilName"
-                            v-model="pupil"
-                            :option-label="format"
-                            :suggestions="pupilList"
+                            v-model="student"
+                            :option-label="formatStudent"
+                            :suggestions="studentList"
                             class="w-full"
                             force-selection
-                            @complete="searchPupils"
+                            @complete="searchStudents"
                           >
                             <template #option="slotProps">
-                              <span>{{ format(slotProps.option) }}</span>
+                              <span>{{ formatStudent(slotProps.option) }}</span>
                             </template>
                           </AutoComplete>
                           <Button
                             icon="pi pi-check"
                             security="success"
-                            @click="addPupilToGroup"
+                            @click="addStudentToGroup"
                           />
                         </InputGroup>
                       </div>

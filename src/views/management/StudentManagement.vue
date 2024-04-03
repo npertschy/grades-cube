@@ -5,38 +5,38 @@ import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
-import type { Pupil } from "@/components/pupils/Pupil";
-import { usePupils } from "@/components/pupils/PupilStore";
+import type { Student } from "@/components/students/Student";
+import { useStudents } from "@/components/students/StudentStore";
 
 const firstName = ref<string>();
 const lastName = ref<string>();
 
-const { pupils, addPupil, format, removePupil } = usePupils();
+const { students, addStudent, formatStudent, removeStudent } = useStudents();
 
-const selectedPupil = ref<Pupil | undefined>();
+const selectedStudent = ref<Student | undefined>();
 
 function handleSave() {
-  const id = selectedPupil.value ? selectedPupil.value.id : undefined;
-  const pupil = {
+  const id = selectedStudent.value ? selectedStudent.value.id : undefined;
+  const student = {
     id: id,
     firstName: firstName.value,
     lastName: lastName.value,
   };
 
-  addPupil(pupil, () => {
+  addStudent(student, () => {
     resetInputs();
-    selectedPupil.value = undefined;
+    selectedStudent.value = undefined;
   });
 }
 
-watch(selectedPupil, (current) => loadPupil(current));
+watch(selectedStudent, (current) => loadStudent(current));
 
 function resetInputs() {
   firstName.value = undefined;
   lastName.value = undefined;
 }
 
-function loadPupil(item: Pupil | undefined) {
+function loadStudent(item: Student | undefined) {
   resetInputs();
   if (item?.id && item.id > 0) {
     firstName.value = item?.firstName;
@@ -45,8 +45,8 @@ function loadPupil(item: Pupil | undefined) {
 }
 
 function handleRemove() {
-  if (selectedPupil.value) {
-    removePupil(selectedPupil.value);
+  if (selectedStudent.value) {
+    removeStudent(selectedStudent.value);
   }
 }
 </script>
@@ -58,13 +58,13 @@ function handleRemove() {
       <div class="grid">
         <div class="col-2">
           <Listbox
-            v-model="selectedPupil"
-            :options="pupils"
+            v-model="selectedStudent"
+            :options="students"
             class="min-h-full shadow-2"
           >
             <template #option="slotProps">
               <p class="text-center">
-                {{ format(slotProps.option) }}
+                {{ formatStudent(slotProps.option) }}
               </p>
             </template>
           </Listbox>
@@ -76,7 +76,7 @@ function handleRemove() {
             auswählen.
           </p>
           <Divider />
-          <div v-show="selectedPupil">
+          <div v-show="selectedStudent">
             <Card class="shadow-2">
               <template #title>Schüler</template>
               <template #content>
@@ -109,7 +109,9 @@ function handleRemove() {
               <Button label="Submit" class="col-1" @click="handleSave" />
               <Button
                 v-show="
-                  selectedPupil && selectedPupil.id && selectedPupil.id > 0
+                  selectedStudent &&
+                  selectedStudent.id &&
+                  selectedStudent.id > 0
                 "
                 label="Delete"
                 class="col-offset-10 col-1"

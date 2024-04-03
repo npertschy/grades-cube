@@ -11,7 +11,7 @@ const items = [
   {
     name: "Schüler",
     icon: PrimeIcons.USER,
-    route: { name: "pupilManagement" },
+    route: { name: "studentManagement" },
   },
   {
     name: "Klassen",

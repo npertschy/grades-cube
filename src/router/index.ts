@@ -16,9 +16,9 @@ const router = createRouter({
             import("@/views/management/SchoolYearManagement.vue"),
         },
         {
-          path: "pupil",
-          name: "pupilManagement",
-          component: () => import("@/views/management/PupilManagement.vue"),
+          path: "student",
+          name: "studentManagement",
+          component: () => import("@/views/management/StudentManagement.vue"),
         },
         {
           path: "group",
