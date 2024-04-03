@@ -1,5 +1,6 @@
 import { ref } from "vue";
 import type { Student } from "./Student";
+import { loadAllStudents } from "@/components/students/StudentGateway";
 
 const idCounter = ref(1);
 
@@ -10,6 +11,11 @@ const students = ref<Student[]>([
     lastName: undefined,
   },
 ]);
+
+const all = await loadAllStudents();
+all.forEach((loaded) => {
+  students.value.push(loaded);
+});
 
 function addStudent(studentToAdd: Student, cleanup: () => void) {
   if (studentToAdd.id && studentToAdd.id > 0) {
