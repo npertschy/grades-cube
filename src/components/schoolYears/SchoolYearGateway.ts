@@ -33,11 +33,13 @@ export async function loadAll(): Promise<SchoolYear[]> {
       end: coreDataToUnix(year.ZEND),
       firstSemester: {
         id: semesters[0].Z_PK,
+        type: 1,
         start: coreDataToUnix(semesters[0].ZSTART),
         end: coreDataToUnix(semesters[0].ZEND),
       },
       secondSemester: {
         id: semesters[1].Z_PK,
+        type: 2,
         start: coreDataToUnix(semesters[1].ZSTART),
         end: coreDataToUnix(semesters[1].ZEND),
       },
@@ -56,27 +58,15 @@ export async function createSchoolYear(schoolYear: SchoolYear) {
     [8, schoolYearEnd, schoolYearStart]
   );
 
-  await createSemester(
-    schoolYear.firstSemester!,
-    1,
-    newSchoolYear.lastInsertId
-  );
-  await createSemester(
-    schoolYear.secondSemester!,
-    2,
-    newSchoolYear.lastInsertId
-  );
+  await createSemester(schoolYear.firstSemester!, newSchoolYear.lastInsertId);
+  await createSemester(schoolYear.secondSemester!, newSchoolYear.lastInsertId);
 }
 
-async function createSemester(
-  semester: Semester,
-  type: number,
-  schoolYearId: number
-) {
+async function createSemester(semester: Semester, schoolYearId: number) {
   const semesterStart = dateToCodeData(semester.start!);
   const semesterEnd = dateToCodeData(semester.end!);
   await db.execute(
     "INSERT INTO ZSEMESTER (Z_ENT, ZTYPEID, ZYEAR, ZEND, ZSTART) VALUES ($1, $2, $3, $4, $5)",
-    [5, type, schoolYearId, semesterEnd, semesterStart]
+    [5, semester.type, schoolYearId, semesterEnd, semesterStart]
   );
 }
