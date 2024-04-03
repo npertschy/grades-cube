@@ -2,8 +2,6 @@ import { ref } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { loadAll, createSchoolYear } from "./SchoolYearGateway";
 
-const idCounter = ref(1);
-
 const schoolYears = ref<SchoolYear[]>([
   {
     id: 0,
@@ -28,12 +26,6 @@ async function addSchoolYear(schoolYearToAdd: SchoolYear, cleanup: () => void) {
     schoolYears.value.splice(index, 1, schoolYearToAdd);
   } else {
     await createSchoolYear(schoolYearToAdd);
-    // schoolYears.value.push({
-    //   ...schoolYearToAdd,
-    //   id: idCounter.value,
-    // });
-
-    // idCounter.value++;
     schoolYears.value = [...(await loadAll())];
     schoolYears.value.unshift({
       id: 0,
