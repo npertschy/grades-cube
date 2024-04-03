@@ -13,5 +13,6 @@
         "Niki",
         "primevue",
         "vite"
-    ]
+    ],
+    "typescript.preferences.importModuleSpecifier": "non-relative"
 }
