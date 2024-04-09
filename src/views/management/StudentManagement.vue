@@ -55,12 +55,13 @@ function handleRemove() {
   <Card>
     <template #title>Schüler verwalten</template>
     <template #content>
-      <div class="grid">
-        <div class="col-2">
+      <div class="container">
+        <div style="height: 80vh">
           <Listbox
             v-model="selectedStudent"
             :options="students"
-            class="min-h-full shadow-2"
+            class="shadow-2"
+            list-style="max-height:80vh"
           >
             <template #option="slotProps">
               <p class="text-center">
@@ -69,7 +70,7 @@ function handleRemove() {
             </template>
           </Listbox>
         </div>
-        <div class="col-offset-1">
+        <div class="edit-area">
           <p>
             Verwalten Sie hier ihre Schüler. Sie können Schüler anlegen oder
             bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
@@ -80,21 +81,21 @@ function handleRemove() {
             <Card class="shadow-2">
               <template #title>Schüler</template>
               <template #content>
-                <div class="formgrid grid">
-                  <div class="field col">
-                    <label for="firstNameField" class="font-semibold"
-                      >Vorname</label
-                    >
+                <div class="label-over-input">
+                  <div>
+                    <label for="firstNameField" class="font-semibold">
+                      Vorname
+                    </label>
                     <InputText
                       input-id="firstNameField"
                       v-model="firstName"
                       class="w-full"
                     />
                   </div>
-                  <div class="field col">
-                    <label for="lastNameField" class="font-semibold"
-                      >Nachname</label
-                    >
+                  <div>
+                    <label for="lastNameField" class="font-semibold">
+                      Nachname
+                    </label>
                     <InputText
                       input-id="lastNameField"
                       v-model="lastName"
@@ -105,8 +106,8 @@ function handleRemove() {
               </template>
             </Card>
 
-            <div class="mt-2">
-              <Button label="Submit" class="col-1" @click="handleSave" />
+            <div class="mt-2 button-area">
+              <Button label="Submit" class="" @click="handleSave" />
               <Button
                 v-show="
                   selectedStudent &&
@@ -114,7 +115,7 @@ function handleRemove() {
                   selectedStudent.id > 0
                 "
                 label="Delete"
-                class="col-offset-10 col-1"
+                class="delete-button"
                 @click="handleRemove"
               />
             </div>
@@ -124,3 +125,30 @@ function handleRemove() {
     </template>
   </Card>
 </template>
+
+<style scoped>
+.container {
+  display: grid;
+  grid-template-columns: 2fr repeat(10, 1fr);
+  column-gap: 1rem;
+}
+
+.edit-area {
+  grid-column: 3 / span 8;
+}
+
+.label-over-input {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 0.5rem;
+}
+
+.button-area {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.delete-button {
+  grid-column: 8 / span 1;
+}
+</style>

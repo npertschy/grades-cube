@@ -32,10 +32,19 @@ const items = ref([
       </router-link>
     </template>
     <template #end>
-      <div class="grid gap-2 pt-2">
+      <div class="header-end">
         <SchoolYearSelector />
         <Avatar icon="pi pi-user" shape="circle" class="mr-2" />
       </div>
     </template>
   </Menubar>
 </template>
+
+<style scoped>
+.header-end {
+  display: grid;
+  column-gap: 0.5rem;
+  grid-template-columns: 1fr 1fr 30px;
+  align-content: end;
+}
+</style>

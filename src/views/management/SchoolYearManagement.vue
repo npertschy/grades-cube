@@ -26,11 +26,13 @@ function handleSave() {
     end: secondEndDate.value,
     firstSemester: {
       id: undefined,
+      type: 1,
       start: firstStartDate.value,
       end: firstEndDate.value,
     },
     secondSemester: {
       id: undefined,
+      type: 2,
       start: secondStartDate.value,
       end: secondEndDate.value,
     },
@@ -72,8 +74,8 @@ function handleRemove() {
   <Card>
     <template #title>Schuljahre verwalten</template>
     <template #content>
-      <div class="grid">
-        <div class="col-2">
+      <div class="container">
+        <div>
           <Listbox
             v-model="selectedSchoolYear"
             :options="schoolYears"
@@ -86,7 +88,7 @@ function handleRemove() {
             </template>
           </Listbox>
         </div>
-        <div class="col-offset-1">
+        <div class="edit-area">
           <p>
             Verwalten Sie hier ihre Schuljahre. Sie können Schuljahre anlegen
             oder bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
@@ -97,28 +99,28 @@ function handleRemove() {
             <Card class="shadow-2">
               <template #title>Erstes Halbjahr</template>
               <template #content>
-                <div class="formgrid grid">
-                  <div class="field col">
-                    <label for="startFirstSemesterField" class="font-semibold"
-                      >Start erstes Halbjahr</label
-                    >
+                <div class="label-over-input">
+                  <div>
+                    <label for="startFirstSemesterField" class="font-semibold">
+                      Start erstes Halbjahr
+                    </label>
                     <Calender
                       input-id="startFirstSemesterField"
                       v-model="firstStartDate"
-                      class="w-full"
+                      class="calender-input"
                       date-format="dd.mm.yy"
                       show-icon
                       show-button-bar
                     />
                   </div>
-                  <div class="field col">
-                    <label for="endFirstSemesterField" class="font-semibold"
-                      >Ende erstes Halbjahr</label
-                    >
+                  <div>
+                    <label for="endFirstSemesterField" class="font-semibold">
+                      Ende erstes Halbjahr
+                    </label>
                     <Calender
                       input-id="endFirstSemesterField"
                       v-model="firstEndDate"
-                      class="w-full"
+                      class="calender-input"
                       date-format="dd.mm.yy"
                       show-icon
                       show-button-bar
@@ -130,28 +132,28 @@ function handleRemove() {
             <Card class="shadow-2 mt-2">
               <template #title>Zweites Halbjahr</template>
               <template #content>
-                <div class="formgrid grid">
-                  <div class="field col">
-                    <label for="startSecondSemesterField" class="font-semibold"
-                      >Start zweites Halbjahr</label
-                    >
+                <div class="label-over-input">
+                  <div>
+                    <label for="startSecondSemesterField" class="font-semibold">
+                      Start zweites Halbjahr
+                    </label>
                     <Calender
                       input-id="startSecondSemesterField"
                       v-model="secondStartDate"
-                      class="w-full"
+                      class="calender-input"
                       date-format="dd.mm.yy"
                       show-icon
                       show-button-bar
                     />
                   </div>
-                  <div class="field col">
-                    <label for="endSecondSemesterField" class="font-semibold"
-                      >Ende zweites Halbjahr</label
-                    >
+                  <div>
+                    <label for="endSecondSemesterField" class="font-semibold">
+                      Ende zweites Halbjahr
+                    </label>
                     <Calender
                       input-id="endSecondSemesterField"
                       v-model="secondEndDate"
-                      class="w-full"
+                      class="calender-input"
                       date-format="dd.mm.yy"
                       show-icon
                       show-button-bar
@@ -160,8 +162,8 @@ function handleRemove() {
                 </div>
               </template>
             </Card>
-            <div class="mt-2">
-              <Button label="Speichern" class="col-1" @click="handleSave" />
+            <div class="mt-2 button-area">
+              <Button label="Speichern" @click="handleSave" />
               <Button
                 v-show="
                   selectedSchoolYear &&
@@ -169,7 +171,7 @@ function handleRemove() {
                   selectedSchoolYear.id > 0
                 "
                 label="Löschen"
-                class="col-offset-10 col-1"
+                class="delete-button"
                 @click="handleRemove"
               />
             </div>
@@ -179,4 +181,35 @@ function handleRemove() {
     </template>
   </Card>
 </template>
-@/components/schoolYears/SchoolYear @/components/schoolYears/SchoolYearStore
+
+<style scoped>
+.container {
+  display: grid;
+  grid-template-columns: 2fr repeat(10, 1fr);
+  column-gap: 1rem;
+}
+
+.edit-area {
+  grid-column: 3 / span 8;
+}
+
+.label-over-input {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 0.5rem;
+}
+
+.calender-input {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.button-area {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.delete-button {
+  grid-column: 8 / span 1;
+}
+</style>

@@ -28,8 +28,8 @@ const items = [
 </script>
 
 <template>
-  <div class="grid grid-nogutter gap-2">
-    <Menu :model="items" class="col-fixed" style="width: 200px">
+  <div class="container">
+    <Menu :model="items">
       <template #item="{ item, props }">
         <router-link
           v-if="item.route"
@@ -44,6 +44,14 @@ const items = [
         </router-link>
       </template>
     </Menu>
-    <RouterView class="col" />
+    <RouterView />
   </div>
 </template>
+
+<style scoped>
+.container {
+  display: grid;
+  grid-template-columns: 200px auto;
+  column-gap: 0.5rem;
+}
+</style>
