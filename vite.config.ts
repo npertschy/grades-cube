@@ -6,6 +6,9 @@ import VueDevTools from "vite-plugin-vue-devtools";
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  build: {
+    target: ["es2022"],
+  },
   plugins: [vue(), VueDevTools()],
   resolve: {
     alias: {
