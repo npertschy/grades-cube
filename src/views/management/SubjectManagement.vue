@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CustomTransition from "@/components/layout/CustomTransition.vue";
 import InputText from "primevue/inputtext";
 import Listbox from "primevue/listbox";
 import Button from "primevue/button";
@@ -87,37 +88,39 @@ function handleRemove() {
             auswählen.
           </p>
           <Divider />
-          <div v-show="selectedSubject">
-            <Card class="shadow-2">
-              <template #title>Fach</template>
-              <template #content>
-                <div class="label-over-input">
-                  <div>
-                    <label for="nameField" class="font-semibold">Name</label>
-                    <InputText
-                      input-id="nameField"
-                      v-model="name"
-                      class="w-full"
-                    />
+          <CustomTransition>
+            <div v-show="selectedSubject">
+              <Card class="shadow-2">
+                <template #title>Fach</template>
+                <template #content>
+                  <div class="label-over-input">
+                    <div>
+                      <label for="nameField" class="font-semibold">Name</label>
+                      <InputText
+                        input-id="nameField"
+                        v-model="name"
+                        class="w-full"
+                      />
+                    </div>
                   </div>
-                </div>
-              </template>
-            </Card>
+                </template>
+              </Card>
 
-            <div class="mt-2 button-area">
-              <Button label="Submit" @click="handleSave" />
-              <Button
-                v-show="
-                  selectedSubject &&
-                  selectedSubject.id &&
-                  selectedSubject.id > 0
-                "
-                label="Delete"
-                class="delete-button"
-                @click="handleRemove"
-              />
+              <div class="mt-2 button-area">
+                <Button label="Submit" @click="handleSave" />
+                <Button
+                  v-show="
+                    selectedSubject &&
+                    selectedSubject.id &&
+                    selectedSubject.id > 0
+                  "
+                  label="Delete"
+                  class="delete-button"
+                  @click="handleRemove"
+                />
+              </div>
             </div>
-          </div>
+          </CustomTransition>
         </div>
       </div>
     </template>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CustomTransition from "@/components/layout/CustomTransition.vue";
 import Calender from "primevue/calendar";
 import Listbox from "primevue/listbox";
 import Button from "primevue/button";
@@ -95,87 +96,95 @@ function handleRemove() {
             auswählen.
           </p>
           <Divider />
-          <div v-show="selectedSchoolYear">
-            <Card class="shadow-2">
-              <template #title>Erstes Halbjahr</template>
-              <template #content>
-                <div class="label-over-input">
-                  <div>
-                    <label for="startFirstSemesterField" class="font-semibold">
-                      Start erstes Halbjahr
-                    </label>
-                    <Calender
-                      input-id="startFirstSemesterField"
-                      v-model="firstStartDate"
-                      class="calender-input"
-                      date-format="dd.mm.yy"
-                      show-icon
-                      show-button-bar
-                    />
+          <CustomTransition>
+            <div v-show="selectedSchoolYear">
+              <Card class="shadow-2">
+                <template #title>Erstes Halbjahr</template>
+                <template #content>
+                  <div class="label-over-input">
+                    <div>
+                      <label
+                        for="startFirstSemesterField"
+                        class="font-semibold"
+                      >
+                        Start erstes Halbjahr
+                      </label>
+                      <Calender
+                        input-id="startFirstSemesterField"
+                        v-model="firstStartDate"
+                        class="calender-input"
+                        date-format="dd.mm.yy"
+                        show-icon
+                        show-button-bar
+                      />
+                    </div>
+                    <div>
+                      <label for="endFirstSemesterField" class="font-semibold">
+                        Ende erstes Halbjahr
+                      </label>
+                      <Calender
+                        input-id="endFirstSemesterField"
+                        v-model="firstEndDate"
+                        class="calender-input"
+                        date-format="dd.mm.yy"
+                        show-icon
+                        show-button-bar
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label for="endFirstSemesterField" class="font-semibold">
-                      Ende erstes Halbjahr
-                    </label>
-                    <Calender
-                      input-id="endFirstSemesterField"
-                      v-model="firstEndDate"
-                      class="calender-input"
-                      date-format="dd.mm.yy"
-                      show-icon
-                      show-button-bar
-                    />
+                </template>
+              </Card>
+              <Card class="shadow-2 mt-2">
+                <template #title>Zweites Halbjahr</template>
+                <template #content>
+                  <div class="label-over-input">
+                    <div>
+                      <label
+                        for="startSecondSemesterField"
+                        class="font-semibold"
+                      >
+                        Start zweites Halbjahr
+                      </label>
+                      <Calender
+                        input-id="startSecondSemesterField"
+                        v-model="secondStartDate"
+                        class="calender-input"
+                        date-format="dd.mm.yy"
+                        show-icon
+                        show-button-bar
+                      />
+                    </div>
+                    <div>
+                      <label for="endSecondSemesterField" class="font-semibold">
+                        Ende zweites Halbjahr
+                      </label>
+                      <Calender
+                        input-id="endSecondSemesterField"
+                        v-model="secondEndDate"
+                        class="calender-input"
+                        date-format="dd.mm.yy"
+                        show-icon
+                        show-button-bar
+                      />
+                    </div>
                   </div>
-                </div>
-              </template>
-            </Card>
-            <Card class="shadow-2 mt-2">
-              <template #title>Zweites Halbjahr</template>
-              <template #content>
-                <div class="label-over-input">
-                  <div>
-                    <label for="startSecondSemesterField" class="font-semibold">
-                      Start zweites Halbjahr
-                    </label>
-                    <Calender
-                      input-id="startSecondSemesterField"
-                      v-model="secondStartDate"
-                      class="calender-input"
-                      date-format="dd.mm.yy"
-                      show-icon
-                      show-button-bar
-                    />
-                  </div>
-                  <div>
-                    <label for="endSecondSemesterField" class="font-semibold">
-                      Ende zweites Halbjahr
-                    </label>
-                    <Calender
-                      input-id="endSecondSemesterField"
-                      v-model="secondEndDate"
-                      class="calender-input"
-                      date-format="dd.mm.yy"
-                      show-icon
-                      show-button-bar
-                    />
-                  </div>
-                </div>
-              </template>
-            </Card>
-            <div class="mt-2 button-area">
-              <Button label="Speichern" @click="handleSave" />
-              <Button
-                v-show="
-                  selectedSchoolYear &&
-                  selectedSchoolYear.id &&
-                  selectedSchoolYear.id > 0
-                "
-                label="Löschen"
-                class="delete-button"
-                @click="handleRemove"
-              />
+                </template>
+              </Card>
+              <div class="mt-2 button-area">
+                <Button label="Speichern" @click="handleSave" />
+                <Button
+                  v-show="
+                    selectedSchoolYear &&
+                    selectedSchoolYear.id &&
+                    selectedSchoolYear.id > 0
+                  "
+                  label="Löschen"
+                  class="delete-button"
+                  @click="handleRemove"
+                />
+              </div>
             </div>
-          </div>
+          </CustomTransition>
         </div>
       </div>
     </template>

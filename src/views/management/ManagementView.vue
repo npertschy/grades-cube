@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CustomTransition from "@/components/layout/CustomTransition.vue";
 import Menu from "primevue/menu";
 import { PrimeIcons } from "primevue/api";
 
@@ -44,7 +45,9 @@ const items = [
         </router-link>
       </template>
     </Menu>
-    <RouterView />
+    <CustomTransition>
+      <RouterView />
+    </CustomTransition>
   </div>
 </template>
 

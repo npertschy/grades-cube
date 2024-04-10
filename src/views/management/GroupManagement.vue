@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CustomTransition from "@/components/layout/CustomTransition.vue";
 import InputText from "primevue/inputtext";
 import InputGroup from "primevue/inputgroup";
 import AutoComplete, {
@@ -137,92 +138,96 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
             auswählen.
           </p>
           <Divider />
-          <div v-show="selectedGroup" class="grid gap-2">
-            <div class="col-4">
-              <div class="grid">
-                <Card class="shadow-2 col-12">
-                  <template #title>Klasse</template>
-                  <template #content>
-                    <div class="formgrid grid">
-                      <div class="field col">
-                        <label for="nameField" class="font-semibold"
-                          >Name</label
-                        >
-                        <InputText
-                          input-id="nameField"
-                          v-model="name"
-                          class="w-full"
-                        />
+          <CustomTransition>
+            <div v-show="selectedGroup" class="grid gap-2">
+              <div class="col-4">
+                <div class="grid">
+                  <Card class="shadow-2 col-12">
+                    <template #title>Klasse</template>
+                    <template #content>
+                      <div class="formgrid grid">
+                        <div class="field col">
+                          <label for="nameField" class="font-semibold"
+                            >Name</label
+                          >
+                          <InputText
+                            input-id="nameField"
+                            v-model="name"
+                            class="w-full"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  </template>
-                </Card>
-                <div class="mt-2 col-12">
-                  <Button label="Submit" class="col-3" @click="addGroup" />
-                  <Button
-                    v-show="selectedGroup && selectedGroup.id > 0"
-                    label="Delete"
-                    class="col-3 col-offset-6"
-                    @click="removeGroup"
-                  />
+                    </template>
+                  </Card>
+                  <div class="mt-2 col-12">
+                    <Button label="Submit" class="col-3" @click="addGroup" />
+                    <Button
+                      v-show="selectedGroup && selectedGroup.id > 0"
+                      label="Delete"
+                      class="col-3 col-offset-6"
+                      @click="removeGroup"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div v-show="selectedGroup && selectedGroup.id > 0" class="col">
+                <div class="grid">
+                  <Card class="shadow-2 col-12">
+                    <template #title>Schüler</template>
+                    <template #content>
+                      <DataTable
+                        :value="selectedGroup?.students"
+                        v-model:selection="selectedStudent"
+                        data-key="id"
+                        selection-mode="single"
+                      >
+                        <Column header="#">
+                          <template #body="slotProps">
+                            {{ slotProps.index }}
+                          </template>
+                        </Column>
+                        <Column header="Name">
+                          <template #body="slotProps">
+                            {{ slotProps.data.firstName }}
+                            {{ slotProps.data.lastName }}
+                          </template>
+                        </Column>
+                      </DataTable>
+                      <div class="formgrid grid mt-2">
+                        <div class="field col">
+                          <label for="pupilName" class="font-semibold"
+                            >Schüler zur Klasse hinzufügen</label
+                          >
+                          <InputGroup>
+                            <AutoComplete
+                              input-id="pupilName"
+                              v-model="student"
+                              :option-label="formatStudent"
+                              :suggestions="studentList"
+                              class="w-full"
+                              force-selection
+                              @complete="searchStudents"
+                            >
+                              <template #option="slotProps">
+                                <span>{{
+                                  formatStudent(slotProps.option)
+                                }}</span>
+                              </template>
+                            </AutoComplete>
+                            <Button
+                              icon="pi pi-check"
+                              security="success"
+                              @click="addStudentToGroup"
+                            />
+                          </InputGroup>
+                        </div>
+                      </div>
+                    </template>
+                  </Card>
                 </div>
               </div>
             </div>
-            <div v-show="selectedGroup && selectedGroup.id > 0" class="col">
-              <div class="grid">
-                <Card class="shadow-2 col-12">
-                  <template #title>Schüler</template>
-                  <template #content>
-                    <DataTable
-                      :value="selectedGroup?.students"
-                      v-model:selection="selectedStudent"
-                      data-key="id"
-                      selection-mode="single"
-                    >
-                      <Column header="#">
-                        <template #body="slotProps">
-                          {{ slotProps.index }}
-                        </template>
-                      </Column>
-                      <Column header="Name">
-                        <template #body="slotProps">
-                          {{ slotProps.data.firstName }}
-                          {{ slotProps.data.lastName }}
-                        </template>
-                      </Column>
-                    </DataTable>
-                    <div class="formgrid grid mt-2">
-                      <div class="field col">
-                        <label for="pupilName" class="font-semibold"
-                          >Schüler zur Klasse hinzufügen</label
-                        >
-                        <InputGroup>
-                          <AutoComplete
-                            input-id="pupilName"
-                            v-model="student"
-                            :option-label="formatStudent"
-                            :suggestions="studentList"
-                            class="w-full"
-                            force-selection
-                            @complete="searchStudents"
-                          >
-                            <template #option="slotProps">
-                              <span>{{ formatStudent(slotProps.option) }}</span>
-                            </template>
-                          </AutoComplete>
-                          <Button
-                            icon="pi pi-check"
-                            security="success"
-                            @click="addStudentToGroup"
-                          />
-                        </InputGroup>
-                      </div>
-                    </div>
-                  </template>
-                </Card>
-              </div>
-            </div>
-          </div>
+          </CustomTransition>
         </div>
       </div>
     </template>
