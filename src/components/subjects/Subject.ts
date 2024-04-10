@@ -1,4 +1,4 @@
 export type Subject = {
-  id: number;
+  id: number | undefined;
   name: string | undefined;
 };

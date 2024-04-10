@@ -5,48 +5,38 @@ import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
+import { useSubjects } from "@/components/subjects/SubjectStore";
+import type { Subject } from "@/components/subjects/Subject";
 
 const name = ref<string>();
 
-const idCounter = ref(1);
-
-type Subject = {
-  id: number;
-  name: string | undefined;
-};
-
-const subjects = ref<Subject[]>([
-  {
-    id: 0,
-    name: undefined,
-  },
-]);
+const { subjects, addSubject, formatSubject, removeSubject, editSubject } =
+  useSubjects();
 
 const selectedSubject = ref<Subject | undefined>();
 
-function addSubject() {
-  if (selectedSubject.value && selectedSubject.value.id > 0) {
-    const subject = {
+function handleSave() {
+  if (selectedSubject.value) {
+    const subject: Subject = {
       id: selectedSubject.value.id,
       name: name.value,
     };
 
-    const index = subjects.value.findIndex((it) => {
-      return it.id == subject.id;
+    editSubject(subject, () => {
+      resetInputs();
+      selectedSubject.value = undefined;
     });
-
-    subjects.value.splice(index, 1, subject);
   } else {
-    subjects.value?.push({
-      id: idCounter.value,
+    const subject: Subject = {
+      id: undefined,
       name: name.value,
+    };
+
+    addSubject(subject, () => {
+      resetInputs();
+      selectedSubject.value = undefined;
     });
-
-    idCounter.value++;
   }
-
-  resetInputs();
-  selectedSubject.value = undefined;
 }
 
 watch(selectedSubject, (current) => loadSubject(current));
@@ -62,16 +52,13 @@ function loadSubject(item: Subject | undefined) {
   }
 }
 
-function format(item: Subject) {
-  return item.id === 0 ? "Neues Fach anlegen" : item.name;
-}
-
-function removeSubject() {
-  const index = subjects.value.findIndex((it) => {
-    return it.id == selectedSubject.value?.id;
-  });
-
-  subjects.value.splice(index, 1);
+function handleRemove() {
+  if (selectedSubject.value) {
+    removeSubject(selectedSubject.value, () => {
+      resetInputs();
+      selectedSubject.value = undefined;
+    });
+  }
 }
 </script>
 
@@ -79,21 +66,21 @@ function removeSubject() {
   <Card>
     <template #title>Fächer verwalten</template>
     <template #content>
-      <div class="grid">
-        <div class="col-2">
+      <div class="container">
+        <div>
           <Listbox
             v-model="selectedSubject"
             :options="subjects"
-            class="min-h-full shadow-2"
+            class="shadow-2"
           >
             <template #option="slotProps">
               <p class="text-center">
-                {{ format(slotProps.option) }}
+                {{ formatSubject(slotProps.option) }}
               </p>
             </template>
           </Listbox>
         </div>
-        <div class="col-offset-1">
+        <div class="edit-area">
           <p>
             Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder
             bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
@@ -104,8 +91,8 @@ function removeSubject() {
             <Card class="shadow-2">
               <template #title>Fach</template>
               <template #content>
-                <div class="formgrid grid">
-                  <div class="field col">
+                <div class="label-over-input">
+                  <div>
                     <label for="nameField" class="font-semibold">Name</label>
                     <InputText
                       input-id="nameField"
@@ -117,13 +104,17 @@ function removeSubject() {
               </template>
             </Card>
 
-            <div class="mt-2">
-              <Button label="Submit" class="col-1" @click="addSubject" />
+            <div class="mt-2 button-area">
+              <Button label="Submit" @click="handleSave" />
               <Button
-                v-show="selectedSubject && selectedSubject.id > 0"
+                v-show="
+                  selectedSubject &&
+                  selectedSubject.id &&
+                  selectedSubject.id > 0
+                "
                 label="Delete"
-                class="col-offset-10 col-1"
-                @click="removeSubject"
+                class="delete-button"
+                @click="handleRemove"
               />
             </div>
           </div>
@@ -132,3 +123,29 @@ function removeSubject() {
     </template>
   </Card>
 </template>
+
+<style scoped>
+.container {
+  display: grid;
+  grid-template-columns: 2fr repeat(10, 1fr);
+  column-gap: 1rem;
+}
+
+.edit-area {
+  grid-column: 3 / span 8;
+}
+
+.label-over-input {
+  display: grid;
+  grid-template-columns: auto;
+}
+
+.button-area {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+}
+
+.delete-button {
+  grid-column: 8 / span 1;
+}
+</style>

@@ -1,16 +1,25 @@
 import { ref } from "vue";
 import type { Subject } from "./Subject";
+import { useSubjectGateway } from "@/components/subjects/SubjectGateway";
 
-const idCounter = ref(1);
+const { loadAllSubjects, createSubject, deleteSubject, updateSubject } =
+  useSubjectGateway();
 
-const subjects = ref<Subject[]>([
-  {
-    id: 0,
-    name: undefined,
-  },
-]);
+const subjects = ref<Subject[]>([]);
+await reloadAllSubjects();
 
-function addSubject(subjectToAdd: Subject, cleanup: () => void) {
+async function reloadAllSubjects() {
+  const all = await loadAllSubjects();
+  subjects.value = [
+    {
+      id: 0,
+      name: undefined,
+    },
+    ...all,
+  ];
+}
+
+async function addSubject(subjectToAdd: Subject, cleanup: () => void) {
   if (subjectToAdd.id && subjectToAdd.id > 0) {
     const index = subjects.value.findIndex((it) => {
       return it.id == subjectToAdd.id;
@@ -18,13 +27,16 @@ function addSubject(subjectToAdd: Subject, cleanup: () => void) {
 
     subjects.value.splice(index, 1, subjectToAdd);
   } else {
-    subjects.value.push({
-      ...subjectToAdd,
-      id: idCounter.value,
-    });
-
-    idCounter.value++;
+    await createSubject(subjectToAdd);
+    await reloadAllSubjects();
   }
+
+  cleanup();
+}
+
+async function editSubject(subject: Subject, cleanup: () => void) {
+  await updateSubject(subject);
+  await reloadAllSubjects();
 
   cleanup();
 }
@@ -33,12 +45,11 @@ function formatSubject(item: Subject) {
   return item.id === 0 ? "Neues Fach anlegen" : item.name;
 }
 
-function removeSubject(subject: Subject) {
-  const index = subjects.value.findIndex((it) => {
-    return it.id == subject.id;
-  });
+async function removeSubject(subject: Subject, cleanup: () => void) {
+  await deleteSubject(subject);
+  await reloadAllSubjects();
 
-  subjects.value.splice(index, 1);
+  cleanup();
 }
 
 export function useSubjects() {
@@ -47,5 +58,6 @@ export function useSubjects() {
     addSubject,
     formatSubject,
     removeSubject,
+    editSubject,
   };
 }
