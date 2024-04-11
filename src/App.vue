@@ -7,9 +7,11 @@ import CustomTransition from "@/components/layout/CustomTransition.vue";
   <div>
     <GlobalToolbar />
     <main class="mt-2">
-      <CustomTransition>
-        <RouterView />
-      </CustomTransition>
+      <RouterView v-slot="{ Component }">
+        <CustomTransition>
+          <component :is="Component" />
+        </CustomTransition>
+      </RouterView>
     </main>
   </div>
 </template>

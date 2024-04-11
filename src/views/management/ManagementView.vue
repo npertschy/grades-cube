@@ -38,16 +38,23 @@ const items = [
           :to="item.route"
           custom
         >
-          <a v-ripple v-bind="props.action" :href="href" @click="navigate">
+          <a
+            v-ripple
+            v-bind="props.action"
+            :href="href"
+            @click="navigate"
+          >
             <span :class="item.icon" />
             <span class="font-semibold ml-2">{{ item.name }}</span>
           </a>
         </router-link>
       </template>
     </Menu>
-    <CustomTransition>
-      <RouterView />
-    </CustomTransition>
+    <RouterView v-slot="{ Component }">
+      <CustomTransition>
+        <component :is="Component" />
+      </CustomTransition>
+    </RouterView>
   </div>
 </template>
 

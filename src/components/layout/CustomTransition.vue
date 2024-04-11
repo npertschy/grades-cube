@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <Transition>
+  <Transition mode="out-in">
     <slot />
   </Transition>
 </template>
