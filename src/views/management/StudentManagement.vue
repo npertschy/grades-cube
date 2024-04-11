@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
+import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputText from "primevue/inputtext";
-import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
@@ -111,16 +111,10 @@ function handleRemove() {
               </Card>
 
               <div class="mt-2 button-area">
-                <Button label="Submit" class="" @click="handleSave" />
-                <Button
-                  v-show="
-                    selectedStudent &&
-                    selectedStudent.id &&
-                    selectedStudent.id > 0
-                  "
-                  label="Delete"
-                  class="delete-button"
-                  @click="handleRemove"
+                <SaveAndDeleteButtons
+                  :show-delete-when-defined="selectedStudent"
+                  :save-action="handleSave"
+                  :delete-action="handleRemove"
                 />
               </div>
             </div>
@@ -151,9 +145,5 @@ function handleRemove() {
 .button-area {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-}
-
-.delete-button {
-  grid-column: 8 / span 1;
 }
 </style>
