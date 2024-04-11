@@ -42,7 +42,7 @@ async function editSubject(subject: Subject, cleanup: () => void) {
 }
 
 function formatSubject(item: Subject) {
-  return item.id === 0 ? "Neues Fach anlegen" : item.name;
+  return item.id === 0 ? "Neues Fach anlegen" : item.name!;
 }
 
 async function removeSubject(subject: Subject, cleanup: () => void) {

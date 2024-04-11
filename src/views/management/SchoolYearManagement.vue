@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
+import EntityList from "@/components/layout/EntityList.vue";
 import Calender from "primevue/calendar";
-import Listbox from "primevue/listbox";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
@@ -77,17 +77,11 @@ function handleRemove() {
     <template #content>
       <div class="container">
         <div>
-          <Listbox
+          <EntityList
             v-model="selectedSchoolYear"
-            :options="schoolYears"
-            class="min-h-full shadow-2"
-          >
-            <template #option="slotProps">
-              <p class="text-center">
-                {{ formatSchoolYear(slotProps.option) }}
-              </p>
-            </template>
-          </Listbox>
+            :entities="schoolYears"
+            :format="formatSchoolYear"
+          />
         </div>
         <div class="edit-area">
           <p>
@@ -110,8 +104,8 @@ function handleRemove() {
                         Start erstes Halbjahr
                       </label>
                       <Calender
-                        input-id="startFirstSemesterField"
                         v-model="firstStartDate"
+                        input-id="startFirstSemesterField"
                         class="calender-input"
                         date-format="dd.mm.yy"
                         show-icon
@@ -119,12 +113,15 @@ function handleRemove() {
                       />
                     </div>
                     <div>
-                      <label for="endFirstSemesterField" class="font-semibold">
+                      <label
+                        for="endFirstSemesterField"
+                        class="font-semibold"
+                      >
                         Ende erstes Halbjahr
                       </label>
                       <Calender
-                        input-id="endFirstSemesterField"
                         v-model="firstEndDate"
+                        input-id="endFirstSemesterField"
                         class="calender-input"
                         date-format="dd.mm.yy"
                         show-icon
@@ -146,8 +143,8 @@ function handleRemove() {
                         Start zweites Halbjahr
                       </label>
                       <Calender
-                        input-id="startSecondSemesterField"
                         v-model="secondStartDate"
+                        input-id="startSecondSemesterField"
                         class="calender-input"
                         date-format="dd.mm.yy"
                         show-icon
@@ -155,12 +152,15 @@ function handleRemove() {
                       />
                     </div>
                     <div>
-                      <label for="endSecondSemesterField" class="font-semibold">
+                      <label
+                        for="endSecondSemesterField"
+                        class="font-semibold"
+                      >
                         Ende zweites Halbjahr
                       </label>
                       <Calender
-                        input-id="endSecondSemesterField"
                         v-model="secondEndDate"
+                        input-id="endSecondSemesterField"
                         class="calender-input"
                         date-format="dd.mm.yy"
                         show-icon
@@ -171,7 +171,10 @@ function handleRemove() {
                 </template>
               </Card>
               <div class="mt-2 button-area">
-                <Button label="Speichern" @click="handleSave" />
+                <Button
+                  label="Speichern"
+                  @click="handleSave"
+                />
                 <Button
                   v-show="
                     selectedSchoolYear &&

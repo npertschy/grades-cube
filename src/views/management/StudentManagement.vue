@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
+import EntityList from "@/components/layout/EntityList.vue";
 import InputText from "primevue/inputtext";
-import Listbox from "primevue/listbox";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
@@ -58,18 +58,14 @@ function handleRemove() {
     <template #content>
       <div class="container">
         <div style="height: 80vh">
-          <Listbox
+          <EntityList
             v-model="selectedStudent"
-            :options="students"
-            class="shadow-2"
-            list-style="max-height:80vh"
-          >
-            <template #option="slotProps">
-              <p class="text-center">
-                {{ formatStudent(slotProps.option) }}
-              </p>
-            </template>
-          </Listbox>
+            :entities="students"
+            :format="formatStudent"
+            list-style="max-height:75vh"
+            filter
+            :filter-fields="['firstName', 'lastName']"
+          />
         </div>
         <div class="edit-area">
           <p>
@@ -85,22 +81,28 @@ function handleRemove() {
                 <template #content>
                   <div class="label-over-input">
                     <div>
-                      <label for="firstNameField" class="font-semibold">
+                      <label
+                        for="firstNameField"
+                        class="font-semibold"
+                      >
                         Vorname
                       </label>
                       <InputText
-                        input-id="firstNameField"
                         v-model="firstName"
+                        input-id="firstNameField"
                         class="w-full"
                       />
                     </div>
                     <div>
-                      <label for="lastNameField" class="font-semibold">
+                      <label
+                        for="lastNameField"
+                        class="font-semibold"
+                      >
                         Nachname
                       </label>
                       <InputText
-                        input-id="lastNameField"
                         v-model="lastName"
+                        input-id="lastNameField"
                         class="w-full"
                       />
                     </div>

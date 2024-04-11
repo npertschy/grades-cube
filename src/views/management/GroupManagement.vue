@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
+import EntityList from "@/components/layout/EntityList.vue";
 import InputText from "primevue/inputtext";
 import InputGroup from "primevue/inputgroup";
 import AutoComplete, {
   type AutoCompleteCompleteEvent,
 } from "primevue/autocomplete";
-import Listbox from "primevue/listbox";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
@@ -81,7 +81,7 @@ function loadGroup(item: Group | undefined) {
 }
 
 function formatGroup(item: Group) {
-  return item.id === 0 ? "Neue Klasse anlegen" : item.name;
+  return item.id === 0 ? "Neue Klasse anlegen" : item.name!;
 }
 
 function removeGroup() {
@@ -115,21 +115,15 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
 
 <template>
   <Card>
-    <template #title>Klassen verwalten</template>
+    <template #title> Klassen verwalten </template>
     <template #content>
       <div class="grid nested-grid">
         <div class="col-2">
-          <Listbox
+          <EntityList
             v-model="selectedGroup"
-            :options="groups"
-            class="min-h-full shadow-2"
-          >
-            <template #option="slotProps">
-              <p class="text-center">
-                {{ formatGroup(slotProps.option) }}
-              </p>
-            </template>
-          </Listbox>
+            :entities="groups"
+            :format="formatGroup"
+          />
         </div>
         <div class="col-offset-1 col-8">
           <p>
@@ -139,20 +133,26 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
           </p>
           <Divider />
           <CustomTransition>
-            <div v-show="selectedGroup" class="grid gap-2">
+            <div
+              v-show="selectedGroup"
+              class="grid gap-2"
+            >
               <div class="col-4">
                 <div class="grid">
                   <Card class="shadow-2 col-12">
-                    <template #title>Klasse</template>
+                    <template #title> Klasse </template>
                     <template #content>
                       <div class="formgrid grid">
                         <div class="field col">
-                          <label for="nameField" class="font-semibold"
-                            >Name</label
+                          <label
+                            for="nameField"
+                            class="font-semibold"
                           >
+                            Name
+                          </label>
                           <InputText
-                            input-id="nameField"
                             v-model="name"
+                            input-id="nameField"
                             class="w-full"
                           />
                         </div>
@@ -160,7 +160,11 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
                     </template>
                   </Card>
                   <div class="mt-2 col-12">
-                    <Button label="Submit" class="col-3" @click="addGroup" />
+                    <Button
+                      label="Submit"
+                      class="col-3"
+                      @click="addGroup"
+                    />
                     <Button
                       v-show="selectedGroup && selectedGroup.id > 0"
                       label="Delete"
@@ -170,14 +174,17 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
                   </div>
                 </div>
               </div>
-              <div v-show="selectedGroup && selectedGroup.id > 0" class="col">
+              <div
+                v-show="selectedGroup && selectedGroup.id > 0"
+                class="col"
+              >
                 <div class="grid">
                   <Card class="shadow-2 col-12">
-                    <template #title>Schüler</template>
+                    <template #title> Schüler </template>
                     <template #content>
                       <DataTable
-                        :value="selectedGroup?.students"
                         v-model:selection="selectedStudent"
+                        :value="selectedGroup?.students"
                         data-key="id"
                         selection-mode="single"
                       >
@@ -195,13 +202,16 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
                       </DataTable>
                       <div class="formgrid grid mt-2">
                         <div class="field col">
-                          <label for="pupilName" class="font-semibold"
-                            >Schüler zur Klasse hinzufügen</label
+                          <label
+                            for="pupilName"
+                            class="font-semibold"
                           >
+                            Schüler zur Klasse hinzufügen
+                          </label>
                           <InputGroup>
                             <AutoComplete
-                              input-id="pupilName"
                               v-model="student"
+                              input-id="pupilName"
                               :option-label="formatStudent"
                               :suggestions="studentList"
                               class="w-full"

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
+import EntityList from "@/components/layout/EntityList.vue";
 import InputText from "primevue/inputtext";
-import Listbox from "primevue/listbox";
 import Button from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
@@ -69,17 +69,11 @@ function handleRemove() {
     <template #content>
       <div class="container">
         <div>
-          <Listbox
+          <EntityList
             v-model="selectedSubject"
-            :options="subjects"
-            class="shadow-2"
-          >
-            <template #option="slotProps">
-              <p class="text-center">
-                {{ formatSubject(slotProps.option) }}
-              </p>
-            </template>
-          </Listbox>
+            :entities="subjects"
+            :format="formatSubject"
+          />
         </div>
         <div class="edit-area">
           <p>
@@ -95,10 +89,14 @@ function handleRemove() {
                 <template #content>
                   <div class="label-over-input">
                     <div>
-                      <label for="nameField" class="font-semibold">Name</label>
+                      <label
+                        for="nameField"
+                        class="font-semibold"
+                        >Name</label
+                      >
                       <InputText
-                        input-id="nameField"
                         v-model="name"
+                        input-id="nameField"
                         class="w-full"
                       />
                     </div>
@@ -107,7 +105,10 @@ function handleRemove() {
               </Card>
 
               <div class="mt-2 button-area">
-                <Button label="Submit" @click="handleSave" />
+                <Button
+                  label="Submit"
+                  @click="handleSave"
+                />
                 <Button
                   v-show="
                     selectedSubject &&
