@@ -25,7 +25,12 @@ const items = ref([
         :to="item.route"
         custom
       >
-        <a v-ripple :href="href" v-bind="props.action" @click="navigate">
+        <a
+          v-ripple
+          :href="href"
+          v-bind="props.action"
+          @click="navigate"
+        >
           <span :class="item.icon" />
           <span class="font-semibold ml-2">{{ item.label }}</span>
         </a>
@@ -34,7 +39,11 @@ const items = ref([
     <template #end>
       <div class="header-end">
         <SchoolYearSelector />
-        <Avatar icon="pi pi-user" shape="circle" class="mr-2" />
+        <Avatar
+          icon="pi pi-user"
+          shape="circle"
+          class="mr-2 align-self-center"
+        />
       </div>
     </template>
   </Menubar>
