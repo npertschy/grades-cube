@@ -3,7 +3,7 @@ import Dropdown from "primevue/dropdown";
 import SelectButton from "primevue/selectbutton";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 
 const { schoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
@@ -15,6 +15,12 @@ const semesters = computed(() => {
         selectedSchoolYear.value.secondSemester,
       ]
     : undefined;
+});
+
+watch(selectedSchoolYear, (current, previous) => {
+  if (current && selectedSemester.value == undefined) {
+    selectedSemester.value = current.firstSemester;
+  }
 });
 </script>
 
