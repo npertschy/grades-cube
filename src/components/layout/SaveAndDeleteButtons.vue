@@ -35,6 +35,7 @@ const deleteButtonStart = computed(() => {
       label="Speichern"
       class="save-button"
       outlined
+      severity="success"
       @click="saveAction"
     />
     <p-button

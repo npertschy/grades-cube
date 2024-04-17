@@ -108,6 +108,7 @@ function handleRemove() {
                     class="calender-input"
                     date-format="dd.mm.yy"
                     show-icon
+                    icon-display="input"
                     show-button-bar
                   />
                 </div>
@@ -124,6 +125,7 @@ function handleRemove() {
                     class="calender-input"
                     date-format="dd.mm.yy"
                     show-icon
+                    icon-display="input"
                     show-button-bar
                   />
                 </div>
@@ -147,6 +149,7 @@ function handleRemove() {
                     class="calender-input"
                     date-format="dd.mm.yy"
                     show-icon
+                    icon-display="input"
                     show-button-bar
                   />
                 </div>
@@ -163,6 +166,7 @@ function handleRemove() {
                     class="calender-input"
                     date-format="dd.mm.yy"
                     show-icon
+                    icon-display="input"
                     show-button-bar
                   />
                 </div>

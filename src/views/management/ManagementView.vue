@@ -10,6 +10,11 @@ const items = [
     route: { name: "schoolYearManagement" },
   },
   {
+    name: "Fächer",
+    icon: PrimeIcons.INBOX,
+    route: { name: "subjectManagement" },
+  },
+  {
     name: "Schüler",
     icon: PrimeIcons.USER,
     route: { name: "studentManagement" },
@@ -18,11 +23,6 @@ const items = [
     name: "Klassen",
     icon: PrimeIcons.USERS,
     route: { name: "groupManagement" },
-  },
-  {
-    name: "Fächer",
-    icon: PrimeIcons.INBOX,
-    route: { name: "subjectManagement" },
   },
   { name: "Kurse", icon: PrimeIcons.BOOK, route: { name: "courseManagement" } },
 ];
