@@ -34,12 +34,15 @@ const deleteButtonStart = computed(() => {
     <p-button
       label="Speichern"
       class="save-button"
+      outlined
       @click="saveAction"
     />
     <p-button
       v-show="showDeleteButton"
       label="Löschen"
       class="delete-button"
+      outlined
+      severity="danger"
       @click="deleteAction"
     />
   </div>
@@ -54,6 +57,7 @@ const deleteButtonStart = computed(() => {
 .save-button {
   grid-column: 1 / span v-bind(buttonSpan);
 }
+
 .delete-button {
   grid-column: v-bind(deleteButtonStart) / span v-bind(buttonSpan);
 }
