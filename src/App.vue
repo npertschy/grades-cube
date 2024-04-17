@@ -5,13 +5,13 @@ import CustomTransition from "@/components/layout/CustomTransition.vue";
 
 <template>
   <div>
-    <GlobalToolbar />
+    <global-toolbar />
     <main class="mt-2">
-      <RouterView v-slot="{ Component }">
-        <CustomTransition>
+      <router-view v-slot="{ Component }">
+        <custom-transition>
           <component :is="Component" />
-        </CustomTransition>
-      </RouterView>
+        </custom-transition>
+      </router-view>
     </main>
   </div>
 </template>

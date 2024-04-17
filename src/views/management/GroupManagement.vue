@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
-import InputText from "primevue/inputtext";
+import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
+import InputWithLabel from "@/components/layout/InputWithLabel.vue";
+import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import InputGroup from "primevue/inputgroup";
 import AutoComplete, {
   type AutoCompleteCompleteEvent,
 } from "primevue/autocomplete";
-import Button from "primevue/button";
+import PButton from "primevue/button";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import DataTable from "primevue/datatable";
@@ -114,132 +116,124 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
 </script>
 
 <template>
-  <Card>
-    <template #title> Klassen verwalten </template>
-    <template #content>
-      <div class="grid nested-grid">
-        <div class="col-2">
-          <EntityList
-            v-model="selectedGroup"
-            :entities="groups"
-            :format="formatGroup"
-          />
-        </div>
-        <div class="col-offset-1 col-8">
-          <p>
-            Verwalten Sie hier ihre Klassen. Sie können Klassen anlegen oder
-            bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
-            auswählen.
-          </p>
-          <Divider />
-          <CustomTransition>
-            <div
-              v-show="selectedGroup"
-              class="grid gap-2"
-            >
-              <div class="col-4">
-                <div class="grid">
-                  <Card class="shadow-2 col-12">
-                    <template #title> Klasse </template>
-                    <template #content>
-                      <div class="formgrid grid">
-                        <div class="field col">
-                          <label
-                            for="nameField"
-                            class="font-semibold"
-                          >
-                            Name
-                          </label>
-                          <InputText
-                            v-model="name"
-                            input-id="nameField"
-                            class="w-full"
-                          />
-                        </div>
-                      </div>
+  <management-panel header="Klassen verwalten">
+    <template #list>
+      <entity-list
+        v-model="selectedGroup"
+        :entities="groups"
+        :format="formatGroup"
+      />
+    </template>
+    <template #edit>
+      <p>
+        Verwalten Sie hier ihre Klassen. Sie können Klassen anlegen oder
+        bearbeiten, indem Sie den entsprechenden Eintrag in der Liste auswählen.
+      </p>
+      <divider />
+      <custom-transition>
+        <div
+          v-show="selectedGroup"
+          class="edit-area"
+        >
+          <div class="group-area">
+            <card class="shadow-2">
+              <template #title> Klasse </template>
+              <template #content>
+                <input-with-label
+                  v-model="name"
+                  identifier="nameField"
+                  label="Name"
+                />
+              </template>
+            </card>
+            <save-and-delete-buttons
+              :show-delete-when-defined="selectedGroup"
+              :save-action="addGroup"
+              :delete-action="removeGroup"
+              :grid-columns="3"
+            />
+          </div>
+          <div
+            v-show="selectedGroup && selectedGroup.id > 0"
+            class="students-area"
+          >
+            <card class="shadow-2">
+              <template #title> Schüler </template>
+              <template #content>
+                <data-table
+                  v-model:selection="selectedStudent"
+                  :value="selectedGroup?.students"
+                  data-key="id"
+                  selection-mode="single"
+                >
+                  <column header="#">
+                    <template #body="slotProps">
+                      {{ slotProps.index + 1 }}
                     </template>
-                  </Card>
-                  <div class="mt-2 col-12">
-                    <Button
-                      label="Submit"
-                      class="col-3"
-                      @click="addGroup"
-                    />
-                    <Button
-                      v-show="selectedGroup && selectedGroup.id > 0"
-                      label="Delete"
-                      class="col-3 col-offset-6"
-                      @click="removeGroup"
-                    />
+                  </column>
+                  <column header="Name">
+                    <template #body="slotProps">
+                      {{ slotProps.data.firstName }}
+                      {{ slotProps.data.lastName }}
+                    </template>
+                  </column>
+                </data-table>
+                <div class="label-over-input mt-2">
+                  <div>
+                    <label
+                      for="pupilName"
+                      class="font-semibold"
+                    >
+                      Schüler zur Klasse hinzufügen
+                    </label>
+                    <input-group>
+                      <auto-complete
+                        v-model="student"
+                        input-id="pupilName"
+                        :option-label="formatStudent"
+                        :suggestions="studentList"
+                        class="w-full"
+                        force-selection
+                        @complete="searchStudents"
+                      >
+                        <template #option="slotProps">
+                          <span>{{ formatStudent(slotProps.option) }}</span>
+                        </template>
+                      </auto-complete>
+                      <p-button
+                        icon="pi pi-check"
+                        security="success"
+                        @click="addStudentToGroup"
+                      />
+                    </input-group>
                   </div>
                 </div>
-              </div>
-              <div
-                v-show="selectedGroup && selectedGroup.id > 0"
-                class="col"
-              >
-                <div class="grid">
-                  <Card class="shadow-2 col-12">
-                    <template #title> Schüler </template>
-                    <template #content>
-                      <DataTable
-                        v-model:selection="selectedStudent"
-                        :value="selectedGroup?.students"
-                        data-key="id"
-                        selection-mode="single"
-                      >
-                        <Column header="#">
-                          <template #body="slotProps">
-                            {{ slotProps.index }}
-                          </template>
-                        </Column>
-                        <Column header="Name">
-                          <template #body="slotProps">
-                            {{ slotProps.data.firstName }}
-                            {{ slotProps.data.lastName }}
-                          </template>
-                        </Column>
-                      </DataTable>
-                      <div class="formgrid grid mt-2">
-                        <div class="field col">
-                          <label
-                            for="pupilName"
-                            class="font-semibold"
-                          >
-                            Schüler zur Klasse hinzufügen
-                          </label>
-                          <InputGroup>
-                            <AutoComplete
-                              v-model="student"
-                              input-id="pupilName"
-                              :option-label="formatStudent"
-                              :suggestions="studentList"
-                              class="w-full"
-                              force-selection
-                              @complete="searchStudents"
-                            >
-                              <template #option="slotProps">
-                                <span>{{
-                                  formatStudent(slotProps.option)
-                                }}</span>
-                              </template>
-                            </AutoComplete>
-                            <Button
-                              icon="pi pi-check"
-                              security="success"
-                              @click="addStudentToGroup"
-                            />
-                          </InputGroup>
-                        </div>
-                      </div>
-                    </template>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          </CustomTransition>
+              </template>
+            </card>
+          </div>
         </div>
-      </div>
+      </custom-transition>
     </template>
-  </Card>
+  </management-panel>
 </template>
+
+<style scoped>
+.edit-area {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 1rem;
+}
+
+.group-area {
+  grid-column: 1 / span 5;
+}
+
+.students-area {
+  grid-column: 6 / span 7;
+}
+
+.label-over-input {
+  display: grid;
+  grid-template-columns: auto;
+}
+</style>

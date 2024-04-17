@@ -1,9 +1,9 @@
 <script setup lang="ts"></script>
 
 <template>
-  <Transition mode="out-in">
+  <transition mode="out-in">
     <slot />
-  </Transition>
+  </transition>
 </template>
 
 <style scoped>

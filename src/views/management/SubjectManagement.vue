@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
-import InputText from "primevue/inputtext";
-import Button from "primevue/button";
+import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
+import InputWithLabel from "@/components/layout/InputWithLabel.vue";
+import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
@@ -64,92 +65,40 @@ function handleRemove() {
 </script>
 
 <template>
-  <Card>
-    <template #title>Fächer verwalten</template>
-    <template #content>
-      <div class="container">
-        <div>
-          <EntityList
-            v-model="selectedSubject"
-            :entities="subjects"
-            :format="formatSubject"
+  <management-panel header="Fächer verwalten">
+    <template #list>
+      <entity-list
+        v-model="selectedSubject"
+        :entities="subjects"
+        :format="formatSubject"
+      />
+    </template>
+    <template #edit>
+      <p>
+        Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder
+        bearbeiten, indem Sie den entsprechenden Eintrag in der Liste auswählen.
+      </p>
+      <divider />
+      <custom-transition>
+        <div v-show="selectedSubject">
+          <card class="shadow-2">
+            <template #title>Fach</template>
+            <template #content>
+              <input-with-label
+                v-model="name"
+                identifier="nameField"
+                label="Name"
+              />
+            </template>
+          </card>
+
+          <save-and-delete-buttons
+            :show-delete-when-defined="selectedSubject"
+            :save-action="handleSave"
+            :delete-action="handleRemove"
           />
         </div>
-        <div class="edit-area">
-          <p>
-            Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder
-            bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
-            auswählen.
-          </p>
-          <Divider />
-          <CustomTransition>
-            <div v-show="selectedSubject">
-              <Card class="shadow-2">
-                <template #title>Fach</template>
-                <template #content>
-                  <div class="label-over-input">
-                    <div>
-                      <label
-                        for="nameField"
-                        class="font-semibold"
-                        >Name</label
-                      >
-                      <InputText
-                        v-model="name"
-                        input-id="nameField"
-                        class="w-full"
-                      />
-                    </div>
-                  </div>
-                </template>
-              </Card>
-
-              <div class="mt-2 button-area">
-                <Button
-                  label="Submit"
-                  @click="handleSave"
-                />
-                <Button
-                  v-show="
-                    selectedSubject &&
-                    selectedSubject.id &&
-                    selectedSubject.id > 0
-                  "
-                  label="Delete"
-                  class="delete-button"
-                  @click="handleRemove"
-                />
-              </div>
-            </div>
-          </CustomTransition>
-        </div>
-      </div>
+      </custom-transition>
     </template>
-  </Card>
+  </management-panel>
 </template>
-
-<style scoped>
-.container {
-  display: grid;
-  grid-template-columns: 2fr repeat(10, 1fr);
-  column-gap: 1rem;
-}
-
-.edit-area {
-  grid-column: 3 / span 8;
-}
-
-.label-over-input {
-  display: grid;
-  grid-template-columns: auto;
-}
-
-.button-area {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-}
-
-.delete-button {
-  grid-column: 8 / span 1;
-}
-</style>

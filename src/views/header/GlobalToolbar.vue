@@ -13,7 +13,7 @@ const items = ref([
 </script>
 
 <template>
-  <Menubar :model="items">
+  <menubar :model="items">
     <template #start>
       <span :class="PrimeIcons.BOX"></span>
       <span class="font-bold ml-2 mr-8">Notenwürfel</span>
@@ -38,15 +38,15 @@ const items = ref([
     </template>
     <template #end>
       <div class="header-end">
-        <SchoolYearSelector />
-        <Avatar
+        <school-year-selector />
+        <avatar
           icon="pi pi-user"
           shape="circle"
           class="mr-2 align-self-center"
         />
       </div>
     </template>
-  </Menubar>
+  </menubar>
 </template>
 
 <style scoped>

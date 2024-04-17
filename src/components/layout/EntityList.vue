@@ -14,7 +14,7 @@ const selectedEntity = defineModel<T>();
 </script>
 
 <template>
-  <Listbox
+  <listbox
     v-model="selectedEntity"
     :options="entities"
     class="min-h-full shadow-2"
@@ -24,5 +24,5 @@ const selectedEntity = defineModel<T>();
         {{ format(slotProps.option) }}
       </p>
     </template>
-  </Listbox>
+  </listbox>
 </template>

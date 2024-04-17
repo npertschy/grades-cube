@@ -2,7 +2,8 @@
 import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
-import InputText from "primevue/inputtext";
+import InputWithLabel from "@/components/layout/InputWithLabel.vue";
+import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
@@ -53,97 +54,60 @@ function handleRemove() {
 </script>
 
 <template>
-  <Card>
-    <template #title>Schüler verwalten</template>
-    <template #content>
-      <div class="container">
-        <div style="height: 80vh">
-          <EntityList
-            v-model="selectedStudent"
-            :entities="students"
-            :format="formatStudent"
-            list-style="max-height:75vh"
-            filter
-            :filter-fields="['firstName', 'lastName']"
-          />
-        </div>
-        <div class="edit-area">
-          <p>
-            Verwalten Sie hier ihre Schüler. Sie können Schüler anlegen oder
-            bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
-            auswählen.
-          </p>
-          <Divider />
-          <CustomTransition>
-            <div v-show="selectedStudent">
-              <Card class="shadow-2">
-                <template #title>Schüler</template>
-                <template #content>
-                  <div class="label-over-input">
-                    <div>
-                      <label
-                        for="firstNameField"
-                        class="font-semibold"
-                      >
-                        Vorname
-                      </label>
-                      <InputText
-                        v-model="firstName"
-                        input-id="firstNameField"
-                        class="w-full"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        for="lastNameField"
-                        class="font-semibold"
-                      >
-                        Nachname
-                      </label>
-                      <InputText
-                        v-model="lastName"
-                        input-id="lastNameField"
-                        class="w-full"
-                      />
-                    </div>
-                  </div>
-                </template>
-              </Card>
-
-              <div class="mt-2 button-area">
-                <SaveAndDeleteButtons
-                  :show-delete-when-defined="selectedStudent"
-                  :save-action="handleSave"
-                  :delete-action="handleRemove"
-                />
-              </div>
-            </div>
-          </CustomTransition>
-        </div>
+  <management-panel header="Schüler verwalten">
+    <template #list>
+      <div style="height: 80vh">
+        <entity-list
+          v-model="selectedStudent"
+          :entities="students"
+          :format="formatStudent"
+          list-style="max-height:75vh"
+          filter
+          :filter-fields="['firstName', 'lastName']"
+        />
       </div>
     </template>
-  </Card>
+    <template #edit>
+      <p>
+        Verwalten Sie hier ihre Schüler. Sie können Schüler anlegen oder
+        bearbeiten, indem Sie den entsprechenden Eintrag in der Liste auswählen.
+      </p>
+      <divider />
+      <custom-transition>
+        <div v-show="selectedStudent">
+          <card class="shadow-2">
+            <template #title>Schüler</template>
+            <template #content>
+              <div class="label-over-input">
+                <input-with-label
+                  v-model="firstName"
+                  identifier="firstNameField"
+                  label="Vorname"
+                />
+                <input-with-label
+                  v-model="lastName"
+                  identifier="lastNameField"
+                  label="Nachname"
+                />
+              </div>
+            </template>
+          </card>
+
+          <save-and-delete-buttons
+            :show-delete-when-defined="selectedStudent"
+            :save-action="handleSave"
+            :delete-action="handleRemove"
+          />
+        </div>
+      </custom-transition>
+    </template>
+  </management-panel>
 </template>
 
 <style scoped>
-.container {
-  display: grid;
-  grid-template-columns: 2fr repeat(10, 1fr);
-  column-gap: 1rem;
-}
-
-.edit-area {
-  grid-column: 3 / span 8;
-}
-
 .label-over-input {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 0.5rem;
-}
-
-.button-area {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
 }
 </style>

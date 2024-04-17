@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
-import Menu from "primevue/menu";
+import PMenu from "primevue/menu";
 import { PrimeIcons } from "primevue/api";
 
 const items = [
@@ -30,7 +30,7 @@ const items = [
 
 <template>
   <div class="container">
-    <Menu :model="items">
+    <p-menu :model="items">
       <template #item="{ item, props }">
         <router-link
           v-if="item.route"
@@ -49,12 +49,12 @@ const items = [
           </a>
         </router-link>
       </template>
-    </Menu>
-    <RouterView v-slot="{ Component }">
-      <CustomTransition>
+    </p-menu>
+    <router-view v-slot="{ Component }">
+      <custom-transition>
         <component :is="Component" />
-      </CustomTransition>
-    </RouterView>
+      </custom-transition>
+    </router-view>
   </div>
 </template>
 

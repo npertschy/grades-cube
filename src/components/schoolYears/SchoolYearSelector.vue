@@ -9,17 +9,17 @@ const { schoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
 const semesters = computed(() => {
-  return selectedSchoolYear.value?.id ?? 0 > 0
+  return selectedSchoolYear.value?.id && selectedSchoolYear.value.id > 0
     ? [
-        selectedSchoolYear.value?.firstSemester,
-        selectedSchoolYear.value?.secondSemester,
+        selectedSchoolYear.value.firstSemester,
+        selectedSchoolYear.value.secondSemester,
       ]
     : undefined;
 });
 </script>
 
 <template>
-  <Dropdown
+  <dropdown
     v-model="selectedSchoolYear"
     :options="schoolYears"
     :option-label="formatSchoolYear"
@@ -27,7 +27,7 @@ const semesters = computed(() => {
     placeholder="Schuljahr auswählen"
     class="w-full"
   />
-  <SelectButton
+  <select-button
     v-model="selectedSemester"
     :options="semesters"
     :option-label="(option) => option.type + '. Semester'"
