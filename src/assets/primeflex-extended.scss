@@ -1,0 +1,11 @@
+@import "/node_modules/primeflex/primeflex.scss";
+
+.font-medium-normal {
+  @include styleclass("font-medium");
+  color: var(--text-color);
+}
+
+.font-bold-highlighted {
+  @include styleclass("font-bold");
+  color: var(--highlight-text-color);
+}

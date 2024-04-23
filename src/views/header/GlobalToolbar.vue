@@ -15,7 +15,10 @@ const items = ref([
 <template>
   <menubar :model="items">
     <template #start>
-      <span :class="PrimeIcons.BOX"></span>
+      <span
+        :class="PrimeIcons.BOX"
+        class="font-bold"
+      ></span>
       <span class="font-bold ml-2 mr-8">Notenwürfel</span>
     </template>
     <template #item="{ item, props }">
@@ -29,10 +32,28 @@ const items = ref([
           v-ripple
           :href="href"
           v-bind="props.action"
+          :class="{
+            'active-link': $route.path.includes(item.route),
+          }"
           @click="navigate"
         >
-          <span :class="item.icon" />
-          <span class="font-semibold ml-2">{{ item.label }}</span>
+          <span
+            :class="[
+              item.icon,
+              $route.path.includes(item.route)
+                ? 'font-bold-highlighted'
+                : 'font-medium-normal',
+            ]"
+          />
+          <span
+            class="ml-2"
+            :class="[
+              $route.path.includes(item.route)
+                ? 'font-bold-highlighted'
+                : 'font-medium-normal',
+            ]"
+            >{{ item.label }}</span
+          >
         </a>
       </router-link>
     </template>

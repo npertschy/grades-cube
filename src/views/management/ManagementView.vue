@@ -42,10 +42,29 @@ const items = [
             v-ripple
             v-bind="props.action"
             :href="href"
+            :class="{
+              'active-link': $route.name?.toString().includes(item.route.name),
+            }"
             @click="navigate"
           >
-            <span :class="item.icon" />
-            <span class="font-semibold ml-2">{{ item.name }}</span>
+            <span
+              :class="[
+                item.icon,
+                $route.name?.toString().includes(item.route.name)
+                  ? 'font-bold-highlighted'
+                  : 'font-medium-normal',
+              ]"
+            />
+            <span
+              class="ml-2"
+              :class="[
+                $route.name?.toString().includes(item.route.name)
+                  ? 'font-bold-highlighted'
+                  : 'font-medium-normal',
+              ]"
+            >
+              {{ item.name }}
+            </span>
           </a>
         </router-link>
       </template>

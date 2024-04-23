@@ -1,0 +1,4 @@
+.active-link {
+    border-radius: 0.5rem;
+    background-color: var(--highlight-bg);
+  }
