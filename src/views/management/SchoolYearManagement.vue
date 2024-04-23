@@ -9,6 +9,9 @@ import Divider from "primevue/divider";
 import { ref, watch } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
 
 const firstStartDate = ref<Date>();
 const firstEndDate = ref<Date>();
@@ -19,6 +22,9 @@ const { schoolYears, addSchoolYear, formatSchoolYear, removeSchoolYear } =
   useSchoolYears();
 
 const selectedSchoolYear = ref<SchoolYear | undefined>();
+if (route.query["index"]) {
+  selectedSchoolYear.value = schoolYears.value[+route.query["index"]];
+}
 
 function handleSave() {
   const id = selectedSchoolYear.value ? selectedSchoolYear.value.id : undefined;

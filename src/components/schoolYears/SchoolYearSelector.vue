@@ -4,6 +4,7 @@ import SelectButton from "primevue/selectbutton";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import { computed, watch } from "vue";
+import { useRouter } from "vue-router";
 
 const { schoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
@@ -17,8 +18,13 @@ const semesters = computed(() => {
     : undefined;
 });
 
-watch(selectedSchoolYear, (current, previous) => {
-  if (current && selectedSemester.value == undefined) {
+const router = useRouter();
+
+watch(selectedSchoolYear, (current) => {
+  if (current && current.id === 0) {
+    router.push({ name: "schoolYearManagement", query: { index: 0 } });
+    selectedSchoolYear.value = undefined;
+  } else if (current && selectedSemester.value == undefined) {
     selectedSemester.value = current.firstSemester;
   }
 });
