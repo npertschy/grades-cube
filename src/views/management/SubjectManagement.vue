@@ -17,14 +17,14 @@ const { subjects, addSubject, formatSubject, removeSubject, editSubject } =
 
 const selectedSubject = ref<Subject | undefined>();
 
-function handleSave() {
-  if (selectedSubject.value) {
+async function handleSave() {
+  if (selectedSubject.value?.id) {
     const subject: Subject = {
       id: selectedSubject.value.id,
       name: name.value,
     };
 
-    editSubject(subject, () => {
+    await editSubject(subject, () => {
       resetInputs();
       selectedSubject.value = undefined;
     });
@@ -33,8 +33,7 @@ function handleSave() {
       id: undefined,
       name: name.value,
     };
-
-    addSubject(subject, () => {
+    await addSubject(subject, () => {
       resetInputs();
       selectedSubject.value = undefined;
     });
