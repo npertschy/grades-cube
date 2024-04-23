@@ -12,7 +12,11 @@
         "gridlines",
         "Niki",
         "primevue",
-        "vite"
+        "sqlite",
+        "vite",
+        "ZFIRSTNAME",
+        "ZLASTNAME",
+        "ZSTUDENT"
     ],
     "typescript.preferences.importModuleSpecifier": "non-relative"
 }
