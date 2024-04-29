@@ -4,18 +4,28 @@ import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
+import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
 import { useSubjects } from "@/components/subjects/SubjectStore";
 import type { Subject } from "@/components/subjects/Subject";
+import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 
 const name = ref<string>();
 
-const { subjects, addSubject, formatSubject, removeSubject, editSubject } =
-  useSubjects();
+const {
+  subjects,
+  loadSubjectsForSchoolYear,
+  addSubject,
+  formatSubject,
+  removeSubject,
+  editSubject,
+} = useSubjects();
 
 const selectedSubject = ref<Subject | undefined>();
+
+const { selectedSchoolYear } = useSchoolYearSelection();
 
 async function handleSave() {
   if (selectedSubject.value?.id) {
@@ -24,7 +34,7 @@ async function handleSave() {
       name: name.value,
     };
 
-    await editSubject(subject, () => {
+    await editSubject(subject, selectedSchoolYear.value!, () => {
       resetInputs();
       selectedSubject.value = undefined;
     });
@@ -33,7 +43,7 @@ async function handleSave() {
       id: undefined,
       name: name.value,
     };
-    await addSubject(subject, () => {
+    await addSubject(subject, selectedSchoolYear.value!, () => {
       resetInputs();
       selectedSubject.value = undefined;
     });
@@ -55,49 +65,60 @@ function loadSubject(item: Subject | undefined) {
 
 function handleRemove() {
   if (selectedSubject.value) {
-    removeSubject(selectedSubject.value, () => {
+    removeSubject(selectedSubject.value, selectedSchoolYear.value!, () => {
       resetInputs();
       selectedSubject.value = undefined;
     });
   }
 }
+
+watch(selectedSchoolYear, async (current) => {
+  if (current) {
+    await loadSubjectsForSchoolYear(current);
+    selectedSubject.value = undefined;
+    resetInputs();
+  }
+});
 </script>
 
 <template>
-  <management-panel header="Fächer verwalten">
-    <template #list>
-      <entity-list
-        v-model="selectedSubject"
-        :entities="subjects"
-        :format="formatSubject"
-      />
-    </template>
-    <template #edit>
-      <p>
-        Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder
-        bearbeiten, indem Sie den entsprechenden Eintrag in der Liste auswählen.
-      </p>
-      <divider />
-      <custom-transition>
-        <div v-show="selectedSubject">
-          <card class="shadow-2">
-            <template #title>Fach</template>
-            <template #content>
-              <input-with-label
-                v-model="name"
-                identifier="nameField"
-                label="Name"
-              />
-            </template>
-          </card>
+  <school-year-selection-container :selected-school-year="selectedSchoolYear">
+    <management-panel header="Fächer verwalten">
+      <template #list>
+        <entity-list
+          v-model="selectedSubject"
+          :entities="subjects"
+          :format="formatSubject"
+        />
+      </template>
+      <template #edit>
+        <p>
+          Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder
+          bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
+          auswählen.
+        </p>
+        <divider />
+        <custom-transition>
+          <div v-show="selectedSubject">
+            <card class="shadow-2">
+              <template #title>Fach</template>
+              <template #content>
+                <input-with-label
+                  v-model="name"
+                  identifier="nameField"
+                  label="Name"
+                />
+              </template>
+            </card>
 
-          <save-and-delete-buttons
-            :show-delete-when-defined="selectedSubject"
-            :save-action="handleSave"
-            :delete-action="handleRemove"
-          />
-        </div>
-      </custom-transition>
-    </template>
-  </management-panel>
+            <save-and-delete-buttons
+              :show-delete-when-defined="selectedSubject"
+              :save-action="handleSave"
+              :delete-action="handleRemove"
+            />
+          </div>
+        </custom-transition>
+      </template>
+    </management-panel>
+  </school-year-selection-container>
 </template>
