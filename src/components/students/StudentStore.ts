@@ -1,37 +1,28 @@
 import { ref } from "vue";
 import type { Student } from "./Student";
-import { loadAllStudents } from "@/components/students/StudentGateway";
+import { StudentGateway } from "@/components/students/StudentGateway";
+import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 
-const idCounter = ref(1);
+const studentGateway = new StudentGateway();
 
-const students = ref<Student[]>([
-  {
-    id: 0,
-    firstName: undefined,
-    lastName: undefined,
-  },
-]);
+const students = ref<Student[]>([]);
 
-const all = await loadAllStudents();
-all.forEach((loaded) => {
-  students.value.push(loaded);
-});
+async function loadStudentsForSchoolYear(schoolYear: SchoolYear) {
+  students.value.length = 0;
 
-function addStudent(studentToAdd: Student, cleanup: () => void) {
-  if (studentToAdd.id && studentToAdd.id > 0) {
-    const index = students.value.findIndex((it) => {
-      return it.id == studentToAdd.id;
-    });
+  const all = await studentGateway.loadAllStudentsForSchoolYear(schoolYear);
+  students.value.push(
+    {
+      id: 0,
+      firstName: undefined,
+      lastName: undefined
+    },
+    ...all);
+}
 
-    students.value.splice(index, 1, studentToAdd);
-  } else {
-    students.value?.push({
-      ...studentToAdd,
-      id: idCounter.value,
-    });
-
-    idCounter.value++;
-  }
+async function addStudent(studentToAdd: Student, schoolYear: SchoolYear, cleanup: () => void) {
+  await studentGateway.createStudentInSchoolYear(studentToAdd, schoolYear);
+  await loadStudentsForSchoolYear(schoolYear);
 
   cleanup();
 }
@@ -42,17 +33,17 @@ function formatStudent(item: Student) {
     : item.firstName + " " + item.lastName;
 }
 
-function removeStudent(student: Student) {
-  const index = students.value.findIndex((it) => {
-    return it.id == student.id;
-  });
+async function removeStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
+  await studentGateway.deleteStudentInSchoolYear(student, schoolYear);
+  await loadStudentsForSchoolYear(schoolYear);
 
-  students.value.splice(index, 1);
+  cleanup();
 }
 
 export function useStudents() {
   return {
     students,
+    loadStudentsForSchoolYear,
     addStudent,
     formatStudent,
     removeStudent,
