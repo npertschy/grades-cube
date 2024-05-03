@@ -7,7 +7,7 @@ import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { useSubjects } from "@/components/subjects/SubjectStore";
 import type { Subject } from "@/components/subjects/Subject";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -77,6 +77,12 @@ watch(selectedSchoolYear, async (current) => {
     await loadSubjectsForSchoolYear(current);
     selectedSubject.value = undefined;
     resetInputs();
+  }
+});
+
+onMounted(async () => {
+  if (selectedSchoolYear.value) {
+    await loadSubjectsForSchoolYear(selectedSchoolYear.value);
   }
 });
 </script>

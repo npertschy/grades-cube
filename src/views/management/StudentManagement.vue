@@ -7,7 +7,7 @@ import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -79,6 +79,12 @@ watch(selectedSchoolYear, async (current) => {
     await loadStudentsForSchoolYear(current);
     selectedStudent.value = undefined;
     resetInputs();
+  }
+});
+
+onMounted(async () => {
+  if (selectedSchoolYear.value) {
+    await loadStudentsForSchoolYear(selectedSchoolYear.value);
   }
 });
 </script>
