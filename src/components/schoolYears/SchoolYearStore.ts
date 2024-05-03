@@ -26,14 +26,14 @@ async function addSchoolYear(schoolYearToAdd: SchoolYear, cleanup: () => void) {
     schoolYears.value.splice(index, 1, schoolYearToAdd);
   } else {
     await createSchoolYear(schoolYearToAdd);
-    schoolYears.value = [...(await loadAll())];
-    schoolYears.value.unshift({
+    schoolYears.value = [{
       id: 0,
       start: undefined,
       end: undefined,
       firstSemester: undefined,
       secondSemester: undefined,
-    });
+    },
+    ...(await loadAll())];
   }
 
   cleanup();
