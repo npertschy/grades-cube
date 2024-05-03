@@ -1,13 +1,18 @@
-import ManagementView from "@/views/management/ManagementView.vue";
+import WelcomeScreen from "@/views/home/WelcomeScreen.vue";
 import { createRouter, createWebHistory } from "vue-router";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
+      path: "/",
+      name: "home",
+      component: WelcomeScreen
+    },
+    {
       path: "/management",
       name: "management",
-      component: ManagementView,
+      component: () => import("@/views/management/ManagementView.vue"),
       children: [
         {
           path: "schoolYear",

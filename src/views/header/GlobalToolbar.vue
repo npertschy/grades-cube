@@ -2,6 +2,7 @@
 import SchoolYearSelector from "@/components/schoolYears/SchoolYearSelector.vue";
 import Menubar from "primevue/menubar";
 import Avatar from "primevue/avatar";
+import PButton from "primevue/button";
 import { PrimeIcons } from "primevue/api";
 import { ref } from "vue";
 
@@ -15,11 +16,14 @@ const items = ref([
 <template>
   <menubar :model="items">
     <template #start>
-      <span
-        :class="PrimeIcons.BOX"
-        class="font-bold"
-      ></span>
-      <span class="font-bold ml-2 mr-8">Notenwürfel</span>
+      <router-link to="/">
+        <p-button
+          text
+          plain
+          label="Notenwürfel"
+          icon="pi pi-box"
+        />
+      </router-link>
     </template>
     <template #item="{ item, props }">
       <router-link
@@ -52,8 +56,9 @@ const items = ref([
                 ? 'font-bold-highlighted'
                 : 'font-medium-normal',
             ]"
-            >{{ item.label }}</span
           >
+            {{ item.label }}
+          </span>
         </a>
       </router-link>
     </template>
