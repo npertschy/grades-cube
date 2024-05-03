@@ -21,7 +21,7 @@ export class StudentGateway {
     const orQuery = ids.map((value, index) => {
       return "Z_PK = $" + (index + 1);
     })
-      .reduce((pre, cur): string => pre + " OR " + cur, "");
+      .join(" OR ");
     const students: StudentEntity[] = await db.select("SELECT * FROM ZSTUDENT WHERE " + orQuery, ids);
 
     return students.map((student) => {

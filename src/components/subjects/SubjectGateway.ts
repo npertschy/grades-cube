@@ -26,7 +26,7 @@ export class SubjectGateway {
     const orQuery = ids.map((value, index) => {
       return "Z_PK = $" + (index + 1);
     })
-      .reduce((pre, cur): string => pre + " OR " + cur, "");
+      .join(" OR ");
 
     const subjects: SubjectEntity[] = await db.select("SELECT * from ZSUBJECT WHERE " + orQuery, ids);
 
