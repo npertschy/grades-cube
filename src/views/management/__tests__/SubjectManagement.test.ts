@@ -1,11 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import PrimeVue from "primevue/config";
 import SubjectManagement from "@/views/management/SubjectManagement.vue";
+import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 
 vi.mock("@/components/subjects/SubjectGateway", () => {
   const SubjectGateway = vi.fn(() => ({
-    loadAllSubjects: vi.fn().mockReturnValue([
+    loadSubjectsForSchoolYear: vi.fn().mockResolvedValue([
       {
         id: 1,
         name: "Deutsch",
@@ -19,22 +20,31 @@ vi.mock("@/components/subjects/SubjectGateway", () => {
         name: "Sport",
       },
     ]),
-    createSubject: vi.fn(),
+    createSubjectForSchoolYear: vi.fn(),
     updateSubject: vi.fn(),
-    deleteSubject: vi.fn()
+    deleteSubjectFromSchoolYear: vi.fn()
   }))
   return { SubjectGateway }
 });
 
 describe("SubjectManagement", () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   const wrapper = mount(SubjectManagement, {
     global: {
       plugins: [PrimeVue],
     },
   });
 
-
-  // subjects.value = ;
+  useSchoolYearSelection().selectedSchoolYear.value = {
+    id: 1,
+    start: undefined,
+    end: undefined,
+    firstSemester: undefined,
+    secondSemester: undefined
+  }
 
   describe("given subjects", () => {
     it("should display subject in a list", () => {
