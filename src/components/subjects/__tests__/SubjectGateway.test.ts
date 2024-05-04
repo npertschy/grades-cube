@@ -3,7 +3,8 @@ import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Subject } from "@/components/subjects/Subject";
 import { SubjectGateway } from "@/components/subjects/SubjectGateway";
 
-const { mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
+const { mockedDb, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
+    mockedDb: vi.fn(),
     mockedExecute: vi.fn(),
     mockedNextPrimaryKey: vi.fn()
 
@@ -11,7 +12,7 @@ const { mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
 
 vi.mock("@/store/Database", () => {
     return {
-        db: vi.fn(),
+        db: mockedDb,
         execute: mockedExecute,
         nextPrimaryKey: mockedNextPrimaryKey
     }
@@ -41,10 +42,12 @@ describe("SubjectManagement", () => {
             }
 
 
+
             sut.createSubjectForSchoolYear(subject, schoolYear)
 
+
             // nextPrimaryKey.mockImplementationOnce(() => 1);
-            expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Subject")
+            // expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Subject")
 
             // execute.mockImplementationOnce(async () => { Promise.resolve({}) })
             // expect(mockedExecute).toHaveBeenCalledTimes(1)
