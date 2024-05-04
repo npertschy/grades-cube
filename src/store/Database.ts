@@ -16,8 +16,8 @@ export type CountResult = {
 }
 
 export async function nextPrimaryKey(name: string): Promise<number> {
-    const result: PrimaryKey = await db.select("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = $1", [name]);
-    const nextId = result.Z_MAX + 1;
+    const result: PrimaryKey[] = await db.select("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = $1", [name]);
+    const nextId = result[0].Z_MAX + 1;
     await db.execute("UPDATE Z_PRIMARYKEY SET Z_MAX = $1 WHERE Z_NAME = $2", [nextId, name]);
     return nextId;
 }
