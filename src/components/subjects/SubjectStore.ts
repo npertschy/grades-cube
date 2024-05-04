@@ -45,6 +45,10 @@ async function removeSubject(subject: Subject, schoolYear: SchoolYear, cleanup: 
   cleanup();
 }
 
+async function loadAllSubjects() {
+  return await subjectGateway.loadAllSubjects();
+}
+
 export function useSubjects() {
   return {
     subjects,
@@ -53,5 +57,6 @@ export function useSubjects() {
     formatSubject,
     removeSubject,
     editSubject,
+    loadAllSubjects
   };
 }

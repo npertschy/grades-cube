@@ -2,7 +2,7 @@
 import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
-import InputWithLabel from "@/components/layout/InputWithLabel.vue";
+import AutoCompleteWithLabel from "@/components/layout/AutoCompleteWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import Card from "primevue/card";
@@ -21,11 +21,14 @@ const {
   formatSubject,
   removeSubject,
   editSubject,
+  loadAllSubjects,
 } = useSubjects();
 
 const selectedSubject = ref<Subject | undefined>();
 
 const { selectedSchoolYear } = useSchoolYearSelection();
+
+const allSubjects = ref<Subject[]>([]);
 
 async function handleSave() {
   if (selectedSubject.value?.id) {
@@ -48,6 +51,8 @@ async function handleSave() {
       selectedSubject.value = undefined;
     });
   }
+
+  allSubjects.value = await loadAllSubjects();
 }
 
 watch(selectedSubject, (current) => loadSubject(current));
@@ -81,6 +86,7 @@ watch(selectedSchoolYear, async (current) => {
 });
 
 onMounted(async () => {
+  allSubjects.value = await loadAllSubjects();
   if (selectedSchoolYear.value) {
     await loadSubjectsForSchoolYear(selectedSchoolYear.value);
   }
@@ -109,10 +115,12 @@ onMounted(async () => {
             <card class="shadow-2">
               <template #title>Fach</template>
               <template #content>
-                <input-with-label
+                <auto-complete-with-label
                   v-model="name"
                   identifier="nameField"
                   label="Name"
+                  :items="allSubjects"
+                  :option="formatSubject"
                 />
               </template>
             </card>

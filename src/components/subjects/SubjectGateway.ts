@@ -71,5 +71,15 @@ export class SubjectGateway {
       subject.id,
     ]);
   }
+
+  async loadAllSubjects(): Promise<Subject[]> {
+    const subjects: SubjectEntity[] = await db.select("SELECT * FROM ZSUBJECT");
+    return subjects.map((subject) => {
+      return {
+        id: subject.Z_PK,
+        name: subject.ZNAME,
+      };
+    });
+  }
 }
 
