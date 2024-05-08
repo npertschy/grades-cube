@@ -11,9 +11,11 @@ import { ref, watch, onMounted } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
+import type { Group } from "@/components/groups/Group";
 
 const firstName = ref<string>();
 const lastName = ref<string>();
+const groups = ref<Group[]>();
 
 const {
   students,
@@ -38,6 +40,7 @@ async function handleSave() {
       id: undefined,
       firstName: firstName.value,
       lastName: lastName.value,
+      groups: undefined,
     };
     await addStudent(student, selectedSchoolYear.value!, () => {
       resetInputs();
@@ -58,6 +61,7 @@ function loadStudent(item: Student | undefined) {
   if (item?.id && item.id > 0) {
     firstName.value = item?.firstName;
     lastName.value = item?.lastName;
+    groups.value = item?.groups;
   }
 }
 

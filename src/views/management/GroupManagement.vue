@@ -16,6 +16,7 @@ import Column from "primevue/column";
 import { ref, watch } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
+import type { Group } from "@/components/groups/Group";
 
 const name = ref<string>();
 const student = ref<Student>();
@@ -24,12 +25,6 @@ const { students, formatStudent } = useStudents();
 const studentList = ref([...students.value]);
 
 const idCounter = ref(1);
-
-type Group = {
-  id: number;
-  name: string | undefined;
-  students: Student[];
-};
 
 const groups = ref<Group[]>([
   {
@@ -43,7 +38,11 @@ const selectedGroup = ref<Group | undefined>();
 const selectedStudent = ref<Student | undefined>();
 
 function addGroup() {
-  if (selectedGroup.value && selectedGroup.value.id > 0) {
+  if (
+    selectedGroup.value &&
+    selectedGroup.value.id &&
+    selectedGroup.value.id > 0
+  ) {
     const group = {
       id: selectedGroup.value.id,
       name: name.value,
@@ -96,7 +95,7 @@ function removeGroup() {
 
 function addStudentToGroup() {
   if (student.value) {
-    selectedGroup.value?.students.push(student.value);
+    selectedGroup.value?.students?.push(student.value);
     student.value = undefined;
   }
 }
@@ -154,7 +153,7 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
             />
           </div>
           <div
-            v-show="selectedGroup && selectedGroup.id > 0"
+            v-show="selectedGroup && selectedGroup.id && selectedGroup.id > 0"
             class="students-area"
           >
             <card class="shadow-2">

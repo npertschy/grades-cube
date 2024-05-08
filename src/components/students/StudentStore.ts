@@ -16,6 +16,8 @@ async function loadStudentsForSchoolYear(schoolYear: SchoolYear) {
       id: 0,
       firstName: undefined,
       lastName: undefined
+      lastName: undefined,
+      groups: undefined,
     },
     ...all);
 }
