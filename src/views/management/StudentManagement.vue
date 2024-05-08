@@ -13,10 +13,12 @@ import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import type { Group } from "@/components/groups/Group";
+import type { Course } from "@/components/courses/Course";
 
 const firstName = ref<string>();
 const lastName = ref<string>();
 const groups = ref<Group[]>();
+const courses = ref<Course[]>();
 
 const {
   students,
@@ -25,7 +27,7 @@ const {
   formatStudent,
   removeStudent,
 } = useStudents();
-const { selectedSchoolYear } = useSchoolYearSelection();
+const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
 const selectedStudent = ref<Student | undefined>();
 
@@ -42,11 +44,17 @@ async function handleSave() {
       firstName: firstName.value,
       lastName: lastName.value,
       groups: undefined,
+      courses: undefined,
     };
-    await addStudent(student, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedStudent.value = undefined;
-    });
+    await addStudent(
+      student,
+      selectedSchoolYear.value!,
+      selectedSemester.value!,
+      () => {
+        resetInputs();
+        selectedStudent.value = undefined;
+      },
+    );
   }
 }
 
@@ -63,6 +71,7 @@ function loadStudent(item: Student | undefined) {
     firstName.value = item?.firstName;
     lastName.value = item?.lastName;
     groups.value = item?.groups;
+    courses.value = item?.courses;
   }
 }
 
@@ -71,6 +80,7 @@ async function handleRemove() {
     await removeStudent(
       selectedStudent.value,
       selectedSchoolYear.value!,
+      selectedSemester.value!,
       () => {
         resetInputs();
         selectedStudent.value = undefined;
@@ -81,7 +91,7 @@ async function handleRemove() {
 
 watch(selectedSchoolYear, async (current) => {
   if (current) {
-    await loadStudentsForSchoolYear(current);
+    await loadStudentsForSchoolYear(current, selectedSemester.value!);
     selectedStudent.value = undefined;
     resetInputs();
   }
@@ -89,7 +99,10 @@ watch(selectedSchoolYear, async (current) => {
 
 onMounted(async () => {
   if (selectedSchoolYear.value) {
-    await loadStudentsForSchoolYear(selectedSchoolYear.value);
+    await loadStudentsForSchoolYear(
+      selectedSchoolYear.value,
+      selectedSemester.value!,
+    );
   }
 });
 </script>
@@ -138,6 +151,16 @@ onMounted(async () => {
                     label="Klassen"
                     :items="[]"
                     :option="(group: Group) => group.name!"
+                  />
+                  <auto-complete-list-with-label
+                    v-model="courses"
+                    identifier="courseField"
+                    label="Kurse"
+                    :items="[]"
+                    :option="
+                      (course: Course) =>
+                        course.group?.name! + ' ' + course.subject?.name
+                    "
                   />
                 </div>
               </template>
