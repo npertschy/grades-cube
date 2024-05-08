@@ -3,6 +3,7 @@ import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
+import AutoCompleteListWithLabel from "@/components/layout/AutoCompleteListWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import Card from "primevue/card";
@@ -131,6 +132,13 @@ onMounted(async () => {
                     identifier="lastNameField"
                     label="Nachname"
                   />
+                  <auto-complete-list-with-label
+                    v-model="groups"
+                    identifier="groupField"
+                    label="Klassen"
+                    :items="[]"
+                    :option="(group: Group) => group.name!"
+                  />
                 </div>
               </template>
             </card>
@@ -151,5 +159,6 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 0.5rem;
+  row-gap: 1.5rem;
 }
 </style>
