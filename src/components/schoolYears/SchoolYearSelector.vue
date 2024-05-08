@@ -3,11 +3,26 @@ import Dropdown from "primevue/dropdown";
 import SelectButton from "primevue/selectbutton";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
-import { computed, watch } from "vue";
+import { computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import store from "@/store/KeyValueStore";
 
 const { schoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
+
+onMounted(async () => {
+  const id = (await store.get("selectedSchoolYear")) ?? undefined;
+  selectedSchoolYear.value = schoolYears.value.find((schoolYear) => {
+    return schoolYear.id === id;
+  });
+  if (selectedSchoolYear.value) {
+    const type = (await store.get("selectedSemester")) ?? undefined;
+    selectedSemester.value =
+      type === 1
+        ? selectedSchoolYear.value.firstSemester
+        : selectedSchoolYear.value.secondSemester;
+  }
+});
 
 const semesters = computed(() => {
   return selectedSchoolYear.value?.id && selectedSchoolYear.value.id > 0
@@ -20,13 +35,19 @@ const semesters = computed(() => {
 
 const router = useRouter();
 
-watch(selectedSchoolYear, (current) => {
+watch(selectedSchoolYear, async (current) => {
   if (current && current.id === 0) {
     router.push({ name: "schoolYearManagement", query: { index: 0 } });
     selectedSchoolYear.value = undefined;
   } else if (current && selectedSemester.value == undefined) {
     selectedSemester.value = current.firstSemester;
+    await store.set("selectedSchoolYear", current.id);
+    await store.set("selectedSemester", selectedSemester.value?.type);
   }
+});
+
+watch(selectedSemester, async (current) => {
+  await store.set("selectedSemester", current?.type);
 });
 </script>
 
