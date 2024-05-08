@@ -97,6 +97,20 @@ watch(selectedSchoolYear, async (current) => {
   }
 });
 
+watch(selectedSemester, async (current) => {
+  if (current) {
+    const previouslySelection = selectedStudent.value;
+    await loadStudentsForSchoolYear(selectedSchoolYear.value!, current);
+    selectedStudent.value = students.value.find((student) => {
+      return student.id === previouslySelection?.id;
+    });
+    document
+      .getElementsByClassName("p-listbox-item p-highlight")
+      .item(0)
+      ?.scrollIntoView(true);
+  }
+});
+
 onMounted(async () => {
   if (selectedSchoolYear.value) {
     await loadStudentsForSchoolYear(

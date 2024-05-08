@@ -18,6 +18,7 @@ const selectedEntity = defineModel<T>();
     v-model="selectedEntity"
     :options="entities"
     class="min-h-full shadow-2"
+    :data-key="format"
   >
     <template #option="slotProps">
       <p class="text-center">
