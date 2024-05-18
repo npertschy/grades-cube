@@ -3,14 +3,32 @@ import SchoolYearSelector from "@/components/schoolYears/SchoolYearSelector.vue"
 import Menubar from "primevue/menubar";
 import Avatar from "primevue/avatar";
 import PButton from "primevue/button";
+import Popover from "primevue/popover";
+import ToggleSwitch from "primevue/toggleswitch";
 import { PrimeIcons } from "primevue/api";
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 
 const items = ref([
   { label: "Verwalten", icon: PrimeIcons.DATABASE, route: "/management" },
   { label: "Bewerten", icon: PrimeIcons.CHART_BAR, route: "/evaluation" },
   { label: "Konfigurieren", icon: PrimeIcons.COG, route: "/configuration" },
 ]);
+
+const usermenu = ref();
+
+function toggle(event: Event) {
+  usermenu.value.toggle(event);
+}
+
+const lightModeSelected = ref(false);
+
+const themeSelection = computed(() => {
+  return lightModeSelected.value ? "Dunkles Design" : "Helles Design";
+});
+
+watch(lightModeSelected, () => {
+  document.body.classList.toggle("my-app-dark");
+});
 </script>
 
 <template>
@@ -68,8 +86,16 @@ const items = ref([
         <avatar
           icon="pi pi-user"
           shape="circle"
-          class="mr-2 align-self-center"
+          class="mr-2 align-self-center cursor-pointer"
+          @click="toggle"
         />
+        <popover ref="usermenu">
+          <label for="theme-switch"> {{ themeSelection }} </label>
+          <toggle-switch
+            v-model="lightModeSelected"
+            input-id="theme-switch"
+          />
+        </popover>
       </div>
     </template>
   </menubar>

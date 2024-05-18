@@ -157,7 +157,7 @@ export const config = {
         preset: customPreset,
         options: {
             prefix: "p",
-            darkModeSelector: 'false',
+            darkModeSelector: '.my-app-dark',
             ccsLayer: false
         }
     }
