@@ -3,7 +3,7 @@ import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
-import Calender from "primevue/calendar";
+import DatePicker from "primevue/datepicker";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import { ref, watch } from "vue";
@@ -108,7 +108,7 @@ function handleRemove() {
                   >
                     Start erstes Halbjahr
                   </label>
-                  <calender
+                  <date-picker
                     v-model="firstStartDate"
                     input-id="startFirstSemesterField"
                     class="calender-input"
@@ -125,7 +125,7 @@ function handleRemove() {
                   >
                     Ende erstes Halbjahr
                   </label>
-                  <calender
+                  <date-picker
                     v-model="firstEndDate"
                     input-id="endFirstSemesterField"
                     class="calender-input"
@@ -149,7 +149,7 @@ function handleRemove() {
                   >
                     Start zweites Halbjahr
                   </label>
-                  <calender
+                  <date-picker
                     v-model="secondStartDate"
                     input-id="startSecondSemesterField"
                     class="calender-input"
@@ -166,7 +166,7 @@ function handleRemove() {
                   >
                     Ende zweites Halbjahr
                   </label>
-                  <calender
+                  <date-picker
                     v-model="secondEndDate"
                     input-id="endSecondSemesterField"
                     class="calender-input"

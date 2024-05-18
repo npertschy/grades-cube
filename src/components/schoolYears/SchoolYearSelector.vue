@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Dropdown from "primevue/dropdown";
+import PSelect from "primevue/select";
 import SelectButton from "primevue/selectbutton";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -52,7 +52,7 @@ watch(selectedSemester, async (current) => {
 </script>
 
 <template>
-  <dropdown
+  <p-select
     v-model="selectedSchoolYear"
     :options="schoolYears"
     :option-label="formatSchoolYear"

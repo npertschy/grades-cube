@@ -130,7 +130,6 @@ onMounted(async () => {
             v-model="selectedStudent"
             :entities="students"
             :format="formatStudent"
-            list-style="max-height:75vh"
             filter
             :filter-fields="['firstName', 'lastName']"
           />
