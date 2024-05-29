@@ -23,6 +23,10 @@ async function loadStudentsForSchoolYear(schoolYear: SchoolYear, semester: Semes
     ...all);
 }
 
+async function loadGroupsAndCoursesFor(student: Student, schoolYear: SchoolYear, semester: Semester) {
+  return studentGateway.loadGroupsAndCoursesForStudent(student, schoolYear, semester);
+}
+
 async function addStudent(studentToAdd: Student, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
   await studentGateway.createStudentInSchoolYear(studentToAdd, schoolYear);
   await loadStudentsForSchoolYear(schoolYear, semester);
@@ -47,6 +51,7 @@ export function useStudents() {
   return {
     students,
     loadStudentsForSchoolYear,
+    loadGroupsAndCoursesFor,
     addStudent,
     formatStudent,
     removeStudent,

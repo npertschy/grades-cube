@@ -42,6 +42,19 @@ export class StudentGateway {
     const studentsOrQuery = this.orQuery(studentIds, "Z_PK", 1);
     const students: StudentEntity[] = await db.select("SELECT * FROM ZSTUDENT WHERE " + studentsOrQuery, studentIds);
 
+
+    return await Promise.all(students.map(async (student) => {
+      return {
+        id: student.Z_PK,
+        firstName: student.ZFIRSTNAME,
+        lastName: student.ZLASTNAME,
+        groups: undefined,
+        courses: undefined
+      };
+    }));
+  }
+
+  async loadGroupsAndCoursesForStudent(student: Student, schoolYear: SchoolYear, semester: Semester): Promise<Student> {
     const groups: GroupsToYears[] = await db.select("SELECT Z_3GROUPS1 FROM Z_3YEARS WHERE Z_8YEARS = $1", [schoolYear.id]);
     const groupIds = groups.map((item) => { return item.Z_3GROUPS1 });
     const groupsOrQuery = this.orQuery(groupIds, "Z_3GROUPS2", 2);
@@ -50,49 +63,47 @@ export class StudentGateway {
     const courseIds = courses.map((item) => { return item.Z_PK });
     const coursesOrQuery = this.orQuery(courseIds, "Z_1COURSES", 2);
 
-    return await Promise.all(students.map(async (student) => {
-      const groupsOfStudent: StudentsToGroups[] = await db.select("SELECT Z_3GROUPS2 FROM Z_3STUDENTS WHERE Z_6STUDENTS1 = $1 AND (" + groupsOrQuery + ")", [student.Z_PK, ...groupIds]);
-      const groupIdsForStudent = groupsOfStudent.map((item) => { return item.Z_3GROUPS2 });
-      const groupEntityOrQuery = this.orQuery(groupIdsForStudent, "Z_PK", 1);
-      const groupEntities: GroupEntity[] = groupIdsForStudent.length > 0
-        ? await db.select("SELECT * FROM ZGROUP WHERE " + groupEntityOrQuery, groupIdsForStudent)
-        : [];
+    const groupsOfStudent: StudentsToGroups[] = await db.select("SELECT Z_3GROUPS2 FROM Z_3STUDENTS WHERE Z_6STUDENTS1 = $1 AND (" + groupsOrQuery + ")", [student.id, ...groupIds]);
+    const groupIdsForStudent = groupsOfStudent.map((item) => { return item.Z_3GROUPS2 });
+    const groupEntityOrQuery = this.orQuery(groupIdsForStudent, "Z_PK", 1);
+    const groupEntities: GroupEntity[] = groupIdsForStudent.length > 0
+      ? await db.select("SELECT * FROM ZGROUP WHERE " + groupEntityOrQuery, groupIdsForStudent)
+      : [];
 
-      const coursesOfStudent: StudentsToCourses[] = await db.select("SELECT Z_1COURSES FROM Z_1STUDENTS WHERE Z_6STUDENTS = $1 AND (" + coursesOrQuery + ")", [student.Z_PK, ...courseIds]);
-      const courseIdsForStudent = coursesOfStudent.map((item) => { return item.Z_1COURSES });
-      const courseEntities = courses.filter((item) => { return courseIdsForStudent.includes(item.Z_PK) })
-      return {
-        id: student.Z_PK,
-        firstName: student.ZFIRSTNAME,
-        lastName: student.ZLASTNAME,
-        groups: groupEntities.map((item): Group => {
-          return {
-            id: item.Z_PK,
-            name: item.ZNAME,
+    const coursesOfStudent: StudentsToCourses[] = await db.select("SELECT Z_1COURSES FROM Z_1STUDENTS WHERE Z_6STUDENTS = $1 AND (" + coursesOrQuery + ")", [student.id, ...courseIds]);
+    const courseIdsForStudent = coursesOfStudent.map((item) => { return item.Z_1COURSES });
+    const courseEntities = courses.filter((item) => { return courseIdsForStudent.includes(item.Z_PK) })
+    return {
+      id: student.id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      groups: groupEntities.map((item): Group => {
+        return {
+          id: item.Z_PK,
+          name: item.ZNAME,
+          students: undefined
+        }
+      }),
+      courses: await Promise.all(courseEntities.map(async (item): Promise<Course> => {
+        const groupOfCourse: GroupEntity[] = await db.select("SELECT * FROM ZGROUP WHERE Z_PK = $1", [item.ZGROUP]);
+        const subjectOfCourse: SubjectEntity[] = await db.select("SELECT * FROM ZSUBJECT WHERE Z_PK = $1", [item.ZSUBJECT]);
+        return {
+          id: item.Z_PK,
+          group: {
+            id: groupOfCourse[0].Z_PK,
+            name: groupOfCourse[0].ZNAME,
             students: undefined
-          }
-        }),
-        courses: await Promise.all(courseEntities.map(async (item): Promise<Course> => {
-          const groupOfCourse: GroupEntity[] = await db.select("SELECT * FROM ZGROUP WHERE Z_PK = $1", [item.ZGROUP]);
-          const subjectOfCourse: SubjectEntity[] = await db.select("SELECT * FROM ZSUBJECT WHERE Z_PK = $1", [item.ZSUBJECT]);
-          return {
-            id: item.Z_PK,
-            group: {
-              id: groupOfCourse[0].Z_PK,
-              name: groupOfCourse[0].ZNAME,
-              students: undefined
-            },
-            semester: undefined,
-            subject: {
-              id: subjectOfCourse[0] ? subjectOfCourse[0].Z_PK : undefined,
-              name: subjectOfCourse[0] ? subjectOfCourse[0].ZNAME : undefined
-            },
-            schoolYear: schoolYear,
-            days: undefined
-          }
-        }))
-      };
-    }));
+          },
+          semester: undefined,
+          subject: {
+            id: subjectOfCourse[0] ? subjectOfCourse[0].Z_PK : undefined,
+            name: subjectOfCourse[0] ? subjectOfCourse[0].ZNAME : undefined
+          },
+          schoolYear: schoolYear,
+          days: undefined
+        }
+      }))
+    };
   }
 
   private orQuery(ids: number[], column: string, offset: number) {

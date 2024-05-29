@@ -23,6 +23,7 @@ const courses = ref<Course[]>();
 const {
   students,
   loadStudentsForSchoolYear,
+  loadGroupsAndCoursesFor,
   addStudent,
   formatStudent,
   removeStudent,
@@ -65,13 +66,14 @@ function resetInputs() {
   lastName.value = undefined;
 }
 
-function loadStudent(item: Student | undefined) {
+async function loadStudent(item: Student | undefined) {
   resetInputs();
-  if (item?.id && item.id > 0) {
-    firstName.value = item?.firstName;
-    lastName.value = item?.lastName;
-    groups.value = item?.groups;
-    courses.value = item?.courses;
+  if (item && selectedSchoolYear.value && selectedSemester.value) {
+    const student = await loadGroupsAndCoursesFor(item!, selectedSchoolYear.value, selectedSemester.value)
+    firstName.value = student?.firstName;
+    lastName.value = student?.lastName;
+    groups.value = student?.groups;
+    courses.value = student?.courses;
   }
 }
 
@@ -126,13 +128,8 @@ onMounted(async () => {
     <management-panel header="Schüler verwalten">
       <template #list>
         <div style="height: 80vh">
-          <entity-list
-            v-model="selectedStudent"
-            :entities="students"
-            :format="formatStudent"
-            filter
-            :filter-fields="['firstName', 'lastName']"
-          />
+          <entity-list v-model="selectedStudent" :entities="students" :format="formatStudent" filter
+            :filter-fields="['firstName', 'lastName']" />
         </div>
       </template>
       <template #edit>
@@ -148,41 +145,19 @@ onMounted(async () => {
               <template #title>Schüler</template>
               <template #content>
                 <div class="label-over-input">
-                  <input-with-label
-                    v-model="firstName"
-                    identifier="firstNameField"
-                    label="Vorname"
-                  />
-                  <input-with-label
-                    v-model="lastName"
-                    identifier="lastNameField"
-                    label="Nachname"
-                  />
-                  <auto-complete-list-with-label
-                    v-model="groups"
-                    identifier="groupField"
-                    label="Klassen"
-                    :items="[]"
-                    :option="(group: Group) => group.name!"
-                  />
-                  <auto-complete-list-with-label
-                    v-model="courses"
-                    identifier="courseField"
-                    label="Kurse"
-                    :items="[]"
-                    :option="
-                      (course: Course) =>
-                        course.group?.name! + ' ' + course.subject?.name
-                    "
-                  />
+                  <input-with-label v-model="firstName" identifier="firstNameField" label="Vorname" />
+                  <input-with-label v-model="lastName" identifier="lastNameField" label="Nachname" />
+                  <auto-complete-list-with-label v-model="groups" identifier="groupField" label="Klassen" :items="[]"
+                    :option="(group: Group) => group.name!" />
+                  <auto-complete-list-with-label v-model="courses" identifier="courseField" label="Kurse" :items="[]"
+                    :option="(course: Course) =>
+                      course.group?.name! + ' ' + course.subject?.name
+                      " />
                 </div>
               </template>
             </card>
-            <save-and-delete-buttons
-              :show-delete-when-defined="selectedStudent"
-              :save-action="handleSave"
-              :delete-action="handleRemove"
-            />
+            <save-and-delete-buttons :show-delete-when-defined="selectedStudent" :save-action="handleSave"
+              :delete-action="handleRemove" />
           </div>
         </custom-transition>
       </template>
