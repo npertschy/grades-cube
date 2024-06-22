@@ -8,28 +8,41 @@ const studentGateway = new StudentGateway();
 
 const students = ref<Student[]>([]);
 
-async function loadStudentsForSchoolYear(schoolYear: SchoolYear, semester: Semester) {
+async function loadStudentsForSchoolYear(schoolYear: SchoolYear) {
   students.value.length = 0;
 
-  const all = await studentGateway.loadAllStudentsForSchoolYear(schoolYear, semester);
+  const all = await studentGateway.loadAllStudentsForSchoolYear(schoolYear);
   students.value.push(
     {
       id: 0,
       firstName: undefined,
       lastName: undefined,
       groups: undefined,
-      courses: undefined
+      courses: undefined,
     },
-    ...all);
+    ...all,
+  );
 }
 
-async function loadGroupsAndCoursesFor(student: Student, schoolYear: SchoolYear, semester: Semester) {
-  return studentGateway.loadGroupsAndCoursesForStudent(student, schoolYear, semester);
+async function loadGroupsAndCoursesFor(
+  student: Student,
+  schoolYear: SchoolYear,
+  semester: Semester,
+) {
+  return studentGateway.loadGroupsAndCoursesForStudent(
+    student,
+    schoolYear,
+    semester,
+  );
 }
 
-async function addStudent(studentToAdd: Student, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
+async function addStudent(
+  studentToAdd: Student,
+  schoolYear: SchoolYear,
+  cleanup: () => void,
+) {
   await studentGateway.createStudentInSchoolYear(studentToAdd, schoolYear);
-  await loadStudentsForSchoolYear(schoolYear, semester);
+  await loadStudentsForSchoolYear(schoolYear);
 
   cleanup();
 }
@@ -40,11 +53,29 @@ function formatStudent(item: Student) {
     : item.firstName + " " + item.lastName;
 }
 
-async function removeStudent(student: Student, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
+async function removeStudent(
+  student: Student,
+  schoolYear: SchoolYear,
+  cleanup: () => void,
+) {
   await studentGateway.deleteStudentInSchoolYear(student, schoolYear);
-  await loadStudentsForSchoolYear(schoolYear, semester);
+  await loadStudentsForSchoolYear(schoolYear);
 
   cleanup();
+}
+
+async function loadGroupsForSchoolYear(schoolYear: SchoolYear) {
+  return studentGateway.loadGroupsForSchoolYear(schoolYear);
+}
+
+function loadCoursesForSchoolYearAndSemester(
+  schoolYear: SchoolYear,
+  semester: Semester,
+) {
+  return studentGateway.loadCoursesForSchoolYearAndSemester(
+    schoolYear,
+    semester,
+  );
 }
 
 export function useStudents() {
@@ -55,5 +86,7 @@ export function useStudents() {
     addStudent,
     formatStudent,
     removeStudent,
+    loadGroupsForSchoolYear,
+    loadCoursesForSchoolYearAndSemester,
   };
 }

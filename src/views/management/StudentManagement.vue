@@ -27,10 +27,14 @@ const {
   addStudent,
   formatStudent,
   removeStudent,
+  loadGroupsForSchoolYear,
+  loadCoursesForSchoolYearAndSemester
 } = useStudents();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
 const selectedStudent = ref<Student | undefined>();
+const availableGroups = ref<Group[]>([]);
+const availableCourses = ref<Course[]>([]);
 
 async function handleSave() {
   if (selectedStudent.value?.id) {
@@ -47,15 +51,10 @@ async function handleSave() {
       groups: undefined,
       courses: undefined,
     };
-    await addStudent(
-      student,
-      selectedSchoolYear.value!,
-      selectedSemester.value!,
-      () => {
-        resetInputs();
-        selectedStudent.value = undefined;
-      },
-    );
+    await addStudent(student, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedStudent.value = undefined;
+    });
   }
 }
 
@@ -69,7 +68,11 @@ function resetInputs() {
 async function loadStudent(item: Student | undefined) {
   resetInputs();
   if (item && selectedSchoolYear.value && selectedSemester.value) {
-    const student = await loadGroupsAndCoursesFor(item!, selectedSchoolYear.value, selectedSemester.value)
+    const student = await loadGroupsAndCoursesFor(
+      item!,
+      selectedSchoolYear.value,
+      selectedSemester.value,
+    );
     firstName.value = student?.firstName;
     lastName.value = student?.lastName;
     groups.value = student?.groups;
@@ -82,7 +85,6 @@ async function handleRemove() {
     await removeStudent(
       selectedStudent.value,
       selectedSchoolYear.value!,
-      selectedSemester.value!,
       () => {
         resetInputs();
         selectedStudent.value = undefined;
@@ -93,8 +95,10 @@ async function handleRemove() {
 
 watch(selectedSchoolYear, async (current) => {
   if (current) {
-    await loadStudentsForSchoolYear(current, selectedSemester.value!);
+    await loadStudentsForSchoolYear(current);
     selectedStudent.value = undefined;
+    availableGroups.value = await loadGroupsForSchoolYear(current);
+    availableCourses.value = await loadCoursesForSchoolYearAndSemester(current, selectedSemester.value!);
     resetInputs();
   }
 });
@@ -102,7 +106,7 @@ watch(selectedSchoolYear, async (current) => {
 watch(selectedSemester, async (current) => {
   if (current) {
     const previouslySelection = selectedStudent.value;
-    await loadStudentsForSchoolYear(selectedSchoolYear.value!, current);
+    await loadStudentsForSchoolYear(selectedSchoolYear.value!);
     selectedStudent.value = students.value.find((student) => {
       return student.id === previouslySelection?.id;
     });
@@ -115,10 +119,11 @@ watch(selectedSemester, async (current) => {
 
 onMounted(async () => {
   if (selectedSchoolYear.value) {
-    await loadStudentsForSchoolYear(
+    await loadStudentsForSchoolYear(selectedSchoolYear.value);
+    availableGroups.value = await loadGroupsForSchoolYear(
       selectedSchoolYear.value,
-      selectedSemester.value!,
     );
+    availableCourses.value = await loadCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value!);
   }
 });
 </script>
@@ -128,8 +133,13 @@ onMounted(async () => {
     <management-panel header="Schüler verwalten">
       <template #list>
         <div style="height: 80vh">
-          <entity-list v-model="selectedStudent" :entities="students" :format="formatStudent" filter
-            :filter-fields="['firstName', 'lastName']" />
+          <entity-list
+            v-model="selectedStudent"
+            :entities="students"
+            :format="formatStudent"
+            filter
+            :filter-fields="['firstName', 'lastName']"
+          />
         </div>
       </template>
       <template #edit>
@@ -145,19 +155,41 @@ onMounted(async () => {
               <template #title>Schüler</template>
               <template #content>
                 <div class="label-over-input">
-                  <input-with-label v-model="firstName" identifier="firstNameField" label="Vorname" />
-                  <input-with-label v-model="lastName" identifier="lastNameField" label="Nachname" />
-                  <auto-complete-list-with-label v-model="groups" identifier="groupField" label="Klassen" :items="[]"
-                    :option="(group: Group) => group.name!" />
-                  <auto-complete-list-with-label v-model="courses" identifier="courseField" label="Kurse" :items="[]"
-                    :option="(course: Course) =>
-                      course.group?.name! + ' ' + course.subject?.name
-                      " />
+                  <input-with-label
+                    v-model="firstName"
+                    identifier="firstNameField"
+                    label="Vorname"
+                  />
+                  <input-with-label
+                    v-model="lastName"
+                    identifier="lastNameField"
+                    label="Nachname"
+                  />
+                  <auto-complete-list-with-label
+                    v-model="groups"
+                    identifier="groupField"
+                    label="Klassen"
+                    :items="availableGroups"
+                    :option="(group: Group) => group.name!"
+                  />
+                  <auto-complete-list-with-label
+                    v-model="courses"
+                    identifier="courseField"
+                    label="Kurse"
+                    :items="[]"
+                    :option="
+                      (course: Course) =>
+                        course.group?.name! + ' ' + course.subject?.name
+                    "
+                  />
                 </div>
               </template>
             </card>
-            <save-and-delete-buttons :show-delete-when-defined="selectedStudent" :save-action="handleSave"
-              :delete-action="handleRemove" />
+            <save-and-delete-buttons
+              :show-delete-when-defined="selectedStudent"
+              :save-action="handleSave"
+              :delete-action="handleRemove"
+            />
           </div>
         </custom-transition>
       </template>
