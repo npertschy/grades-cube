@@ -5,7 +5,7 @@ import Avatar from "primevue/avatar";
 import PButton from "primevue/button";
 import Popover from "primevue/popover";
 import ToggleSwitch from "primevue/toggleswitch";
-import { PrimeIcons } from "primevue/api";
+import { PrimeIcons } from "@primevue/core/api";
 import { ref, computed, watch } from "vue";
 
 const items = ref([

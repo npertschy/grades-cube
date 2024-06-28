@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PrimeIcons } from "primevue/api";
+import { PrimeIcons } from "@primevue/core/api";
 import PanelMenu from "primevue/panelmenu";
 import { ref } from "vue";
 

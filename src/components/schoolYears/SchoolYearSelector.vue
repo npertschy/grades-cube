@@ -6,6 +6,7 @@ import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelec
 import { computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import store from "@/store/KeyValueStore";
+import type { Semester } from "./Semester";
 
 const { schoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
@@ -63,7 +64,7 @@ watch(selectedSemester, async (current) => {
   <select-button
     v-model="selectedSemester"
     :options="semesters"
-    :option-label="(option) => option.type + '. Semester'"
+    :option-label="(option: Semester) => option.type + '. Semester'"
     data-key="type"
   />
 </template>

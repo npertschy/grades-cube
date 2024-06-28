@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CustomTransition from "@/components/layout/CustomTransition.vue";
 import PMenu from "primevue/menu";
-import { PrimeIcons } from "primevue/api";
+import { PrimeIcons } from "@primevue/core/api";
 
 const items = [
   {
