@@ -28,7 +28,7 @@ const {
   formatStudent,
   removeStudent,
   loadGroupsForSchoolYear,
-  loadCoursesForSchoolYearAndSemester
+  loadCoursesForSchoolYearAndSemester,
 } = useStudents();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
@@ -73,6 +73,7 @@ async function loadStudent(item: Student | undefined) {
       selectedSchoolYear.value,
       selectedSemester.value,
     );
+
     firstName.value = student?.firstName;
     lastName.value = student?.lastName;
     groups.value = student?.groups;
@@ -98,7 +99,10 @@ watch(selectedSchoolYear, async (current) => {
     await loadStudentsForSchoolYear(current);
     selectedStudent.value = undefined;
     availableGroups.value = await loadGroupsForSchoolYear(current);
-    availableCourses.value = await loadCoursesForSchoolYearAndSemester(current, selectedSemester.value!);
+    availableCourses.value = await loadCoursesForSchoolYearAndSemester(
+      current,
+      selectedSemester.value!,
+    );
     resetInputs();
   }
 });
@@ -123,7 +127,10 @@ onMounted(async () => {
     availableGroups.value = await loadGroupsForSchoolYear(
       selectedSchoolYear.value,
     );
-    availableCourses.value = await loadCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value!);
+    availableCourses.value = await loadCoursesForSchoolYearAndSemester(
+      selectedSchoolYear.value,
+      selectedSemester.value!,
+    );
   }
 });
 </script>

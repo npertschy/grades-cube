@@ -1,8 +1,8 @@
 import { ref } from "vue";
-import type { Student } from "./Student";
-import { StudentGateway } from "@/components/students/StudentGateway";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
+import { StudentGateway } from "@/components/students/StudentGateway";
+import type { Student } from "@/components/students/Student";
 
 const studentGateway = new StudentGateway();
 
@@ -29,7 +29,7 @@ async function loadGroupsAndCoursesFor(
   schoolYear: SchoolYear,
   semester: Semester,
 ) {
-  return studentGateway.loadGroupsAndCoursesForStudent(
+  return await studentGateway.loadGroupsAndCoursesForStudent(
     student,
     schoolYear,
     semester,

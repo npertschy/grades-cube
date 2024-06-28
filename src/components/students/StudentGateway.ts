@@ -1,7 +1,7 @@
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-import { db, type CountResult } from "@/store/Database";
+import { db, orQuery, type CountResult } from "@/store/Database";
 import type { QueryResult } from "@tauri-apps/plugin-sql";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { Group } from "@/components/groups/Group";
@@ -9,15 +9,11 @@ import type { CourseEntity } from "@/components/courses/CourseEntity";
 import type { Course } from "@/components/courses/Course";
 import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
 import type { Semester } from "@/components/schoolYears/Semester";
+import type { GroupsToYears } from "@/components/groups/GroupsToYears";
 
 type StudentsToYears = {
   Z_6STUDENTS2: number;
   Z_8YEARS1: number;
-};
-
-type GroupsToYears = {
-  Z_3GROUPS1: number;
-  Z_8YEARS: number;
 };
 
 type StudentsToGroups = {
@@ -45,7 +41,7 @@ export class StudentGateway {
     const studentIds = studentsPerYear.map((item) => {
       return item.Z_6STUDENTS2;
     });
-    const studentsOrQuery = this.orQuery(studentIds, "Z_PK", 1);
+    const studentsOrQuery = orQuery(studentIds, "Z_PK", 1);
     const students: StudentEntity[] = await db.select(
       "SELECT * FROM ZSTUDENT WHERE " + studentsOrQuery,
       studentIds,
@@ -76,7 +72,7 @@ export class StudentGateway {
     const groupIds = groups.map((item) => {
       return item.Z_3GROUPS1;
     });
-    const groupsOrQuery = this.orQuery(groupIds, "Z_3GROUPS2", 2);
+    const groupsOrQuery = orQuery(groupIds, "Z_3GROUPS2", 2);
 
     const courses: CourseEntity[] = await db.select(
       "SELECT * FROM ZCOURSE WHERE ZYEAR = $1 AND ZSEMESTER = $2",
@@ -85,7 +81,7 @@ export class StudentGateway {
     const courseIds = courses.map((item) => {
       return item.Z_PK;
     });
-    const coursesOrQuery = this.orQuery(courseIds, "Z_1COURSES", 2);
+    const coursesOrQuery = orQuery(courseIds, "Z_1COURSES", 2);
 
     const groupsOfStudent: StudentsToGroups[] = await db.select(
       "SELECT Z_3GROUPS2 FROM Z_3STUDENTS WHERE Z_6STUDENTS1 = $1 AND (" +
@@ -96,7 +92,7 @@ export class StudentGateway {
     const groupIdsForStudent = groupsOfStudent.map((item) => {
       return item.Z_3GROUPS2;
     });
-    const groupEntityOrQuery = this.orQuery(groupIdsForStudent, "Z_PK", 1);
+    const groupEntityOrQuery = orQuery(groupIdsForStudent, "Z_PK", 1);
     const groupEntities: GroupEntity[] =
       groupIdsForStudent.length > 0
         ? await db.select(
@@ -158,13 +154,6 @@ export class StudentGateway {
     };
   }
 
-  private orQuery(ids: number[], column: string, offset: number) {
-    return ids
-      .map((_value, index) => {
-        return `${column} = $` + (index + offset);
-      })
-      .join(" OR ");
-  }
 
   async createStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
     const studentId: QueryResult = await db.execute(
@@ -199,7 +188,7 @@ export class StudentGateway {
     const groupIds = groupsToYears.map((groupToYear) => {
       return groupToYear.Z_3GROUPS1;
     });
-    const groupIdsOrQuery = this.orQuery(groupIds, "Z_PK", 1);
+    const groupIdsOrQuery = orQuery(groupIds, "Z_PK", 1);
     const groups: GroupEntity[] = await db.select(
       "SELECT * FROM ZGROUP WHERE " + groupIdsOrQuery,
       groupIds,
