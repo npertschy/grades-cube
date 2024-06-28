@@ -2,6 +2,7 @@
 import AutoComplete, {
   type AutoCompleteCompleteEvent,
 } from "primevue/autocomplete";
+import Chip from "primevue/chip";
 import { type Ref, ref, toRefs } from "vue";
 
 interface Props {
@@ -48,7 +49,10 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
       @complete="filterSuggestions"
     >
       <template #chip="slotProps">
-        <div>{{ option(slotProps.value) }}</div>
+        <Chip
+          :label="option(slotProps.value)"
+          class="compact-chips chip-background"
+        />
       </template>
     </auto-complete>
   </div>
@@ -57,5 +61,14 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
 <style scoped>
 div :deep(ul) {
   width: 100%;
+}
+
+.compact-chips {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.chip-background {
+  background: var(--p-cyan-100);
 }
 </style>
