@@ -13,11 +13,15 @@ import Card from "primevue/card";
 import Divider from "primevue/divider";
 import DataTable from "primevue/datatable";
 import Column from "primevue/column";
-import { ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import type { Group } from "@/components/groups/Group";
+import { useGroups } from "@/components/groups/GroupStore";
+import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 
+const { groups, loadAllGroupsForSchoolYearAndSemester, loadStudentsForGroup } =
+  useGroups();
 const name = ref<string>();
 const student = ref<Student>();
 
@@ -26,16 +30,10 @@ const studentList = ref([...students.value]);
 
 const idCounter = ref(1);
 
-const groups = ref<Group[]>([
-  {
-    id: 0,
-    name: undefined,
-    students: [],
-  },
-]);
-
 const selectedGroup = ref<Group | undefined>();
 const selectedStudent = ref<Student | undefined>();
+
+const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
 function addGroup() {
   if (
@@ -74,10 +72,12 @@ function resetInputs() {
   name.value = undefined;
 }
 
-function loadGroup(item: Group | undefined) {
+async function loadGroup(item: Group | undefined) {
   resetInputs();
   if (item?.id && item.id > 0) {
+    const students = await loadStudentsForGroup(item);
     name.value = item?.name;
+    item.students = students;
   }
 }
 
@@ -112,6 +112,32 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
     });
   }
 }
+
+watch(selectedSchoolYear, async (current) => {
+  if (current) {
+    await loadAllGroupsForSchoolYearAndSemester(current);
+    selectedGroup.value = undefined;
+    resetInputs();
+  }
+});
+
+onMounted(async () => {
+  if (selectedSchoolYear.value) {
+    await loadAllGroupsForSchoolYearAndSemester(selectedSchoolYear.value);
+  }
+});
+
+const numberOfStudents = computed(() => {
+  if (
+    selectedGroup.value &&
+    selectedGroup.value.students &&
+    selectedGroup.value.students.length > 0
+  ) {
+    return `${selectedGroup.value.students.length}`;
+  } else {
+    return "Keine";
+  }
+});
 </script>
 
 <template>
@@ -157,13 +183,15 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
             class="students-area"
           >
             <card class="shadow-2">
-              <template #title> Schüler </template>
+              <template #title> {{ numberOfStudents }} Schüler </template>
               <template #content>
                 <data-table
                   v-model:selection="selectedStudent"
                   :value="selectedGroup?.students"
                   data-key="id"
                   selection-mode="single"
+                  scrollable
+                  scroll-height="55vh"
                 >
                   <column header="#">
                     <template #body="slotProps">
