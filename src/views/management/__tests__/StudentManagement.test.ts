@@ -1,6 +1,6 @@
 import StudentManagement from "@/views/management/StudentManagement.vue";
 import { flushPromises, mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import PrimeVue from "primevue/config";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 
@@ -95,7 +95,7 @@ describe("StudentManagement", () => {
       const inputSelector = `input[input-id="${firstNameLabel?.element.htmlFor}"]`;
       const firstNameInput = wrapper.find(inputSelector);
 
-      expect(firstNameInput.element.value).toEqual("Max");
+      expect(firstNameInput.attributes()["value"]).toEqual("Max");
     });
   });
 });
