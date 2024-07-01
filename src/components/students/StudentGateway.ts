@@ -10,15 +10,11 @@ import type { Course } from "@/components/courses/Course";
 import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
 import type { Semester } from "@/components/schoolYears/Semester";
 import type { GroupsToYears } from "@/components/groups/GroupsToYears";
+import type { StudentsToGroups } from "@/components/students/StudentsToGroups";
 
 type StudentsToYears = {
   Z_6STUDENTS2: number;
   Z_8YEARS1: number;
-};
-
-type StudentsToGroups = {
-  Z_3GROUPS2: number;
-  Z_6STUDENTS1: number;
 };
 
 type StudentsToCourses = {
@@ -153,7 +149,6 @@ export class StudentGateway {
       ),
     };
   }
-
 
   async createStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
     const studentId: QueryResult = await db.execute(

@@ -2,15 +2,9 @@ import type { Group } from "@/components/groups/Group";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { GroupsToYears } from "@/components/groups/GroupsToYears";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-import type { Semester } from "@/components/schoolYears/Semester";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { StudentsToGroups } from "@/components/students/StudentsToGroups";
 import { db, orQuery } from "@/store/Database";
-
-type GroupsToSemesters = {
-  Z_3GROUPS: number;
-  Z_5SEMESTERS: number;
-};
 
 export class GroupGateway {
   async loadGroupsForSchoolYearAndSemester(
