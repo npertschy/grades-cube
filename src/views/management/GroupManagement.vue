@@ -9,9 +9,11 @@ import AutoComplete, {
   type AutoCompleteCompleteEvent,
 } from "primevue/autocomplete";
 import PButton from "primevue/button";
+import SelectButton from "primevue/selectbutton";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import DataTable from "primevue/datatable";
+import DataView from "primevue/dataview";
 import Column from "primevue/column";
 import { computed, onMounted, ref, watch } from "vue";
 import type { Student } from "@/components/students/Student";
@@ -33,7 +35,7 @@ const idCounter = ref(1);
 const selectedGroup = ref<Group | undefined>();
 const selectedStudent = ref<Student | undefined>();
 
-const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
+const { selectedSchoolYear } = useSchoolYearSelection();
 
 function addGroup() {
   if (
@@ -138,6 +140,25 @@ const numberOfStudents = computed(() => {
     return "Keine";
   }
 });
+
+const layout = ref("grid");
+const layoutOptions = ["list", "grid"];
+
+watch(selectedStudent, (current) => {
+  if (current) {
+    student.value = current;
+  } else {
+    student.value = undefined;
+  }
+});
+
+function toggleStudentSelection(selectionFromClick: Student) {
+  if (selectionFromClick == selectedStudent.value) {
+    selectedStudent.value = undefined;
+  } else {
+    selectedStudent.value = selectionFromClick;
+  }
+}
 </script>
 
 <template>
@@ -183,28 +204,88 @@ const numberOfStudents = computed(() => {
             class="students-area"
           >
             <card class="shadow-2">
-              <template #title> {{ numberOfStudents }} Schüler </template>
               <template #content>
-                <data-table
-                  v-model:selection="selectedStudent"
+                <data-view
                   :value="selectedGroup?.students"
-                  data-key="id"
-                  selection-mode="single"
-                  scrollable
-                  scroll-height="55vh"
+                  :layout="layout"
+                  :pt="{
+                    header: () => ({ style: { padding: '0 0 0.75rem 0' } }),
+                  }"
                 >
-                  <column header="#">
-                    <template #body="slotProps">
-                      {{ slotProps.index + 1 }}
-                    </template>
-                  </column>
-                  <column header="Name">
-                    <template #body="slotProps">
-                      {{ slotProps.data.firstName }}
-                      {{ slotProps.data.lastName }}
-                    </template>
-                  </column>
-                </data-table>
+                  <template #header>
+                    <div
+                      style="
+                        display: grid;
+                        grid-template-columns: auto auto;
+                        justify-content: space-between;
+                      "
+                    >
+                      <div class="p-card-title">
+                        {{ numberOfStudents }} Schüler
+                      </div>
+                      <select-button
+                        v-model="layout"
+                        :options="layoutOptions"
+                        :allow-empty="false"
+                      >
+                        <template #option="{ option }">
+                          <i
+                            :class="[
+                              option === 'list' ? 'pi pi-bars' : 'pi pi-table',
+                            ]"
+                          />
+                        </template>
+                      </select-button>
+                    </div>
+                  </template>
+                  <template #list="listProps">
+                    <data-table
+                      v-model:selection="selectedStudent"
+                      :value="listProps.items"
+                      data-key="id"
+                      selection-mode="single"
+                      scrollable
+                      scroll-height="55vh"
+                    >
+                      <column header="#">
+                        <template #body="headerProps">
+                          {{ headerProps.index + 1 }}
+                        </template>
+                      </column>
+                      <column header="Name">
+                        <template #body="bodyProps">
+                          {{ bodyProps.data.firstName }}
+                          {{ bodyProps.data.lastName }}
+                        </template>
+                      </column>
+                    </data-table>
+                  </template>
+                  <template #grid="gridProps">
+                    <div
+                      style="
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 3px 3px;
+                        padding-top: 3px;
+                      "
+                    >
+                      <p-button
+                        v-for="(studentItem, index) in gridProps.items"
+                        :key="index"
+                        outlined
+                        severity="secondary"
+                        style="padding: 2px"
+                        :class="{
+                          'highlight-button': selectedStudent == studentItem,
+                        }"
+                        @click="toggleStudentSelection(studentItem)"
+                      >
+                        {{ index + 1 }}.
+                        {{ formatStudent(studentItem) }}
+                      </p-button>
+                    </div>
+                  </template>
+                </data-view>
                 <div class="label-over-input mt-2">
                   <div>
                     <label
@@ -252,15 +333,20 @@ const numberOfStudents = computed(() => {
 }
 
 .group-area {
-  grid-column: 1 / span 5;
+  grid-column: 1 / span 4;
 }
 
 .students-area {
-  grid-column: 6 / span 7;
+  grid-column: 5 / span 8;
 }
 
 .label-over-input {
   display: grid;
   grid-template-columns: auto;
+}
+
+.highlight-button {
+  background-color: var(--p-highlight-focus-background);
+  color: var(--p-highlight-color);
 }
 </style>

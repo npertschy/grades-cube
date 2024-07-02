@@ -51,16 +51,16 @@ const items = [
               :class="[
                 item.icon,
                 $route.name?.toString().includes(item.route.name)
-                  ? 'font-bold-highlighted'
-                  : 'font-medium-normal',
+                  ? 'font-bold'
+                  : 'font-medium',
               ]"
             />
             <span
               class="ml-2"
               :class="[
                 $route.name?.toString().includes(item.route.name)
-                  ? 'font-bold-highlighted'
-                  : 'font-medium-normal',
+                  ? 'font-bold'
+                  : 'font-medium',
               ]"
             >
               {{ item.name }}

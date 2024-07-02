@@ -62,17 +62,13 @@ watch(lightModeSelected, () => {
           <span
             :class="[
               item.icon,
-              $route.path.includes(item.route)
-                ? 'font-bold-highlighted'
-                : 'font-medium-normal',
+              $route.path.includes(item.route) ? 'font-bold' : 'font-medium',
             ]"
           />
           <span
             class="ml-2"
             :class="[
-              $route.path.includes(item.route)
-                ? 'font-bold-highlighted'
-                : 'font-medium-normal',
+              $route.path.includes(item.route) ? 'font-bold' : 'font-medium',
             ]"
           >
             {{ item.label }}

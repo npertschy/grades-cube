@@ -1,4 +1,5 @@
-.active-link {
-    border-radius: 0.5rem;
-    background-color: var(--highlight-bg);
-  }
+.active-link { 
+	border-radius: 0.5rem; 
+	background-color: var(--p-highlight-focus-background); 
+	color: var(--p-highlight-color) !important; 
+}

@@ -342,7 +342,7 @@ const customPreset = definePreset(Aura, {
         },
         highlight: {
           background: "{primary.50}",
-          focusBackground: "{primary.100}",
+          focusBackground: "{primary.50}",
           color: "{primary.600}",
           focusColor: "{primary.800}",
         },
@@ -422,7 +422,7 @@ export const config = {
     options: {
       prefix: "p",
       darkModeSelector: ".my-app-dark",
-      ccsLayer: false,
+      cssLayer: false,
     },
   },
 };
