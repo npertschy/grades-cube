@@ -29,6 +29,7 @@ export class GroupGateway {
       return {
         id: group.Z_PK,
         name: group.ZNAME,
+        type: group.ZTYPE,
         students: [],
       };
     });

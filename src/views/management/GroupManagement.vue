@@ -10,6 +10,7 @@ import AutoComplete, {
 } from "primevue/autocomplete";
 import PButton from "primevue/button";
 import SelectButton from "primevue/selectbutton";
+import RadioButton from "primevue/radiobutton";
 import Card from "primevue/card";
 import Divider from "primevue/divider";
 import DataTable from "primevue/datatable";
@@ -26,6 +27,7 @@ const { groups, loadAllGroupsForSchoolYearAndSemester, loadStudentsForGroup } =
   useGroups();
 const name = ref<string>();
 const student = ref<Student>();
+const groupType = ref<number>();
 
 const { students, formatStudent } = useStudents();
 const studentList = ref([...students.value]);
@@ -46,6 +48,7 @@ function addGroup() {
     const group = {
       id: selectedGroup.value.id,
       name: name.value,
+      type: groupType.value,
       students: [],
     };
 
@@ -58,6 +61,7 @@ function addGroup() {
     groups.value?.push({
       id: idCounter.value,
       name: name.value,
+      type: groupType.value,
       students: [],
     });
 
@@ -80,6 +84,7 @@ async function loadGroup(item: Group | undefined) {
     const students = await loadStudentsForGroup(item);
     name.value = item?.name;
     item.students = students;
+    groupType.value = item?.type;
   }
 }
 
@@ -190,6 +195,39 @@ function toggleStudentSelection(selectionFromClick: Student) {
                   identifier="nameField"
                   label="Name"
                 />
+                <div
+                  class="mt-2"
+                  style="display: grid; grid-template-columns: repeat(2, 1fr)"
+                >
+                  <div>
+                    <radio-button
+                      v-model="groupType"
+                      input-id="sek1"
+                      name="sek"
+                      :value="0"
+                    />
+                    <label
+                      for="sek1"
+                      class="font-semibold"
+                    >
+                      Sekundarstufe I
+                    </label>
+                  </div>
+                  <div>
+                    <radio-button
+                      v-model="groupType"
+                      input-id="sek2"
+                      name="sek"
+                      :value="1"
+                    />
+                    <label
+                      for="sek2"
+                      class="font-semibold"
+                    >
+                      Sekundarstufe II
+                    </label>
+                  </div>
+                </div>
               </template>
             </card>
             <save-and-delete-buttons
