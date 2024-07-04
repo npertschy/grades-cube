@@ -1,7 +1,5 @@
 import "primeicons/primeicons.css";
-import "@/../node_modules/primeflex/primeflex.css";
 import "@/assets/styles.css";
-import "@/assets/primeflex-extended.scss"
 
 import { createApp } from "vue";
 import App from "./App.vue";

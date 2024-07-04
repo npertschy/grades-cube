@@ -31,7 +31,7 @@ const items = ref([
             v-ripple
             :href="href"
             v-bind="props.action"
-            class="panel-item no-underline hover:surface-hover"
+            class="panel-item no-underline"
             @click="navigate"
           >
             <span

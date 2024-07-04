@@ -45,15 +45,9 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
       :input-id="identifier"
       :suggestions="suggestions"
       :option-label="option"
-      class="w-full mt-1 my-p-autocomplete-multiple-container"
+      class="w-full mt-1"
       @complete="filterSuggestions"
     >
-      <template #chip="slotProps">
-        <Chip
-          :label="option(slotProps.value)"
-          class="compact-chips chip-background"
-        />
-      </template>
     </auto-complete>
   </div>
 </template>
@@ -61,14 +55,5 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
 <style scoped>
 div :deep(ul) {
   width: 100%;
-}
-
-.compact-chips {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-}
-
-.chip-background {
-  background: var(--p-cyan-100);
 }
 </style>

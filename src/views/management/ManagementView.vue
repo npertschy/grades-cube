@@ -47,22 +47,8 @@ const items = [
             }"
             @click="navigate"
           >
-            <span
-              :class="[
-                item.icon,
-                $route.name?.toString().includes(item.route.name)
-                  ? 'font-bold'
-                  : 'font-medium',
-              ]"
-            />
-            <span
-              class="ml-2"
-              :class="[
-                $route.name?.toString().includes(item.route.name)
-                  ? 'font-bold'
-                  : 'font-medium',
-              ]"
-            >
+            <span :class="[item.icon]" />
+            <span class="ml-2">
               {{ item.name }}
             </span>
           </a>

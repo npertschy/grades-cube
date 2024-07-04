@@ -59,18 +59,8 @@ watch(lightModeSelected, () => {
           }"
           @click="navigate"
         >
-          <span
-            :class="[
-              item.icon,
-              $route.path.includes(item.route) ? 'font-bold' : 'font-medium',
-            ]"
-          />
-          <span
-            class="ml-2"
-            :class="[
-              $route.path.includes(item.route) ? 'font-bold' : 'font-medium',
-            ]"
-          >
+          <span :class="item.icon" />
+          <span class="ml-2">
             {{ item.label }}
           </span>
         </a>
@@ -82,7 +72,7 @@ watch(lightModeSelected, () => {
         <avatar
           icon="pi pi-user"
           shape="circle"
-          class="mr-2 align-self-center cursor-pointer"
+          class="mr-2 cursor-pointer"
           @click="toggle"
         />
         <popover ref="usermenu">

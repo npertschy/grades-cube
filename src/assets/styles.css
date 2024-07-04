@@ -1,5 +1,81 @@
+ /* custom style */
 .active-link { 
 	border-radius: 0.5rem; 
 	background-color: var(--p-highlight-focus-background); 
 	color: var(--p-highlight-color) !important; 
 }
+
+/* margins */
+.mt-1 {
+	margin-top: 0.25rem;
+}
+
+.mt-2 {
+	margin-top: 0.5rem;
+}
+
+.ml-2 {
+	margin-left: 0.5rem;
+}
+
+.mr-2 {
+	margin-right: 0.5rem;
+}
+
+/* width */
+.w-full {
+	width: 100%;
+}
+
+.min-h-full {
+	min-height: 100%;
+}
+
+.w-2 {
+	width: 16.6667%;
+}
+
+/* font related stuff */
+* {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.font-semibold {
+	font-weight: 600;
+}
+
+.font-bold {
+	font-weight: 700;
+}
+
+.text-xl {
+	font-size: 1.25rem;
+}
+
+.text-lg {
+	font-size: 1.125rem;
+}
+
+.no-underline {
+  text-decoration: none;
+}
+
+.text-color {
+	color: var(--p-text-color);
+}
+
+/* shadows */
+.shadow-2 {
+	box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.03), 0px 0px 2px rgba(0, 0, 0, 0.06), 0px 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* text alignment */
+.text-center {
+	text-align: center;
+}
+
+/* cursors */
+.cursor-pointer {
+        cursor: pointer;
+}
+
