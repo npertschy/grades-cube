@@ -68,11 +68,7 @@ function resetInputs() {
 async function loadStudent(item: Student | undefined) {
   resetInputs();
   if (item && selectedSchoolYear.value && selectedSemester.value) {
-    const student = await loadGroupsAndCoursesFor(
-      item!,
-      selectedSchoolYear.value,
-      selectedSemester.value,
-    );
+    const student = await loadGroupsAndCoursesFor(item!, selectedSchoolYear.value, selectedSemester.value);
 
     firstName.value = student?.firstName;
     lastName.value = student?.lastName;
@@ -83,14 +79,10 @@ async function loadStudent(item: Student | undefined) {
 
 async function handleRemove() {
   if (selectedStudent.value) {
-    await removeStudent(
-      selectedStudent.value,
-      selectedSchoolYear.value!,
-      () => {
-        resetInputs();
-        selectedStudent.value = undefined;
-      },
-    );
+    await removeStudent(selectedStudent.value, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedStudent.value = undefined;
+    });
   }
 }
 
@@ -99,10 +91,7 @@ watch(selectedSchoolYear, async (current) => {
     await loadStudentsForSchoolYear(current);
     selectedStudent.value = undefined;
     availableGroups.value = await loadGroupsForSchoolYear(current);
-    availableCourses.value = await loadCoursesForSchoolYearAndSemester(
-      current,
-      selectedSemester.value!,
-    );
+    availableCourses.value = await loadCoursesForSchoolYearAndSemester(current, selectedSemester.value!);
     resetInputs();
   }
 });
@@ -114,19 +103,14 @@ watch(selectedSemester, async (current) => {
     selectedStudent.value = students.value.find((student) => {
       return student.id === previouslySelection?.id;
     });
-    document
-      .getElementsByClassName("p-listbox-item p-highlight")
-      .item(0)
-      ?.scrollIntoView(true);
+    document.getElementsByClassName("p-listbox-item p-highlight").item(0)?.scrollIntoView(true);
   }
 });
 
 onMounted(async () => {
   if (selectedSchoolYear.value) {
     await loadStudentsForSchoolYear(selectedSchoolYear.value);
-    availableGroups.value = await loadGroupsForSchoolYear(
-      selectedSchoolYear.value,
-    );
+    availableGroups.value = await loadGroupsForSchoolYear(selectedSchoolYear.value);
     availableCourses.value = await loadCoursesForSchoolYearAndSemester(
       selectedSchoolYear.value,
       selectedSemester.value!,
@@ -151,9 +135,8 @@ onMounted(async () => {
       </template>
       <template #edit>
         <p>
-          Verwalten Sie hier ihre Schüler. Sie können Schüler anlegen oder
-          bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
-          auswählen.
+          Verwalten Sie hier ihre Schüler. Sie können Schüler anlegen oder bearbeiten, indem Sie den entsprechenden
+          Eintrag in der Liste auswählen.
         </p>
         <divider />
         <custom-transition>
@@ -184,10 +167,7 @@ onMounted(async () => {
                     identifier="courseField"
                     label="Kurse"
                     :items="[]"
-                    :option="
-                      (course: Course) =>
-                        course.group?.name! + ' ' + course.subject?.name
-                    "
+                    :option="(course: Course) => course.group?.name! + ' ' + course.subject?.name"
                   />
                 </div>
               </template>
