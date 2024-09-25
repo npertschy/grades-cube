@@ -5,9 +5,7 @@ import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import InputGroup from "primevue/inputgroup";
-import AutoComplete, {
-  type AutoCompleteCompleteEvent,
-} from "primevue/autocomplete";
+import AutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
 import SelectButton from "primevue/selectbutton";
 import RadioButton from "primevue/radiobutton";
@@ -23,8 +21,16 @@ import type { Group } from "@/components/groups/Group";
 import { useGroups } from "@/components/groups/GroupStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 
-const { groups, loadAllGroupsForSchoolYearAndSemester, loadStudentsForGroup } =
-  useGroups();
+const {
+  groups,
+  loadAllGroupsForSchoolYearAndSemester,
+  loadStudentsForGroup,
+  addGroup,
+  editGroup,
+  removeGroup,
+  addStudentToGroup,
+  removeStudentFromGroup,
+} = useGroups();
 const name = ref<string>();
 const student = ref<Student>();
 const groupType = ref<number>();
@@ -32,44 +38,39 @@ const groupType = ref<number>();
 const { students, formatStudent } = useStudents();
 const studentList = ref([...students.value]);
 
-const idCounter = ref(1);
-
 const selectedGroup = ref<Group | undefined>();
 const selectedStudent = ref<Student | undefined>();
 
 const { selectedSchoolYear } = useSchoolYearSelection();
 
-function addGroup() {
-  if (
-    selectedGroup.value &&
-    selectedGroup.value.id &&
-    selectedGroup.value.id > 0
-  ) {
+async function handleSave() {
+  if (selectedGroup.value?.id) {
     const group = {
       id: selectedGroup.value.id,
       name: name.value,
+      sortingName: selectedGroup.value.sortingName,
       type: groupType.value,
       students: [],
     };
 
-    const index = groups.value.findIndex((it) => {
-      return it.id == group.id;
+    await editGroup(group, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedGroup.value = undefined;
     });
-
-    groups.value.splice(index, 1, group);
   } else {
-    groups.value?.push({
-      id: idCounter.value,
+    const group = {
+      id: undefined,
       name: name.value,
+      sortingName: undefined,
       type: groupType.value,
       students: [],
+    };
+
+    await addGroup(group, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedGroup.value = undefined;
     });
-
-    idCounter.value++;
   }
-
-  resetInputs();
-  selectedGroup.value = undefined;
 }
 
 watch(selectedGroup, (current) => loadGroup(current));
@@ -92,18 +93,26 @@ function formatGroup(item: Group) {
   return item.id === 0 ? "Neue Klasse anlegen" : item.name!;
 }
 
-function removeGroup() {
-  const index = groups.value.findIndex((it) => {
-    return it.id == selectedGroup.value?.id;
-  });
-
-  groups.value.splice(index, 1);
+async function handleRemove() {
+  if (selectedGroup.value) {
+    await removeGroup(selectedGroup.value, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedGroup.value = undefined;
+    });
+  }
 }
 
-function addStudentToGroup() {
+async function handleAddingStudent() {
   if (student.value) {
-    selectedGroup.value?.students?.push(student.value);
-    student.value = undefined;
+    await addStudentToGroup(student.value, selectedGroup.value!);
+    await loadGroup(selectedGroup.value);
+  }
+}
+
+async function handleRemovingStudent() {
+  if (selectedStudent.value) {
+    await removeStudentFromGroup(selectedStudent.value, selectedGroup.value!);
+    await loadGroup(selectedGroup.value);
   }
 }
 
@@ -112,10 +121,7 @@ function searchStudents(event: AutoCompleteCompleteEvent) {
     studentList.value = [...students.value];
   } else {
     studentList.value = students.value.filter((it) => {
-      return (
-        it.firstName?.includes(event.query) ||
-        it.lastName?.includes(event.query)
-      );
+      return it.firstName?.includes(event.query) || it.lastName?.includes(event.query);
     });
   }
 }
@@ -135,11 +141,7 @@ onMounted(async () => {
 });
 
 const numberOfStudents = computed(() => {
-  if (
-    selectedGroup.value &&
-    selectedGroup.value.students &&
-    selectedGroup.value.students.length > 0
-  ) {
+  if (selectedGroup.value && selectedGroup.value.students && selectedGroup.value.students.length > 0) {
     return `${selectedGroup.value.students.length}`;
   } else {
     return "Keine";
@@ -177,8 +179,8 @@ function toggleStudentSelection(selectionFromClick: Student) {
     </template>
     <template #edit>
       <p>
-        Verwalten Sie hier ihre Klassen. Sie können Klassen anlegen oder
-        bearbeiten, indem Sie den entsprechenden Eintrag in der Liste auswählen.
+        Verwalten Sie hier ihre Klassen. Sie können Klassen anlegen oder bearbeiten, indem Sie den entsprechenden
+        Eintrag in der Liste auswählen.
       </p>
       <divider />
       <custom-transition>
@@ -232,8 +234,8 @@ function toggleStudentSelection(selectionFromClick: Student) {
             </card>
             <save-and-delete-buttons
               :show-delete-when-defined="selectedGroup"
-              :save-action="addGroup"
-              :delete-action="removeGroup"
+              :save-action="handleSave"
+              :delete-action="handleRemove"
               :grid-columns="3"
             />
           </div>
@@ -251,27 +253,15 @@ function toggleStudentSelection(selectionFromClick: Student) {
                   }"
                 >
                   <template #header>
-                    <div
-                      style="
-                        display: grid;
-                        grid-template-columns: auto auto;
-                        justify-content: space-between;
-                      "
-                    >
-                      <div class="p-card-title">
-                        {{ numberOfStudents }} Schüler
-                      </div>
+                    <div style="display: grid; grid-template-columns: auto auto; justify-content: space-between">
+                      <div class="p-card-title">{{ numberOfStudents }} Schüler</div>
                       <select-button
                         v-model="layout"
                         :options="layoutOptions"
                         :allow-empty="false"
                       >
                         <template #option="{ option }">
-                          <i
-                            :class="[
-                              option === 'list' ? 'pi pi-bars' : 'pi pi-table',
-                            ]"
-                          />
+                          <i :class="[option === 'list' ? 'pi pi-bars' : 'pi pi-table']" />
                         </template>
                       </select-button>
                     </div>
@@ -299,14 +289,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                     </data-table>
                   </template>
                   <template #grid="gridProps">
-                    <div
-                      style="
-                        display: grid;
-                        grid-template-columns: repeat(3, 1fr);
-                        gap: 3px 3px;
-                        padding-top: 3px;
-                      "
-                    >
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 3px; padding-top: 3px">
                       <p-button
                         v-for="(studentItem, index) in gridProps.items"
                         :key="index"
@@ -333,6 +316,12 @@ function toggleStudentSelection(selectionFromClick: Student) {
                       Schüler zur Klasse hinzufügen
                     </label>
                     <input-group>
+                      <p-button
+                        icon="pi pi-check"
+                        severity="success"
+                        :disabled="!student"
+                        @click="handleAddingStudent"
+                      />
                       <auto-complete
                         v-model="student"
                         input-id="pupilName"
@@ -347,9 +336,10 @@ function toggleStudentSelection(selectionFromClick: Student) {
                         </template>
                       </auto-complete>
                       <p-button
-                        icon="pi pi-check"
-                        security="success"
-                        @click="addStudentToGroup"
+                        icon="pi pi-times"
+                        severity="danger"
+                        :disabled="!student"
+                        @click="handleRemovingStudent"
                       />
                     </input-group>
                   </div>
