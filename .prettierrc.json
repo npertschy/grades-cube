@@ -1,4 +1,13 @@
 {
     "parser": "vue",
-    "singleAttributePerLine": true
+    "printWidth": 120,
+    "singleAttributePerLine": true,
+    "overrides": [
+        {
+            "files": "*.css",
+            "options": {
+                "parser": "css"
+            }
+        }
+    ]
 }
