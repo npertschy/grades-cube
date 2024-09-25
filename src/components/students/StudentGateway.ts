@@ -17,7 +17,11 @@ type FullCourse = CourseEntity & {
 export class StudentGateway {
   async loadAllStudentsForSchoolYear(schoolYear: SchoolYear): Promise<Student[]> {
     const students: StudentEntity[] = await db.select(
-      "SELECT * FROM ZSTUDENT INNER JOIN Z_6YEARS ON Z_PK = Z_6YEARS.Z_6STUDENTS2 WHERE Z_6YEARS.Z_8YEARS1 = $1",
+      `
+      SELECT * FROM ZSTUDENT 
+      INNER JOIN Z_6YEARS ON Z_PK = Z_6YEARS.Z_6STUDENTS2 
+      WHERE Z_6YEARS.Z_8YEARS1 = $1
+      `,
       [schoolYear.id],
     );
 
@@ -36,7 +40,13 @@ export class StudentGateway {
 
   async loadGroupsAndCoursesForStudent(student: Student, schoolYear: SchoolYear, semester: Semester): Promise<Student> {
     const groupEntities: GroupEntity[] = await db.select(
-      "SELECT * FROM ZGROUP INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 INNER JOIN Z_3STUDENTS ON Z_PK = Z_3STUDENTS.Z_3GROUPS2 WHERE Z_3YEARS.Z_8YEARS = $1 AND Z_3STUDENTS.Z_6STUDENTS1 = $2",
+      `
+      SELECT * FROM ZGROUP 
+      INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 
+      INNER JOIN Z_3STUDENTS ON Z_PK = Z_3STUDENTS.Z_3GROUPS2 
+      WHERE Z_3YEARS.Z_8YEARS = $1 
+      AND Z_3STUDENTS.Z_6STUDENTS1 = $2
+      `,
       [schoolYear.id, student.id],
     );
 
@@ -113,7 +123,11 @@ export class StudentGateway {
 
   async loadGroupsForSchoolYear(schoolYear: SchoolYear): Promise<Group[]> {
     const groups: GroupEntity[] = await db.select(
-      "SELECT * FROM ZGROUP INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 WHERE Z_3YEARS.Z_8YEARS = $1",
+      `
+      SELECT * FROM ZGROUP 
+      INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 
+      WHERE Z_3YEARS.Z_8YEARS = $1
+      `,
       [schoolYear.id],
     );
     return groups.map((group): Group => {
@@ -129,7 +143,19 @@ export class StudentGateway {
 
   async loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semester: Semester): Promise<Course[]> {
     const courses: FullCourse[] = await db.select(
-      "SELECT ZCOURSE.Z_PK, ZCOURSE.ZSUBJECT, ZCOURSE.ZGROUP, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK AND ZYEAR = $1 AND ZSEMESTER = $2",
+      `
+      SELECT 
+        ZCOURSE.Z_PK,
+        ZCOURSE.ZSUBJECT,
+        ZCOURSE.ZGROUP,
+        ZGROUP.ZNAME AS GROUPNAME,
+        ZSUBJECT.ZNAME AS SUBJECTNAME 
+      FROM ZCOURSE 
+      INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK 
+      INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK 
+      WHERE ZYEAR = $1 
+      AND ZSEMESTER = $2
+      `,
       [schoolYear.id, semester.id],
     );
     return Promise.all(
