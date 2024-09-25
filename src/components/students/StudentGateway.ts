@@ -1,46 +1,24 @@
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-import { db, orQuery, type CountResult } from "@/store/Database";
+import { db, type CountResult } from "@/store/Database";
 import type { QueryResult } from "@tauri-apps/plugin-sql";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { Group } from "@/components/groups/Group";
 import type { CourseEntity } from "@/components/courses/CourseEntity";
 import type { Course } from "@/components/courses/Course";
-import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
 import type { Semester } from "@/components/schoolYears/Semester";
-import type { GroupsToYears } from "@/components/groups/GroupsToYears";
-import type { StudentsToGroups } from "@/components/students/StudentsToGroups";
 
-type StudentsToYears = {
-  Z_6STUDENTS2: number;
-  Z_8YEARS1: number;
-};
-
-type StudentsToCourses = {
-  Z_1COURSES: number;
-  Z_6STUDENTS: number;
+type FullCourse = CourseEntity & {
+  GROUPNAME: string;
+  SUBJECTNAME: string;
 };
 
 export class StudentGateway {
-  async loadAllStudentsForSchoolYear(
-    schoolYear: SchoolYear,
-  ): Promise<Student[]> {
-    const studentsPerYear: StudentsToYears[] = await db.select(
-      "SELECT Z_6STUDENTS2 from Z_6YEARS WHERE Z_8YEARS1 = $1",
-      [schoolYear.id],
-    );
-    if (studentsPerYear.length == 0) {
-      return [];
-    }
-
-    const studentIds = studentsPerYear.map((item) => {
-      return item.Z_6STUDENTS2;
-    });
-    const studentsOrQuery = orQuery(studentIds, "Z_PK", 1);
+  async loadAllStudentsForSchoolYear(schoolYear: SchoolYear): Promise<Student[]> {
     const students: StudentEntity[] = await db.select(
-      "SELECT * FROM ZSTUDENT WHERE " + studentsOrQuery,
-      studentIds,
+      "SELECT * FROM ZSTUDENT INNER JOIN Z_6YEARS ON Z_PK = Z_6YEARS.Z_6STUDENTS2 WHERE Z_6YEARS.Z_8YEARS1 = $1",
+      [schoolYear.id],
     );
 
     return await Promise.all(
@@ -56,59 +34,29 @@ export class StudentGateway {
     );
   }
 
-  async loadGroupsAndCoursesForStudent(
-    student: Student,
-    schoolYear: SchoolYear,
-    semester: Semester,
-  ): Promise<Student> {
-    const groups: GroupsToYears[] = await db.select(
-      "SELECT Z_3GROUPS1 FROM Z_3YEARS WHERE Z_8YEARS = $1",
-      [schoolYear.id],
+  async loadGroupsAndCoursesForStudent(student: Student, schoolYear: SchoolYear, semester: Semester): Promise<Student> {
+    const groupEntities: GroupEntity[] = await db.select(
+      "SELECT * FROM ZGROUP INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 INNER JOIN Z_3STUDENTS ON Z_PK = Z_3STUDENTS.Z_3GROUPS2 WHERE Z_3YEARS.Z_8YEARS = $1 AND Z_3STUDENTS.Z_6STUDENTS1 = $2",
+      [schoolYear.id, student.id],
     );
-    const groupIds = groups.map((item) => {
-      return item.Z_3GROUPS1;
-    });
-    const groupsOrQuery = orQuery(groupIds, "Z_3GROUPS2", 2);
 
-    const courses: CourseEntity[] = await db.select(
-      "SELECT * FROM ZCOURSE WHERE ZYEAR = $1 AND ZSEMESTER = $2",
-      [schoolYear.id, semester.id],
+    const courseEntities: FullCourse[] = await db.select(
+      `SELECT 
+          ZCOURSE.Z_PK,
+          ZCOURSE.ZSUBJECT,
+          ZCOURSE.ZGROUP, 
+          ZGROUP.ZNAME AS GROUPNAME,
+          ZSUBJECT.ZNAME AS SUBJECTNAME 
+        FROM ZCOURSE 
+          INNER JOIN Z_1STUDENTS ON ZCOURSE.Z_PK = Z_1STUDENTS.Z_1COURSES 
+          INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK 
+          INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK 
+        WHERE Z_1STUDENTS.Z_6STUDENTS = $1 
+        AND ZYEAR = $2 
+        AND ZSEMESTER = $3`,
+      [student.id, schoolYear.id, semester.id],
     );
-    const courseIds = courses.map((item) => {
-      return item.Z_PK;
-    });
-    const coursesOrQuery = orQuery(courseIds, "Z_1COURSES", 2);
 
-    const groupsOfStudent: StudentsToGroups[] = await db.select(
-      "SELECT Z_3GROUPS2 FROM Z_3STUDENTS WHERE Z_6STUDENTS1 = $1 AND (" +
-        groupsOrQuery +
-        ")",
-      [student.id, ...groupIds],
-    );
-    const groupIdsForStudent = groupsOfStudent.map((item) => {
-      return item.Z_3GROUPS2;
-    });
-    const groupEntityOrQuery = orQuery(groupIdsForStudent, "Z_PK", 1);
-    const groupEntities: GroupEntity[] =
-      groupIdsForStudent.length > 0
-        ? await db.select(
-            "SELECT * FROM ZGROUP WHERE " + groupEntityOrQuery,
-            groupIdsForStudent,
-          )
-        : [];
-
-    const coursesOfStudent: StudentsToCourses[] = await db.select(
-      "SELECT Z_1COURSES FROM Z_1STUDENTS WHERE Z_6STUDENTS = $1 AND (" +
-        coursesOrQuery +
-        ")",
-      [student.id, ...courseIds],
-    );
-    const courseIdsForStudent = coursesOfStudent.map((item) => {
-      return item.Z_1COURSES;
-    });
-    const courseEntities = courses.filter((item) => {
-      return courseIdsForStudent.includes(item.Z_PK);
-    });
     return {
       id: student.id,
       firstName: student.firstName,
@@ -117,36 +65,30 @@ export class StudentGateway {
         return {
           id: item.Z_PK,
           name: item.ZNAME,
+          sortingName: item.ZSORTINGNAME,
           students: undefined,
+          type: undefined,
         };
       }),
-      courses: await Promise.all(
-        courseEntities.map(async (item): Promise<Course> => {
-          const groupOfCourse: GroupEntity[] = await db.select(
-            "SELECT * FROM ZGROUP WHERE Z_PK = $1",
-            [item.ZGROUP],
-          );
-          const subjectOfCourse: SubjectEntity[] = await db.select(
-            "SELECT * FROM ZSUBJECT WHERE Z_PK = $1",
-            [item.ZSUBJECT],
-          );
-          return {
-            id: item.Z_PK,
-            group: {
-              id: groupOfCourse[0].Z_PK,
-              name: groupOfCourse[0].ZNAME,
-              students: undefined,
-            },
-            semester: undefined,
-            subject: {
-              id: subjectOfCourse[0] ? subjectOfCourse[0].Z_PK : undefined,
-              name: subjectOfCourse[0] ? subjectOfCourse[0].ZNAME : undefined,
-            },
-            schoolYear: schoolYear,
-            days: undefined,
-          };
-        }),
-      ),
+      courses: courseEntities.map((item): Course => {
+        return {
+          id: item.Z_PK,
+          group: {
+            id: item.ZGROUP,
+            name: item.GROUPNAME,
+            sortingName: undefined,
+            students: undefined,
+            type: undefined,
+          },
+          semester: semester,
+          subject: {
+            id: item.ZSUBJECT,
+            name: item.SUBJECTNAME,
+          },
+          schoolYear: schoolYear,
+          days: undefined,
+        };
+      }),
     };
   }
 
@@ -155,77 +97,56 @@ export class StudentGateway {
       "INSERT INTO ZSTUDENT (Z_ENT, ZFIRSTNAME, ZLASTNAME) VALUES ($1, $2, $3)",
       [6, student.firstName, student.lastName],
     );
-    await db.execute(
-      "INSERT INTO Z_6YEARS (Z_6STUDENTS2, Z_8YEARS1) VALUES ($1, $2)",
-      [studentId.lastInsertId, schoolYear.id],
-    );
+    await db.execute("INSERT INTO Z_6YEARS (Z_6STUDENTS2, Z_8YEARS1) VALUES ($1, $2)", [
+      studentId.lastInsertId,
+      schoolYear.id,
+    ]);
   }
 
   async deleteStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
-    await db.execute(
-      "DELETE FROM Z_6YEARS WHERE Z_6STUDENTS2 = $1 AND Z_8YEARS1 = $2",
-      [student.id, schoolYear.id],
-    );
-    const count: CountResult = await db.select(
-      "SELECT COUNT(*) FROM Z_6YEARS WHERE Z_6STUDENTS2 = $1",
-      [student.id],
-    );
+    await db.execute("DELETE FROM Z_6YEARS WHERE Z_6STUDENTS2 = $1 AND Z_8YEARS1 = $2", [student.id, schoolYear.id]);
+    const count: CountResult = await db.select("SELECT COUNT(*) FROM Z_6YEARS WHERE Z_6STUDENTS2 = $1", [student.id]);
     if (count["COUNT(*)"] === 0) {
       await db.execute("DELETE FROM ZSTUDENT WHERE Z_PK = $1", [student.id]);
     }
   }
 
   async loadGroupsForSchoolYear(schoolYear: SchoolYear): Promise<Group[]> {
-    const groupsToYears: GroupsToYears[] = await db.select(
-      "SELECT * FROM Z_3YEARS WHERE Z_8YEARS = $1",
-      [schoolYear.id],
-    );
-    const groupIds = groupsToYears.map((groupToYear) => {
-      return groupToYear.Z_3GROUPS1;
-    });
-    const groupIdsOrQuery = orQuery(groupIds, "Z_PK", 1);
     const groups: GroupEntity[] = await db.select(
-      "SELECT * FROM ZGROUP WHERE " + groupIdsOrQuery,
-      groupIds,
+      "SELECT * FROM ZGROUP INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 WHERE Z_3YEARS.Z_8YEARS = $1",
+      [schoolYear.id],
     );
     return groups.map((group): Group => {
       return {
         id: group.Z_PK,
         name: group.ZNAME,
+        sortingName: group.ZSORTINGNAME,
         students: [],
+        type: group.ZTYPE,
       };
     });
   }
 
-  async loadCoursesForSchoolYearAndSemester(
-    schoolYear: SchoolYear,
-    semester: Semester,
-  ): Promise<Course[]> {
-    const courses: CourseEntity[] = await db.select(
-      "SELECT * FROM ZCOURSE WHERE ZYEAR = $1 AND ZSEMESTER = $2",
+  async loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semester: Semester): Promise<Course[]> {
+    const courses: FullCourse[] = await db.select(
+      "SELECT ZCOURSE.Z_PK, ZCOURSE.ZSUBJECT, ZCOURSE.ZGROUP, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK AND ZYEAR = $1 AND ZSEMESTER = $2",
       [schoolYear.id, semester.id],
     );
     return Promise.all(
-      courses.map(async (course): Promise<Course> => {
-        const groupOfCourse: GroupEntity[] = await db.select(
-          "SELECT * FROM ZGROUP WHERE Z_PK = $1",
-          [course.ZGROUP],
-        );
-        const subjectOfCourse: SubjectEntity[] = await db.select(
-          "SELECT * FROM ZSUBJECT WHERE Z_PK = $1",
-          [course.ZSUBJECT],
-        );
+      courses.map((course): Course => {
         return {
           id: course.Z_PK,
           group: {
-            id: groupOfCourse[0].Z_PK,
-            name: groupOfCourse[0].ZNAME,
+            id: course.ZGROUP,
+            name: course.GROUPNAME,
+            sortingName: undefined,
             students: undefined,
+            type: undefined,
           },
-          semester: undefined,
+          semester: semester,
           subject: {
-            id: subjectOfCourse[0] ? subjectOfCourse[0].Z_PK : undefined,
-            name: subjectOfCourse[0] ? subjectOfCourse[0].ZNAME : undefined,
+            id: course.ZSUBJECT,
+            name: course.SUBJECTNAME,
           },
           schoolYear: schoolYear,
           days: undefined,
