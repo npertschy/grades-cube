@@ -11,10 +11,10 @@ const items = ref([
 </script>
 
 <template>
-  <div class="container">
-    <div>
-      <p class="text-xl font-semibold">Willkommen beim Notenwürfel!</p>
-      <p class="text-lg font-semibold">Was haben Sie heute vor?</p>
+  <div class="welcome-container with-height">
+    <div class="welcome-container">
+      <h1>Willkommen beim Notenwürfel!</h1>
+      <h3>Was haben Sie heute vor?</h3>
     </div>
     <panel-menu
       :model="items"
@@ -48,9 +48,12 @@ const items = ref([
 </template>
 
 <style scoped>
-.container {
+.welcome-container {
   display: grid;
   place-items: center;
+}
+
+.with-height {
   height: 40vh;
 }
 

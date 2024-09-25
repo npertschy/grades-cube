@@ -34,14 +34,15 @@ watch(lightModeSelected, () => {
 <template>
   <menubar :model="items">
     <template #start>
-      <router-link to="/">
-        <p-button
-          text
-          plain
-          label="Notenwürfel"
-          icon="pi pi-box"
-        />
-      </router-link>
+      <p-button
+        as="router-link"
+        :to="{ name: 'home' }"
+        text
+        plain
+        label="Notenwürfel"
+        icon="pi pi-box"
+        class="no-underline"
+      />
     </template>
     <template #item="{ item, props }">
       <router-link

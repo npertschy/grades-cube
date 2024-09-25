@@ -1,4 +1,3 @@
-import WelcomeScreen from "@/views/home/WelcomeScreen.vue";
 import { createRouter, createWebHistory } from "vue-router";
 
 const router = createRouter({
@@ -7,7 +6,7 @@ const router = createRouter({
     {
       path: "/",
       name: "home",
-      component: WelcomeScreen
+      component: () => import("@/views/home/WelcomeScreen.vue"),
     },
     {
       path: "/management",
@@ -17,8 +16,7 @@ const router = createRouter({
         {
           path: "schoolYear",
           name: "schoolYearManagement",
-          component: () =>
-            import("@/views/management/SchoolYearManagement.vue"),
+          component: () => import("@/views/management/SchoolYearManagement.vue"),
         },
         {
           path: "student",
