@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T">
+<script setup lang="ts" generic="T extends { name: string | undefined }">
 import AutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import { type Ref, ref, toRefs } from "vue";
 
@@ -13,7 +13,7 @@ const props = defineProps<Props>();
 
 const { identifier, label, items, option } = toRefs(props);
 
-const value = defineModel<T[]>();
+const value = defineModel<T>();
 
 const suggestions = ref([...items.value]) as Ref<T[]>;
 
@@ -22,7 +22,7 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
     suggestions.value = [...items.value];
   } else {
     suggestions.value = items.value.filter((item) => {
-      return option.value(item).includes(event.query);
+      return item.name?.includes(event.query);
     });
   }
 }
@@ -38,19 +38,12 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
     </label>
     <auto-complete
       v-model="value"
-      multiple
       :input-id="identifier"
       :suggestions="suggestions"
       :option-label="option"
       class="w-full mt-1"
+      input-class="w-full"
       @complete="filterSuggestions"
-    >
-    </auto-complete>
+    />
   </div>
 </template>
-
-<style scoped>
-div :deep(ul) {
-  width: 100%;
-}
-</style>
