@@ -1,20 +1,16 @@
 <script setup lang="ts" generic="T">
-import Listbox from "primevue/listbox";
-import { toRefs } from "vue";
+import PListbox from "primevue/listbox";
 
-interface Props {
+const { entities, format } = defineProps<{
   entities: T[];
   format: (entity: T) => string;
-}
+}>();
 
-const props = defineProps<Props>();
-
-const { entities, format } = toRefs(props);
 const selectedEntity = defineModel<T>();
 </script>
 
 <template>
-  <listbox
+  <p-listbox
     v-model="selectedEntity"
     :options="entities"
     class="min-h-full shadow-2"
@@ -26,5 +22,5 @@ const selectedEntity = defineModel<T>();
         {{ format(slotProps.option) }}
       </p>
     </template>
-  </listbox>
+  </p-listbox>
 </template>

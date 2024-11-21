@@ -3,9 +3,9 @@ import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
-import DatePicker from "primevue/datepicker";
-import Card from "primevue/card";
-import Divider from "primevue/divider";
+import PDatePicker from "primevue/datepicker";
+import PCard from "primevue/card";
+import PDivider from "primevue/divider";
 import { ref, watch } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
@@ -18,8 +18,7 @@ const firstEndDate = ref<Date>();
 const secondStartDate = ref<Date>();
 const secondEndDate = ref<Date>();
 
-const { schoolYears, addSchoolYear, formatSchoolYear, removeSchoolYear } =
-  useSchoolYears();
+const { schoolYears, addSchoolYear, formatSchoolYear, removeSchoolYear } = useSchoolYears();
 
 const selectedSchoolYear = ref<SchoolYear | undefined>();
 if (route.query["index"]) {
@@ -91,13 +90,13 @@ function handleRemove() {
     </template>
     <template #edit>
       <p>
-        Verwalten Sie hier ihre Schuljahre. Sie können Schuljahre anlegen oder
-        bearbeiten, indem Sie den entsprechenden Eintrag in der Liste auswählen.
+        Verwalten Sie hier ihre Schuljahre. Sie können Schuljahre anlegen oder bearbeiten, indem Sie den entsprechenden
+        Eintrag in der Liste auswählen.
       </p>
-      <divider />
+      <p-divider />
       <custom-transition>
         <div v-show="selectedSchoolYear">
-          <card class="shadow-2">
+          <p-card class="shadow-2">
             <template #title>Erstes Halbjahr</template>
             <template #content>
               <div class="label-over-input">
@@ -108,7 +107,7 @@ function handleRemove() {
                   >
                     Start erstes Halbjahr
                   </label>
-                  <date-picker
+                  <p-date-picker
                     v-model="firstStartDate"
                     input-id="startFirstSemesterField"
                     class="calender-input"
@@ -125,7 +124,7 @@ function handleRemove() {
                   >
                     Ende erstes Halbjahr
                   </label>
-                  <date-picker
+                  <p-date-picker
                     v-model="firstEndDate"
                     input-id="endFirstSemesterField"
                     class="calender-input"
@@ -137,8 +136,8 @@ function handleRemove() {
                 </div>
               </div>
             </template>
-          </card>
-          <card class="shadow-2 mt-2">
+          </p-card>
+          <p-card class="shadow-2 mt-2">
             <template #title>Zweites Halbjahr</template>
             <template #content>
               <div class="label-over-input">
@@ -149,7 +148,7 @@ function handleRemove() {
                   >
                     Start zweites Halbjahr
                   </label>
-                  <date-picker
+                  <p-date-picker
                     v-model="secondStartDate"
                     input-id="startSecondSemesterField"
                     class="calender-input"
@@ -166,7 +165,7 @@ function handleRemove() {
                   >
                     Ende zweites Halbjahr
                   </label>
-                  <date-picker
+                  <p-date-picker
                     v-model="secondEndDate"
                     input-id="endSecondSemesterField"
                     class="calender-input"
@@ -178,7 +177,7 @@ function handleRemove() {
                 </div>
               </div>
             </template>
-          </card>
+          </p-card>
           <save-and-delete-buttons
             :show-delete-when-defined="selectedSchoolYear"
             :save-action="handleSave"

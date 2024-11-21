@@ -16,22 +16,13 @@ export type CountResult = {
 };
 
 export async function nextPrimaryKey(name: string): Promise<number> {
-  const result: PrimaryKey[] = await db.select(
-    "SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = $1",
-    [name],
-  );
+  const result: PrimaryKey[] = await db.select("SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = $1", [name]);
   const nextId = result[0].Z_MAX + 1;
-  await db.execute("UPDATE Z_PRIMARYKEY SET Z_MAX = $1 WHERE Z_NAME = $2", [
-    nextId,
-    name,
-  ]);
+  await db.execute("UPDATE Z_PRIMARYKEY SET Z_MAX = $1 WHERE Z_NAME = $2", [nextId, name]);
   return nextId;
 }
 
-export async function execute(
-  query: string,
-  bindValues: unknown[] | undefined,
-) {
+export async function execute(query: string, bindValues: unknown[] | undefined) {
   return await db.execute(query, bindValues);
 }
 
@@ -42,6 +33,15 @@ export function orQuery(ids: number[], column: string, offset: number) {
     })
     .join(" OR ");
 }
+
+export function coreDataToUnix(seconds: number): Date {
+  return new Date((seconds + 978307200) * 1000);
+}
+
+export function dateToCodeData(date: Date): number {
+  return Math.floor(date.getTime() / 1000 - 978307200);
+}
+
 // export class DbClient {
 
 //     private db: Database | undefined;

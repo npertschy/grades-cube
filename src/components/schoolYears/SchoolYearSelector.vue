@@ -6,31 +6,26 @@ import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelec
 import { computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import store from "@/store/KeyValueStore";
-import type { Semester } from "./Semester";
+import type { Semester } from "@/components/schoolYears/Semester";
 
 const { schoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
 onMounted(async () => {
-  const id = (await store.get("selectedSchoolYear")) ?? undefined;
+  const id = await store.get("selectedSchoolYear");
   selectedSchoolYear.value = schoolYears.value.find((schoolYear) => {
     return schoolYear.id === id;
   });
   if (selectedSchoolYear.value) {
     const type = (await store.get("selectedSemester")) ?? undefined;
     selectedSemester.value =
-      type === 1
-        ? selectedSchoolYear.value.firstSemester
-        : selectedSchoolYear.value.secondSemester;
+      type === 1 ? selectedSchoolYear.value.firstSemester : selectedSchoolYear.value.secondSemester;
   }
 });
 
 const semesters = computed(() => {
   return selectedSchoolYear.value?.id && selectedSchoolYear.value.id > 0
-    ? [
-        selectedSchoolYear.value.firstSemester,
-        selectedSchoolYear.value.secondSemester,
-      ]
+    ? [selectedSchoolYear.value.firstSemester, selectedSchoolYear.value.secondSemester]
     : undefined;
 });
 

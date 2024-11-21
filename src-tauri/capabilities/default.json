@@ -19,6 +19,7 @@
     "sql:allow-execute",
     "store:allow-get",
     "store:allow-set",
+    "store:allow-has",
     "store:allow-save",
     "store:allow-load"
   ]

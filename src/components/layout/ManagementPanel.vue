@@ -1,13 +1,9 @@
 <script setup lang="ts">
 import Panel from "primevue/panel";
-import { toRefs } from "vue";
 
-interface Props {
+const { header } = defineProps<{
   header: string;
-}
-
-const props = defineProps<Props>();
-const { header } = toRefs(props);
+}>();
 </script>
 
 <template>

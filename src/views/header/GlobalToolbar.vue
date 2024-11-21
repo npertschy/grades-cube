@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import SchoolYearSelector from "@/components/schoolYears/SchoolYearSelector.vue";
-import Menubar from "primevue/menubar";
-import Avatar from "primevue/avatar";
+import PMenubar from "primevue/menubar";
+import PAvatar from "primevue/avatar";
 import PButton from "primevue/button";
-import Popover from "primevue/popover";
-import ToggleSwitch from "primevue/toggleswitch";
+import PPopover from "primevue/popover";
+import PToggleSwitch from "primevue/toggleswitch";
 import { PrimeIcons } from "@primevue/core/api";
 import { ref, computed, watch } from "vue";
 
@@ -32,7 +32,7 @@ watch(lightModeSelected, () => {
 </script>
 
 <template>
-  <menubar :model="items">
+  <p-menubar :model="items">
     <template #start>
       <p-button
         as="router-link"
@@ -70,22 +70,22 @@ watch(lightModeSelected, () => {
     <template #end>
       <div class="header-end">
         <school-year-selector />
-        <avatar
+        <p-avatar
           icon="pi pi-user"
           shape="circle"
           class="mr-2 cursor-pointer"
           @click="toggle"
         />
-        <popover ref="usermenu">
+        <p-popover ref="usermenu">
           <label for="theme-switch"> {{ themeSelection }} </label>
-          <toggle-switch
+          <p-toggle-switch
             v-model="lightModeSelected"
             input-id="theme-switch"
           />
-        </popover>
+        </p-popover>
       </div>
     </template>
-  </menubar>
+  </p-menubar>
 </template>
 
 <style scoped>

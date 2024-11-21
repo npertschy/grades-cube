@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PrimeIcons } from "@primevue/core/api";
-import PanelMenu from "primevue/panelmenu";
+import PPanelMenu from "primevue/panelmenu";
 import { ref } from "vue";
 
 const items = ref([
@@ -16,7 +16,7 @@ const items = ref([
       <h1>Willkommen beim Notenwürfel!</h1>
       <h3>Was haben Sie heute vor?</h3>
     </div>
-    <panel-menu
+    <p-panel-menu
       :model="items"
       class="w-2"
     >
@@ -43,7 +43,7 @@ const items = ref([
           </a>
         </router-link>
       </template>
-    </panel-menu>
+    </p-panel-menu>
   </div>
 </template>
 

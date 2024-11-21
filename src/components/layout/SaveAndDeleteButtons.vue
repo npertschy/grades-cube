@@ -1,31 +1,29 @@
 <script setup lang="ts" generic="T extends { id: number | undefined }">
 import PButton from "primevue/button";
-import { computed, toRefs } from "vue";
+import { computed } from "vue";
 
-interface Props {
+const {
+  showDeleteWhenDefined,
+  saveAction,
+  deleteAction,
+  gridColumns = 8,
+} = defineProps<{
   showDeleteWhenDefined: T | undefined;
   saveAction: () => void;
   deleteAction: () => void;
   gridColumns?: number;
-}
-
-const props = withDefaults(defineProps<Props>(), {
-  gridColumns: 8,
-});
-
-const { showDeleteWhenDefined, saveAction, deleteAction, gridColumns } =
-  toRefs(props);
+}>();
 
 const showDeleteButton = computed(() => {
-  return showDeleteWhenDefined.value?.id > 0;
+  return showDeleteWhenDefined && showDeleteWhenDefined.id && showDeleteWhenDefined.id > 0;
 });
 
 const buttonSpan = computed(() => {
-  return Math.ceil(gridColumns.value / 8);
+  return Math.ceil(gridColumns / 8);
 });
 
 const deleteButtonStart = computed(() => {
-  return gridColumns.value - buttonSpan.value + 1;
+  return gridColumns - buttonSpan.value + 1;
 });
 </script>
 

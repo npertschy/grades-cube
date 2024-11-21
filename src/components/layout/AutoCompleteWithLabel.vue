@@ -1,29 +1,23 @@
 <script setup lang="ts" generic="T extends { name: string | undefined }">
-import AutoComplete, {
-  type AutoCompleteCompleteEvent,
-} from "primevue/autocomplete";
-import { type Ref, ref, toRefs } from "vue";
+import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
+import { ref } from "vue";
 
-interface Props {
+const { identifier, label, items, option } = defineProps<{
   identifier: string;
   label: string;
   items: T[];
   option: (t: T) => string;
-}
-
-const props = defineProps<Props>();
-
-const { identifier, label, items, option } = toRefs(props);
+}>();
 
 const value = defineModel<string>();
 
-const suggestions = ref([...items.value]) as Ref<T[]>;
+const suggestions = ref<T[]>([...items]);
 
 function filterSuggestions(event: AutoCompleteCompleteEvent) {
   if (event.query === "") {
-    suggestions.value = [...items.value];
+    suggestions.value = [...items];
   } else {
-    suggestions.value = items.value.filter((item) => {
+    suggestions.value = items.filter((item) => {
       return item.name?.includes(event.query);
     });
   }
@@ -38,7 +32,7 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
     >
       {{ label }}
     </label>
-    <auto-complete
+    <p-auto-complete
       v-model="value"
       :input-id="identifier"
       :suggestions="suggestions"

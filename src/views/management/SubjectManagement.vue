@@ -5,8 +5,8 @@ import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import AutoCompleteWithLabel from "@/components/layout/AutoCompleteWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
-import Card from "primevue/card";
-import Divider from "primevue/divider";
+import PCard from "primevue/card";
+import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
 import { useSubjects } from "@/components/subjects/SubjectStore";
 import type { Subject } from "@/components/subjects/Subject";
@@ -14,15 +14,8 @@ import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelec
 
 const name = ref<string>();
 
-const {
-  subjects,
-  loadSubjectsForSchoolYear,
-  addSubject,
-  formatSubject,
-  removeSubject,
-  editSubject,
-  loadAllSubjects,
-} = useSubjects();
+const { subjects, loadSubjectsForSchoolYear, addSubject, formatSubject, removeSubject, editSubject, loadAllSubjects } =
+  useSubjects();
 
 const selectedSubject = ref<Subject | undefined>();
 
@@ -105,14 +98,13 @@ onMounted(async () => {
       </template>
       <template #edit>
         <p>
-          Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder
-          bearbeiten, indem Sie den entsprechenden Eintrag in der Liste
-          auswählen.
+          Verwalten Sie hier ihre Fächer. Sie können Fächer anlegen oder bearbeiten, indem Sie den entsprechenden
+          Eintrag in der Liste auswählen.
         </p>
-        <divider />
+        <p-divider />
         <custom-transition>
           <div v-show="selectedSubject">
-            <card class="shadow-2">
+            <p-card class="shadow-2">
               <template #title>Fach</template>
               <template #content>
                 <auto-complete-with-label
@@ -123,7 +115,7 @@ onMounted(async () => {
                   :option="formatSubject"
                 />
               </template>
-            </card>
+            </p-card>
 
             <save-and-delete-buttons
               :show-delete-when-defined="selectedSubject"

@@ -4,16 +4,16 @@ import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
-import InputGroup from "primevue/inputgroup";
-import AutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
+import PInputGroup from "primevue/inputgroup";
+import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
-import SelectButton from "primevue/selectbutton";
-import RadioButton from "primevue/radiobutton";
-import Card from "primevue/card";
-import Divider from "primevue/divider";
-import DataTable from "primevue/datatable";
-import DataView from "primevue/dataview";
-import Column from "primevue/column";
+import PSelectButton from "primevue/selectbutton";
+import PRadioButton from "primevue/radiobutton";
+import PCard from "primevue/card";
+import PDivider from "primevue/divider";
+import PDataTable from "primevue/datatable";
+import PDataView from "primevue/dataview";
+import PColumn from "primevue/column";
 import { computed, onMounted, ref, watch } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
@@ -148,7 +148,7 @@ const numberOfStudents = computed(() => {
   }
 });
 
-const layout = ref("grid");
+const layout = ref<"grid" | "list" | undefined>("grid");
 const layoutOptions = ["list", "grid"];
 
 watch(selectedStudent, (current) => {
@@ -182,14 +182,14 @@ function toggleStudentSelection(selectionFromClick: Student) {
         Verwalten Sie hier ihre Klassen. Sie können Klassen anlegen oder bearbeiten, indem Sie den entsprechenden
         Eintrag in der Liste auswählen.
       </p>
-      <divider />
+      <p-divider />
       <custom-transition>
         <div
           v-show="selectedGroup"
           class="edit-area"
         >
           <div class="group-area">
-            <card class="shadow-2">
+            <p-card class="shadow-2">
               <template #title> Klasse </template>
               <template #content>
                 <input-with-label
@@ -202,7 +202,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                   style="display: grid; grid-template-columns: repeat(2, 1fr)"
                 >
                   <div>
-                    <radio-button
+                    <p-radio-button
                       v-model="groupType"
                       input-id="sek1"
                       name="sek"
@@ -216,7 +216,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                     </label>
                   </div>
                   <div>
-                    <radio-button
+                    <p-radio-button
                       v-model="groupType"
                       input-id="sek2"
                       name="sek"
@@ -231,7 +231,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                   </div>
                 </div>
               </template>
-            </card>
+            </p-card>
             <save-and-delete-buttons
               :show-delete-when-defined="selectedGroup"
               :save-action="handleSave"
@@ -243,11 +243,12 @@ function toggleStudentSelection(selectionFromClick: Student) {
             v-show="selectedGroup && selectedGroup.id && selectedGroup.id > 0"
             class="students-area"
           >
-            <card class="shadow-2">
+            <p-card class="shadow-2">
               <template #content>
-                <data-view
+                <p-data-view
                   :value="selectedGroup?.students"
                   :layout="layout"
+                  data-key="id"
                   :pt="{
                     header: () => ({ style: { padding: '0 0 0.75rem 0' } }),
                   }"
@@ -255,7 +256,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                   <template #header>
                     <div style="display: grid; grid-template-columns: auto auto; justify-content: space-between">
                       <div class="p-card-title">{{ numberOfStudents }} Schüler</div>
-                      <select-button
+                      <p-select-button
                         v-model="layout"
                         :options="layoutOptions"
                         :allow-empty="false"
@@ -263,11 +264,11 @@ function toggleStudentSelection(selectionFromClick: Student) {
                         <template #option="{ option }">
                           <i :class="[option === 'list' ? 'pi pi-bars' : 'pi pi-table']" />
                         </template>
-                      </select-button>
+                      </p-select-button>
                     </div>
                   </template>
                   <template #list="listProps">
-                    <data-table
+                    <p-data-table
                       v-model:selection="selectedStudent"
                       :value="listProps.items"
                       data-key="id"
@@ -275,18 +276,18 @@ function toggleStudentSelection(selectionFromClick: Student) {
                       scrollable
                       scroll-height="55vh"
                     >
-                      <column header="#">
+                      <p-column header="#">
                         <template #body="headerProps">
                           {{ headerProps.index + 1 }}
                         </template>
-                      </column>
-                      <column header="Name">
+                      </p-column>
+                      <p-column header="Name">
                         <template #body="bodyProps">
                           {{ bodyProps.data.firstName }}
                           {{ bodyProps.data.lastName }}
                         </template>
-                      </column>
-                    </data-table>
+                      </p-column>
+                    </p-data-table>
                   </template>
                   <template #grid="gridProps">
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 3px; padding-top: 3px">
@@ -306,7 +307,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                       </p-button>
                     </div>
                   </template>
-                </data-view>
+                </p-data-view>
                 <div class="label-over-input mt-2">
                   <div>
                     <label
@@ -315,14 +316,14 @@ function toggleStudentSelection(selectionFromClick: Student) {
                     >
                       Schüler zur Klasse hinzufügen
                     </label>
-                    <input-group>
+                    <p-input-group>
                       <p-button
                         icon="pi pi-check"
                         severity="success"
                         :disabled="!student"
                         @click="handleAddingStudent"
                       />
-                      <auto-complete
+                      <p-auto-complete
                         v-model="student"
                         input-id="pupilName"
                         :option-label="formatStudent"
@@ -334,18 +335,18 @@ function toggleStudentSelection(selectionFromClick: Student) {
                         <template #option="slotProps">
                           <span>{{ formatStudent(slotProps.option) }}</span>
                         </template>
-                      </auto-complete>
+                      </p-auto-complete>
                       <p-button
                         icon="pi pi-times"
                         severity="danger"
                         :disabled="!student"
                         @click="handleRemovingStudent"
                       />
-                    </input-group>
+                    </p-input-group>
                   </div>
                 </div>
               </template>
-            </card>
+            </p-card>
           </div>
         </div>
       </custom-transition>

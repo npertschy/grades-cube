@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import InputText from "primevue/inputtext";
-import { toRefs } from "vue";
 
-interface Props {
+const { identifier, label } = defineProps<{
   identifier: string;
   label: string;
-}
-
-const props = defineProps<Props>();
-
-const { identifier, label } = toRefs(props);
+}>();
 
 const value = defineModel<string>();
 </script>

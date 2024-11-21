@@ -6,8 +6,8 @@ import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import AutoCompleteListWithLabel from "@/components/layout/AutoCompleteListWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
-import Card from "primevue/card";
-import Divider from "primevue/divider";
+import PCard from "primevue/card";
+import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
@@ -138,10 +138,10 @@ onMounted(async () => {
           Verwalten Sie hier ihre Schüler. Sie können Schüler anlegen oder bearbeiten, indem Sie den entsprechenden
           Eintrag in der Liste auswählen.
         </p>
-        <divider />
+        <p-divider />
         <custom-transition>
           <div v-show="selectedStudent">
-            <card class="shadow-2">
+            <p-card class="shadow-2">
               <template #title>Schüler</template>
               <template #content>
                 <div class="label-over-input">
@@ -171,7 +171,7 @@ onMounted(async () => {
                   />
                 </div>
               </template>
-            </card>
+            </p-card>
             <save-and-delete-buttons
               :show-delete-when-defined="selectedStudent"
               :save-action="handleSave"
