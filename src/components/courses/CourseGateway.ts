@@ -1,5 +1,5 @@
 import type { Course } from "@/components/courses/Course";
-import type { CourseEntity } from "@/components/courses/CourseEntity";
+import type { FullCourseEntity } from "@/components/courses/CourseEntity";
 import type { Group } from "@/components/groups/Group";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
@@ -9,13 +9,6 @@ import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { Subject } from "@/components/subjects/Subject";
 import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
 import { db } from "@/store/Database";
-
-type FullCourseEntity = CourseEntity & {
-  GROUPID: number;
-  GROUPNAME: string;
-  SUBJECTID: number;
-  SUBJECTNAME: string;
-};
 
 export class CourseGateway {
   async loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semester: Semester): Promise<Course[]> {
