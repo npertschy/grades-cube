@@ -6,11 +6,13 @@ const {
   showDeleteWhenDefined,
   saveAction,
   deleteAction,
+  saveDisabled,
   gridColumns = 8,
 } = defineProps<{
   showDeleteWhenDefined: T | undefined;
   saveAction: () => void;
   deleteAction: () => void;
+  saveDisabled: boolean;
   gridColumns?: number;
 }>();
 
@@ -34,6 +36,7 @@ const deleteButtonStart = computed(() => {
       class="save-button"
       outlined
       severity="success"
+      :disabled="saveDisabled"
       @click="saveAction"
     />
     <p-button
