@@ -158,6 +158,14 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
   const grade: Grade = event.newData.grades.get(performanceId);
   await updateGrade(grade);
 }
+
+function allowedGradesByPerformance(performance: Performance) {
+  if (performance.type === 0) {
+    return { pattern: /^(?:\+\+|\+|0|-|--|f)$/, validateOnly: true };
+  } else {
+    return { pattern: /^(?:[0-9]|1[0-5])$/, validateOnly: true };
+  }
+}
 </script>
 
 <template>
@@ -279,6 +287,7 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
         >
           <p-input-text
             v-model="data.grades.get(column.props.field).value"
+            v-keyfilter="allowedGradesByPerformance(performance)"
             style="width: 100%; padding-top: 3px; padding-bottom: 3px"
           />
         </template>
