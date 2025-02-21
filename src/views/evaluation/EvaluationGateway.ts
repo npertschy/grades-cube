@@ -180,4 +180,15 @@ export class EvaluationGateway {
       [performance.weight, performance.title, performance.id],
     );
   }
+
+  async updateGrade(grade: Grade): Promise<void> {
+    await db.execute(
+      `
+      UPDATE ZGRADE
+      SET ZVALUE = $1
+      WHERE Z_PK = $2
+      `,
+      [grade.value, grade.id],
+    );
+  }
 }

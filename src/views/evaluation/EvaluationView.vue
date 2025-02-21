@@ -4,13 +4,13 @@ import { useEvaluations } from "@/views/evaluation/EvaluationStore";
 import { computed, onMounted, ref, watch } from "vue";
 import PTree, { type TreeExpandedKeys, type TreeSelectionKeys } from "primevue/tree";
 import PPanel from "primevue/panel";
-import PDataTable from "primevue/datatable";
+import PDataTable, { type DataTableCellEditCompleteEvent } from "primevue/datatable";
 import PColumn from "primevue/column";
 import PInputText from "primevue/inputtext";
 import PButton from "primevue/button";
 import PDialog from "primevue/dialog";
 import type { TreeNode } from "primevue/treenode";
-import type { EvaluatedStudent } from "@/components/evaluations/EvaluatedStudent";
+import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
 import type { Performance } from "@/components/evaluations/Performance";
 
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
@@ -22,6 +22,7 @@ const {
   loadPerformancesForCourse,
   createPerformance,
   updatePerformance,
+  updateGrade,
 } = useEvaluations();
 
 const expandedKeys: TreeExpandedKeys = ref({});
@@ -148,6 +149,11 @@ function handleColumnSelection(id: number) {
   }
 }
 
+async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
+  const performanceId = event.field;
+  const grade: Grade = event.newData.grades.get(performanceId);
+  await updateGrade(grade);
+}
 </script>
 
 <template>
@@ -176,6 +182,7 @@ function handleColumnSelection(id: number) {
       row-hover
       edit-mode="cell"
       class="table-area"
+      @cell-edit-complete="handleGradeChanged"
     >
       <template #header>
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center">

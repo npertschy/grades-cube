@@ -1,5 +1,5 @@
 import type { Course } from "@/components/courses/Course";
-import type { EvaluatedStudent } from "@/components/evaluations/EvaluatedStudent";
+import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
 import type { Group } from "@/components/groups/Group";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
@@ -93,6 +93,11 @@ async function createPerformance(
 async function updatePerformance(performance: Performance) {
   await evaluationGateway.updatePerformance(performance);
 }
+
+async function updateGrade(grade: Grade) {
+  await evaluationGateway.updateGrade(grade);
+}
+
 export function useEvaluations() {
   return {
     treeItems,
@@ -102,5 +107,6 @@ export function useEvaluations() {
     loadPerformancesForCourse,
     createPerformance,
     updatePerformance,
+    updateGrade,
   };
 }
