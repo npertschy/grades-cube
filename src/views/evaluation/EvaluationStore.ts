@@ -89,6 +89,10 @@ async function createPerformance(
     await evaluationGateway.updatePerformance(performance);
   }
 }
+
+async function updatePerformance(performance: Performance) {
+  await evaluationGateway.updatePerformance(performance);
+}
 export function useEvaluations() {
   return {
     treeItems,
@@ -97,5 +101,6 @@ export function useEvaluations() {
     loadStudentsForGroup,
     loadPerformancesForCourse,
     createPerformance,
+    updatePerformance,
   };
 }

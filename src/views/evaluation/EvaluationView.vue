@@ -21,6 +21,7 @@ const {
   loadStudentsForGroup,
   loadPerformancesForCourse,
   createPerformance,
+  updatePerformance,
 } = useEvaluations();
 
 const expandedKeys: TreeExpandedKeys = ref({});
@@ -29,14 +30,11 @@ const students = ref<EvaluatedStudent[]>([]);
 const performances = ref<Performance[]>([]);
 const selectedNode = ref<TreeNode>();
 
-const newPerfomanceItems = ref([
-  { label: "Mündlich", icon: "pi pi-comment", command: () => {} },
-  { label: "Spezial", icon: "pi pi-star", command: () => {} },
-  { label: "Test", icon: "pi pi-file", command: () => {} },
-]);
 const typeOfNewPerformance = ref<number>(-1);
 const openAddPerformanceDialog = ref(false);
 const titleOfPerformance = ref("");
+
+const selectedColumn = ref<number>();
 
 onMounted(async () => {
   await loadTreeItems(selectedSchoolYear.value!, selectedSemester.value!);
@@ -111,6 +109,14 @@ const addPerformanceTitle = computed(() => {
 });
 
 async function handleSavePerformance() {
+  if (selectedColumn.value) {
+    const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
+    if (performance) {
+      performance.title = titleOfPerformance.value;
+      await updatePerformance(performance);
+    }
+    selectedColumn.value = undefined;
+  } else {
     const existingPerformances: Performance[] = performances.value.filter(
       (performance) => performance.type === typeOfNewPerformance.value,
     );
@@ -126,12 +132,22 @@ async function handleSavePerformance() {
       weight: 0,
     };
     await createPerformance(performance, existingPerformances, students.value);
+  }
   openAddPerformanceDialog.value = false;
   titleOfPerformance.value = "";
   typeOfNewPerformance.value = -1;
   students.value = await loadStudentsForCourse(selectedNode.value?.data);
   performances.value = await loadPerformancesForCourse(selectedNode.value?.data);
 }
+
+function handleColumnSelection(id: number) {
+  if (selectedColumn.value === id) {
+    selectedColumn.value = undefined;
+  } else {
+    selectedColumn.value = id;
+  }
+}
+
 </script>
 
 <template>
@@ -162,14 +178,8 @@ async function handleSavePerformance() {
       class="table-area"
     >
       <template #header>
-        <div style="display: grid; grid-template-columns: 1fr 1fr">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center">
           <h2>{{ tableTitle }}</h2>
-          <p-split-button
-            :model="newPerfomanceItems"
-            label="Neue Leistung"
-            icon="pi pi-plus"
-            outlined
-            style="place-self: center end"
           <div>
             <p-button
               style="background-color: lightcoral; border-color: lightcoral"
@@ -202,6 +212,14 @@ async function handleSavePerformance() {
               <i class="pi pi-file" />
             </p-button>
           </div>
+          <p-button
+            icon="pi pi-pencil"
+            severity="secondary"
+            :disabled="selectedColumn === undefined"
+            @click="
+              titleOfPerformance = performances.find((performance) => performance.id === selectedColumn)?.title!;
+              openAddPerformanceDialog = true;
+            "
           />
         </div>
       </template>
@@ -231,8 +249,19 @@ async function handleSavePerformance() {
         :style="backgroundColorByType(performance.type)"
         style="width: fit-content; max-width: 20px"
       >
+        <template #header>
+          <span
+            style="cursor: pointer"
+            :style="[selectedColumn === performance.id ? { 'font-weight': 'bold' } : { 'font-weight': 600 }]"
+            @click="handleColumnSelection(performance.id!)"
+          >
+            {{ performance.title }}
+          </span>
+        </template>
         <template #body="{ data, column }">
-          {{ data.grades.get(column.props.field)?.value }}
+          <span :style="[selectedColumn === performance.id ? { 'font-weight': 'bold' } : {}]">
+            {{ data.grades.get(column.props.field)?.value }}
+          </span>
         </template>
         <template
           v-if="performance.editable"

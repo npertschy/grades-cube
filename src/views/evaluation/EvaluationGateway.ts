@@ -169,4 +169,15 @@ export class EvaluationGateway {
       );
     }
   }
+
+  async updatePerformance(performance: Performance): Promise<void> {
+    await db.execute(
+      `
+      UPDATE ZPERFORMANCE
+      SET ZWEIGHT = $1, ZTITLE = $2
+      WHERE Z_PK = $3
+      `,
+      [performance.weight, performance.title, performance.id],
+    );
+  }
 }
