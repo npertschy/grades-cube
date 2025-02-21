@@ -97,6 +97,10 @@ function backgroundColorByType(type: number) {
 }
 
 const addPerformanceTitle = computed(() => {
+  if (selectedColumn.value) {
+    return "Leistung bearbeiten";
+  }
+
   switch (typeOfNewPerformance.value) {
     case 0:
       return "Neue mündliche Leistung anlegen";
@@ -252,7 +256,6 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
         v-for="performance in performances"
         :key="performance.id"
         :field="performance.performanceId"
-        :header="performance.title"
         :style="backgroundColorByType(performance.type)"
         style="width: fit-content; max-width: 20px"
       >
