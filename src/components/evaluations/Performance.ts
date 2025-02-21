@@ -1,6 +1,6 @@
 export type Performance = {
-  id: number;
-  performanceId: string;
+  id: number | undefined;
+  performanceId: string | undefined;
   title: string;
   editable: boolean;
   weight: number;

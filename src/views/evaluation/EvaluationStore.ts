@@ -4,6 +4,7 @@ import type { Group } from "@/components/groups/Group";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
 import { EvaluationGateway } from "@/views/evaluation/EvaluationGateway";
+import type { Performance } from "@/components/evaluations/Performance";
 import type { TreeNode } from "primevue/treenode";
 import { ref } from "vue";
 
@@ -71,6 +72,23 @@ async function loadPerformancesForCourse(course: Course) {
   return await evaluationGateway.loadPerformancesForCourse(course);
 }
 
+async function createPerformance(
+  newPerformance: Performance,
+  existingPerformances: Performance[],
+  students: EvaluatedStudent[],
+) {
+  const newWeight = 1 / (existingPerformances.length + 1);
+  newPerformance.weight = newWeight;
+  await evaluationGateway.createPerformance(
+    newPerformance,
+    students.map((student) => student.student),
+  );
+
+  for (const performance of existingPerformances) {
+    performance.weight = newWeight;
+    await evaluationGateway.updatePerformance(performance);
+  }
+}
 export function useEvaluations() {
   return {
     treeItems,
@@ -78,5 +96,6 @@ export function useEvaluations() {
     loadStudentsForCourse,
     loadStudentsForGroup,
     loadPerformancesForCourse,
+    createPerformance,
   };
 }

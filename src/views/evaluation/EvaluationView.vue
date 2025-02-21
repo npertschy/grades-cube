@@ -7,14 +7,21 @@ import PPanel from "primevue/panel";
 import PDataTable from "primevue/datatable";
 import PColumn from "primevue/column";
 import PInputText from "primevue/inputtext";
-import PSplitButton from "primevue/splitbutton";
+import PButton from "primevue/button";
+import PDialog from "primevue/dialog";
 import type { TreeNode } from "primevue/treenode";
 import type { EvaluatedStudent } from "@/components/evaluations/EvaluatedStudent";
 import type { Performance } from "@/components/evaluations/Performance";
 
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
-const { treeItems, loadTreeItems, loadStudentsForCourse, loadStudentsForGroup, loadPerformancesForCourse } =
-  useEvaluations();
+const {
+  treeItems,
+  loadTreeItems,
+  loadStudentsForCourse,
+  loadStudentsForGroup,
+  loadPerformancesForCourse,
+  createPerformance,
+} = useEvaluations();
 
 const expandedKeys: TreeExpandedKeys = ref({});
 const selectedItem: TreeSelectionKeys = ref();
@@ -27,6 +34,9 @@ const newPerfomanceItems = ref([
   { label: "Spezial", icon: "pi pi-star", command: () => {} },
   { label: "Test", icon: "pi pi-file", command: () => {} },
 ]);
+const typeOfNewPerformance = ref<number>(-1);
+const openAddPerformanceDialog = ref(false);
+const titleOfPerformance = ref("");
 
 onMounted(async () => {
   await loadTreeItems(selectedSchoolYear.value!, selectedSemester.value!);
@@ -53,7 +63,6 @@ watch(selectedNode, async (node) => {
     } else if (node.type === "course") {
       students.value = await loadStudentsForCourse(node.data);
       performances.value = await loadPerformancesForCourse(node.data);
-      console.log(performances.value);
     }
   } else {
     students.value = [];
@@ -73,16 +82,55 @@ const tableTitle = computed(() => {
 
 function backgroundColorByType(type: number) {
   switch (type) {
+    case 0:
     case 1:
     case 2:
       return { backgroundColor: "lightcoral" };
+    case 3:
     case 4:
       return { backgroundColor: "lightgreen" };
+    case 6:
     case 7:
       return { backgroundColor: "lightblue" };
     default:
       return {};
   }
+}
+
+const addPerformanceTitle = computed(() => {
+  switch (typeOfNewPerformance.value) {
+    case 0:
+      return "Neue mündliche Leistung anlegen";
+    case 3:
+      return "Neue spezielle Leistung anlegen";
+    case 6:
+      return "Neue Testleistung anlegen";
+    default:
+      return "";
+  }
+});
+
+async function handleSavePerformance() {
+    const existingPerformances: Performance[] = performances.value.filter(
+      (performance) => performance.type === typeOfNewPerformance.value,
+    );
+    const performance: Performance = {
+      title: titleOfPerformance.value,
+      type: typeOfNewPerformance.value,
+      editable: true,
+      sortOrder: existingPerformances.length,
+      date: new Date(),
+      courseId: selectedNode.value?.data.id,
+      id: undefined,
+      performanceId: undefined,
+      weight: 0,
+    };
+    await createPerformance(performance, existingPerformances, students.value);
+  openAddPerformanceDialog.value = false;
+  titleOfPerformance.value = "";
+  typeOfNewPerformance.value = -1;
+  students.value = await loadStudentsForCourse(selectedNode.value?.data);
+  performances.value = await loadPerformancesForCourse(selectedNode.value?.data);
 }
 </script>
 
@@ -122,6 +170,38 @@ function backgroundColorByType(type: number) {
             icon="pi pi-plus"
             outlined
             style="place-self: center end"
+          <div>
+            <p-button
+              style="background-color: lightcoral; border-color: lightcoral"
+              @click="
+                typeOfNewPerformance = 0;
+                openAddPerformanceDialog = true;
+              "
+            >
+              <i class="pi pi-plus" />
+              <i class="pi pi-comment" />
+            </p-button>
+            <p-button
+              style="background-color: lightgreen; border-color: lightgreen"
+              @click="
+                typeOfNewPerformance = 3;
+                openAddPerformanceDialog = true;
+              "
+            >
+              <i class="pi pi-plus" />
+              <i class="pi pi-star" />
+            </p-button>
+            <p-button
+              style="background-color: lightblue; border-color: lightblue"
+              @click="
+                typeOfNewPerformance = 6;
+                openAddPerformanceDialog = true;
+              "
+            >
+              <i class="pi pi-plus" />
+              <i class="pi pi-file" />
+            </p-button>
+          </div>
           />
         </div>
       </template>
@@ -172,6 +252,32 @@ function backgroundColorByType(type: number) {
     >
       <h3>Bitte wählen Sie eine Klasse oder einen Kurs aus.</h3>
     </div>
+    <p-dialog
+      v-model:visible="openAddPerformanceDialog"
+      modal
+      :header="addPerformanceTitle"
+    >
+      <div>
+        <label for="performanceTitle">Name: </label>
+        <p-input-text
+          v-model="titleOfPerformance"
+          placeholder="Titel"
+        />
+      </div>
+      <template #footer>
+        <p-button
+          label="Abbrechen"
+          icon="pi pi-times"
+          class="p-button-text"
+          @click="openAddPerformanceDialog = false"
+        />
+        <p-button
+          label="Speichern"
+          icon="pi pi-check"
+          @click="handleSavePerformance"
+        />
+      </template>
+    </p-dialog>
   </div>
 </template>
 

@@ -9,7 +9,8 @@ import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
-import { coreDataToUnix, db } from "@/store/Database";
+import { dateToCoreData, coreDataToUnix, db } from "@/store/Database";
+import type { QueryResult } from "@tauri-apps/plugin-sql";
 
 export class EvaluationGateway {
   async loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semester: Semester): Promise<Course[]> {
@@ -139,5 +140,33 @@ export class EvaluationGateway {
         courses: undefined,
       };
     });
+  }
+
+  async createPerformance(performance: Performance, students: Student[]): Promise<void> {
+    const newCourseId: QueryResult = await db.execute(
+      `
+      INSERT INTO ZPERFORMANCE (ZEDITABLE, ZSORTORDER, ZTYPE, ZCOURSE, ZDATE, ZWEIGHT, ZTITLE)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `,
+      [
+        performance.editable ? 1 : 0,
+        performance.sortOrder,
+        performance.type,
+        performance.courseId,
+        dateToCoreData(performance.date),
+        performance.weight,
+        performance.title,
+      ],
+    );
+
+    for (const student of students) {
+      await db.execute(
+        `
+        INSERT INTO ZGRADE (ZPERFORMANCE, ZSTUDENT)
+        VALUES ($1, $2)
+        `,
+        [newCourseId.lastInsertId, student.id],
+      );
+    }
   }
 }

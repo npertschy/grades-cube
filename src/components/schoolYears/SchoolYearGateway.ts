@@ -4,7 +4,7 @@ import type { SchoolYear } from "./SchoolYear";
 import type { Semester } from "./Semester";
 import type { SchoolYearEntity } from "./SchoolYearEntity";
 import type { SemesterEntity } from "./SemesterEntity";
-import { coreDataToUnix, dateToCodeData } from "@/store/Database";
+import { coreDataToUnix, dateToCoreData } from "@/store/Database";
 
 const path = (await appLocalDataDir()) + "/db/Notenwuerfel.sqlite";
 const db = await Database.load("sqlite:" + path);
@@ -43,8 +43,8 @@ export async function loadAll(): Promise<SchoolYear[]> {
 }
 
 export async function createSchoolYear(schoolYear: SchoolYear) {
-  const schoolYearStart = dateToCodeData(schoolYear.start!);
-  const schoolYearEnd = dateToCodeData(schoolYear.end!);
+  const schoolYearStart = dateToCoreData(schoolYear.start!);
+  const schoolYearEnd = dateToCoreData(schoolYear.end!);
   const newSchoolYear: QueryResult = await db.execute("INSERT INTO ZYEAR (Z_ENT, ZEND, ZSTART) VALUES ($1, $2, $3)", [
     8,
     schoolYearEnd,
@@ -56,8 +56,8 @@ export async function createSchoolYear(schoolYear: SchoolYear) {
 }
 
 async function createSemester(semester: Semester, schoolYearId: number) {
-  const semesterStart = dateToCodeData(semester.start!);
-  const semesterEnd = dateToCodeData(semester.end!);
+  const semesterStart = dateToCoreData(semester.start!);
+  const semesterEnd = dateToCoreData(semester.end!);
   await db.execute("INSERT INTO ZSEMESTER (Z_ENT, ZTYPEID, ZYEAR, ZEND, ZSTART) VALUES ($1, $2, $3, $4, $5)", [
     5,
     semester.type,
