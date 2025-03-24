@@ -58,7 +58,8 @@ export class EvaluationGateway {
          json_object(
            'GRADEID', ZGRADE.Z_PK,
            'VALUE', ZGRADE.ZVALUE,
-           'TITLE', ZPERFORMANCE.ZTITLE
+           'TITLE', ZPERFORMANCE.ZTITLE,
+            'TYPE', ZPERFORMANCE.ZTYPE
          )
       ) AS GRADES
       FROM ZSTUDENT
@@ -80,6 +81,7 @@ export class EvaluationGateway {
           id: grade.GRADEID,
           value: grade.VALUE,
           performacneTitle: grade.TITLE,
+          performanceType: grade.TYPE,
         });
       });
       return {

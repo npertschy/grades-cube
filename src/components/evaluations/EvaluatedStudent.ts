@@ -9,4 +9,5 @@ export type Grade = {
   id: number;
   value: string;
   performacneTitle: string;
+  performanceType: number;
 };

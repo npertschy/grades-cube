@@ -9,4 +9,5 @@ export type GradeEntity = {
   GRADEID: number;
   VALUE: string;
   TITLE: string;
+  TYPE: number;
 };
