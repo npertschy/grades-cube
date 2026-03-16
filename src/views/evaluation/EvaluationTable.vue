@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { useEvaluations } from "@/views/evaluation/EvaluationStore";
-import { computed, ref, toRefs } from "vue";
+import { ref, toRefs } from "vue";
 import PDataTable, { type DataTableCellEditCompleteEvent } from "primevue/datatable";
 import PColumn from "primevue/column";
 import PInputText from "primevue/inputtext";
-import PButton from "primevue/button";
-import PDialog from "primevue/dialog";
 import type { TreeNode } from "primevue/treenode";
 import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
 import type { Performance } from "@/components/evaluations/Performance";
-import GradeWeightsView from "@/views/evaluation/GradeWeightsView.vue";
 
 interface Props {
   selectedNode: TreeNode;
@@ -19,35 +16,16 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const { selectedNode, performances, students } = toRefs(props);
-
-interface Emits {
-  (e: "performancesUpdated"): void;
-}
-
-const emits = defineEmits<Emits>();
+const { performances, students } = toRefs(props);
 
 const possibleOralGrades = ["++", "+", "0", "-", "--", "f"];
 
-const { createPerformance, updatePerformance, updateGrade } = useEvaluations();
-
-const typeOfNewPerformance = ref<number>(-1);
-const openAddPerformanceDialog = ref(false);
-const titleOfPerformance = ref("");
+const { updateGrade } = useEvaluations();
+const emit = defineEmits<{
+  (e: "selected-column", value?: number): void;
+}>();
 
 const selectedColumn = ref<number>();
-const showChartForPerformance = ref(false);
-const showWeightsManagement = ref(false);
-
-const tableTitle = computed(() => {
-  if (selectedNode.value) {
-    return selectedNode.value?.type === "group"
-      ? selectedNode.value.data.name
-      : `${selectedNode.value?.data.group.name} ${selectedNode.value?.data.subject.name}`;
-  } else {
-    return "";
-  }
-});
 
 function backgroundColorByType(type: number) {
   switch (type) {
@@ -66,59 +44,15 @@ function backgroundColorByType(type: number) {
   }
 }
 
-const addPerformanceTitle = computed(() => {
-  if (selectedColumn.value) {
-    return "Leistung bearbeiten";
-  }
-
-  switch (typeOfNewPerformance.value) {
-    case 0:
-      return "Neue mündliche Leistung anlegen";
-    case 3:
-      return "Neue spezielle Leistung anlegen";
-    case 6:
-      return "Neue schriftliche Leistung anlegen";
-    default:
-      return "";
-  }
-});
-
-async function handleSavePerformance() {
-  if (selectedColumn.value) {
-    const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
-    if (performance) {
-      performance.title = titleOfPerformance.value;
-      await updatePerformance(performance);
-    }
-    selectedColumn.value = undefined;
-  } else {
-    const existingPerformances: Performance[] = performances.value.filter(
-      (performance) => performance.type === typeOfNewPerformance.value,
-    );
-    const performance: Performance = {
-      title: titleOfPerformance.value,
-      type: typeOfNewPerformance.value,
-      editable: true,
-      sortOrder: existingPerformances.length,
-      date: new Date(),
-      courseId: selectedNode.value?.data.id,
-      id: undefined,
-      performanceId: undefined,
-      weight: 0,
-    };
-    await createPerformance(performance, existingPerformances, students.value);
-  }
-  openAddPerformanceDialog.value = false;
-  titleOfPerformance.value = "";
-  typeOfNewPerformance.value = -1;
-  emits("performancesUpdated");
-}
-
 function handleColumnSelection(id: number) {
   if (selectedColumn.value === id) {
     selectedColumn.value = undefined;
+    // emit deselection
+    emit("selected-column", undefined);
   } else {
     selectedColumn.value = id;
+    // emit new selected column id
+    emit("selected-column", id);
   }
 }
 
@@ -129,14 +63,7 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
 
   if (grade.performanceType === 0) {
     const student = students.value[event.index];
-    const oralGradesOfStudent = Array.from(student.grades)
-      .map(([, value]) => value)
-      .filter((value) => value.performanceType === 0)
-      .filter((value) => value.value !== undefined)
-      .filter((value) => value.value !== null)
-      .filter((value) => value.value !== "")
-      .map((value) => value.value)
-      .filter((value) => value !== "f");
+    const oralGradesOfStudent = filterGradesByPerformanceType(student.grades, 0);
     const gradesFrequency = oralGradesOfStudent.reduce(
       (acc, grade) => {
         acc[grade] = (acc[grade] || 0) + 1;
@@ -162,267 +89,139 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
     }
   } else if (grade.performanceType === 3) {
     const student = students.value[event.index];
-    const specialGradesOfStudent = Array.from(student.grades)
-      .map(([, value]) => value)
-      .filter((value) => value.performanceType === 3)
-      .filter((value) => value.value !== undefined)
-      .filter((value) => value.value !== null)
-      .filter((value) => value.value !== "")
-      .filter((value) => value.value !== "f")
-      .map((value) => value.value);
 
-    const sum = specialGradesOfStudent.reduce((acc, grade) => acc + parseInt(grade), 0);
-    const average = sum / specialGradesOfStudent.length;
-
-    const specialOverallPerformance = performances.value.find((performance) => performance.type === 4);
-    if (specialOverallPerformance && specialOverallPerformance.performanceId) {
-      const specialOverallGrade = student.grades.get(specialOverallPerformance.performanceId);
-      if (specialOverallGrade) {
-        specialOverallGrade.value = Math.floor(average).toString();
-        await updateGrade(specialOverallGrade);
-      }
-    }
+    await updateOverallGradeByPerformanceType(student, 3, 4);
   } else if (grade.performanceType === 6) {
     const student = students.value[event.index];
-    const testGradesOfStudent = Array.from(student.grades)
-      .map(([, value]) => value)
-      .filter((value) => value.performanceType === 6)
-      .filter((value) => value.value !== undefined)
-      .filter((value) => value.value !== null)
-      .filter((value) => value.value !== "")
-      .filter((value) => value.value !== "f")
-      .map((value) => value.value);
 
-    const sum = testGradesOfStudent.reduce((acc, grade) => acc + parseInt(grade), 0);
-    const average = sum / testGradesOfStudent.length;
+    await updateOverallGradeByPerformanceType(student, 6, 7);
+  }
+}
 
-    const testOverallPerformance = performances.value.find((performance) => performance.type === 7);
-    if (testOverallPerformance && testOverallPerformance.performanceId) {
-      const testOverallGrade = student.grades.get(testOverallPerformance.performanceId);
-      if (testOverallGrade) {
-        testOverallGrade.value = Math.floor(average).toString();
-        await updateGrade(testOverallGrade);
-      }
+function filterGradesByPerformanceType(grades: Map<string, Grade>, performanceType: number) {
+  return Array.from(grades)
+    .map(([, value]) => value)
+    .filter((value) => value.performanceType === performanceType)
+    .filter((value) => value.value !== undefined)
+    .filter((value) => value.value !== null)
+    .filter((value) => value.value !== "")
+    .map((value) => value.value)
+    .filter((value) => value !== "f");
+}
+
+function calculateAverageGrade(grades: Map<string, Grade>, performanceType: number) {
+  const filteredGrades = filterGradesByPerformanceType(grades, performanceType);
+  const sum = filteredGrades.reduce((acc, grade) => acc + parseInt(grade), 0);
+  return sum / filteredGrades.length;
+}
+
+async function updateOverallGradeByPerformanceType(
+  student: EvaluatedStudent,
+  performanceType: number,
+  overallPerformanceType: number,
+) {
+  const average = calculateAverageGrade(student.grades, performanceType);
+
+  const overallPerformance = performances.value.find((performance) => performance.type === overallPerformanceType);
+  if (overallPerformance && overallPerformance.performanceId) {
+    const overallGrade = student.grades.get(overallPerformance.performanceId);
+    if (overallGrade) {
+      overallGrade.value = Math.floor(average).toString();
+      await updateGrade(overallGrade);
     }
   }
 }
 
+const gradePatterns: Record<number, RegExp> = {
+  0: /^(?:\+\+|\+|0|-|--|f)$/,
+  3: /^(?:[\d]|1[0-5])$/,
+  6: /^(?:[\d]|1[0-5])$/,
+};
+
 function allowedGradesByPerformance(performance: Performance) {
-  if (performance.type === 0) {
-    return { pattern: /^(?:\+\+|\+|0|-|--|f)$/, validateOnly: true };
-  } else {
-    return { pattern: /^(?:[\d]|1[0-5])$/, validateOnly: true };
-  }
+  const pattern = gradePatterns[performance.type];
+  return {
+    pattern,
+    validateOnly: true,
+  };
 }
 </script>
 
 <template>
-  <div>
-    <div
-      style="display: grid; transition: 300ms"
-      :style="[
-        {
-          'grid-template-columns': showWeightsManagement ? '10fr 350px' : '10fr 0px',
-          'column-gap': showWeightsManagement ? '1rem' : '0',
-        },
-      ]"
+  <p-data-table
+    :value="students"
+    size="small"
+    show-gridlines
+    scrollable
+    scroll-height="80vh"
+    row-hover
+    edit-mode="cell"
+    style="overflow-x: scroll"
+    @cell-edit-complete="handleGradeChanged"
+  >
+    <p-column
+      header="#"
+      frozen
+      style="min-width: 2rem"
     >
-      <p-data-table
-        :value="students"
-        size="small"
-        show-gridlines
-        scrollable
-        scroll-height="80vh"
-        row-hover
-        edit-mode="cell"
-        style="overflow-x: scroll"
-        @cell-edit-complete="handleGradeChanged"
+      <template #body="headerProps">
+        {{ headerProps.index + 1 }}
+      </template>
+    </p-column>
+    <p-column
+      header="Name"
+      frozen
+      style="min-width: 14rem"
+    >
+      <template #body="slotProps">
+        {{ slotProps.data.student.firstName }} {{ slotProps.data.student.lastName }}
+      </template>
+    </p-column>
+    <p-column
+      v-for="performance in performances"
+      :key="performance.id"
+      :field="performance.performanceId"
+      :style="backgroundColorByType(performance.type)"
+      style="width: fit-content; min-width: 2rem"
+    >
+      <template #header>
+        <span
+          style="cursor: pointer"
+          :class="selectedColumn === performance.id ? 'bold-text' : 'normal-text'"
+          @click="handleColumnSelection(performance.id!)"
+        >
+          {{ performance.title }}
+        </span>
+      </template>
+      <template #body="{ data, column }">
+        <span :class="selectedColumn === performance.id ? 'bold-text' : ''">
+          {{ data.grades.get(column.props.field)?.value }}
+        </span>
+      </template>
+      <template
+        v-if="performance.editable"
+        #editor="{ data, column }"
       >
-        <template #header>
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; align-items: center">
-            <h2>{{ tableTitle }}</h2>
-            <div>
-              <p-button
-                severity="secondary"
-                class="new-oral-performance"
-                style="color: lightskyblue"
-                @click="
-                  typeOfNewPerformance = 0;
-                  openAddPerformanceDialog = true;
-                "
-              >
-                <i class="pi pi-plus" />
-                <i class="pi pi-comment" />
-              </p-button>
-              <p-button
-                severity="secondary"
-                class="new-special-performance"
-                style="color: lightgreen"
-                @click="
-                  typeOfNewPerformance = 3;
-                  openAddPerformanceDialog = true;
-                "
-              >
-                <i class="pi pi-plus" />
-                <i class="pi pi-star" />
-              </p-button>
-              <p-button
-                severity="secondary"
-                class="new-test-performance"
-                style="color: lightcoral"
-                @click="
-                  typeOfNewPerformance = 6;
-                  openAddPerformanceDialog = true;
-                "
-              >
-                <i class="pi pi-plus" />
-                <i class="pi pi-file" />
-              </p-button>
-            </div>
-            <p-button
-              icon="pi pi-pencil"
-              severity="secondary"
-              :disabled="selectedColumn === undefined"
-              @click="
-                titleOfPerformance = performances.find((performance) => performance.id === selectedColumn)?.title!;
-                openAddPerformanceDialog = true;
-              "
-            />
-            <div>
-              <p-button
-                icon="pi pi-chart-bar"
-                severity="secondary"
-                :style="
-                  showChartForPerformance
-                    ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
-                    : {}
-                "
-                @click="showChartForPerformance = !showChartForPerformance"
-              />
-              <p-button
-                icon="pi pi-percentage"
-                severity="secondary"
-                :style="
-                  showWeightsManagement
-                    ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
-                    : {}
-                "
-                @click="showWeightsManagement = !showWeightsManagement"
-              />
-            </div>
-          </div>
-        </template>
-        <p-column
-          header="#"
-          frozen
-          style="min-width: 2rem"
-        >
-          <template #body="headerProps">
-            {{ headerProps.index + 1 }}
-          </template>
-        </p-column>
-        <p-column
-          header="Name"
-          frozen
-          style="min-width: 14rem"
-        >
-          <template #body="slotProps">
-            {{ slotProps.data.student.firstName }} {{ slotProps.data.student.lastName }}
-          </template>
-        </p-column>
-        <p-column
-          v-for="performance in performances"
-          :key="performance.id"
-          :field="performance.performanceId"
-          :style="backgroundColorByType(performance.type)"
-          style="width: fit-content; min-width: 2rem"
-        >
-          <template #header>
-            <span
-              style="cursor: pointer"
-              :style="[selectedColumn === performance.id ? { 'font-weight': 'bold' } : { 'font-weight': 600 }]"
-              @click="handleColumnSelection(performance.id!)"
-            >
-              {{ performance.title }}
-            </span>
-          </template>
-          <template #body="{ data, column }">
-            <span :style="[selectedColumn === performance.id ? { 'font-weight': 'bold' } : {}]">
-              {{ data.grades.get(column.props.field)?.value }}
-            </span>
-          </template>
-          <template
-            v-if="performance.editable"
-            #editor="{ data, column }"
-          >
-            <p-input-text
-              v-model="data.grades.get(column.props.field).value"
-              v-keyfilter="allowedGradesByPerformance(performance)"
-              style="width: 100%; padding-top: 3px; padding-bottom: 3px"
-            />
-          </template>
-        </p-column>
-      </p-data-table>
-      <grade-weights-view
-        v-if="showWeightsManagement"
-        :performances="performances"
-      />
-    </div>
-    <p-dialog
-      v-model:visible="openAddPerformanceDialog"
-      modal
-      :header="addPerformanceTitle"
-    >
-      <div>
-        <label for="performanceTitle">Name: </label>
         <p-input-text
-          v-model="titleOfPerformance"
-          placeholder="Titel"
-        />
-      </div>
-      <template #footer>
-        <p-button
-          label="Abbrechen"
-          icon="pi pi-times"
-          class="p-button-text"
-          @click="openAddPerformanceDialog = false"
-        />
-        <p-button
-          label="Speichern"
-          icon="pi pi-check"
-          @click="handleSavePerformance"
+          v-model="data.grades.get(column.props.field).value"
+          v-keyfilter="allowedGradesByPerformance(performance)"
+          style="width: 100%; padding-top: 3px; padding-bottom: 3px"
         />
       </template>
-    </p-dialog>
-  </div>
+    </p-column>
+  </p-data-table>
 </template>
 
 <style>
 td:has(input) {
   padding: 0px 8px !important;
 }
-</style>
-<style scoped>
-.no-padding {
-  padding-inline: 0px 0.5rem !important;
-  padding-block: 0px 0.5rem !important;
+
+.bold-text {
+  font-weight: bold;
 }
 
-.new-oral-performance:hover {
-  background-color: lightskyblue;
-  border-color: lightskyblue;
-  color: white !important;
-}
-
-.new-special-performance:hover {
-  background-color: lightgreen;
-  border-color: lightgreen;
-  color: white !important;
-}
-
-.new-test-performance:hover {
-  background-color: lightcoral;
-  border-color: lightcoral;
-  color: white !important;
+.normal-text {
+  font-weight: 500;
 }
 </style>

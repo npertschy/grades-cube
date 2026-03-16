@@ -8,32 +8,89 @@ import PInputNumber from "primevue/inputnumber";
 import PPanel from "primevue/panel";
 import PRow from "primevue/row";
 import PSlider from "primevue/slider";
-import { ref, toRefs } from "vue";
+import { computed, toRefs } from "vue";
 
 interface Props {
   performances: Performance[];
 }
 
 const props = defineProps<Props>();
+const emit = defineEmits<{ (e: "update-performance", performance: Performance): void }>();
 
 const { performances } = toRefs(props);
 
-const specialPerformances = ref(performances.value.filter((performance) => performance.type === 3));
-const specialWeightsTotal = specialPerformances.value
-  .reduce((acc, performance) => acc + performance.weight, 0)
-  .toString();
+// derived lists (reactive)
+const specialPerformances = computed(() => performances.value.filter((performance) => performance.type === 3));
+const specialWeightsTotal = computed(() =>
+  specialPerformances.value.reduce((acc, performance) => acc + (performance.weight ?? 0), 0).toString(),
+);
 
-const testPerformances = ref(performances.value.filter((performance) => performance.type === 6));
-const testWeightsTotal = testPerformances.value.reduce((acc, performance) => acc + performance.weight, 0).toString();
-
-const oralOverallPerformance = ref(findPerformanceOfType(2));
-const specialOverallPerformance = ref(findPerformanceOfType(4));
-
-const atOverallPerformance = ref(findPerformanceOfType(5));
-const testOverallPerformance = ref(findPerformanceOfType(7));
+const testPerformances = computed(() => performances.value.filter((performance) => performance.type === 6));
+const testWeightsTotal = computed(() =>
+  testPerformances.value.reduce((acc, performance) => acc + (performance.weight ?? 0), 0).toString(),
+);
 
 function findPerformanceOfType(type: number) {
-  return performances.value.find((performance) => performance.type === type) ?? { weight: 0 };
+  return performances.value.find((performance) => performance.type === type);
+}
+
+function updatePerformanceWeight(perf: Performance | undefined, weight: number) {
+  if (!perf) return;
+  const updated: Performance = { ...perf, weight };
+  emit("update-performance", updated);
+}
+
+// computed getters/setters for two-way bindings
+const oralOverallWeight = computed<number>({
+  get: () => findPerformanceOfType(2)?.weight ?? 0,
+  set: (val: number) => {
+    const oral = findPerformanceOfType(2);
+    const special = findPerformanceOfType(4);
+    updatePerformanceWeight(oral, val);
+    if (special) updatePerformanceWeight(special, 1 - val);
+  },
+});
+
+const specialOverallWeight = computed<number>({
+  get: () => findPerformanceOfType(4)?.weight ?? 0,
+  set: (val: number) => {
+    const special = findPerformanceOfType(4);
+    const oral = findPerformanceOfType(2);
+    updatePerformanceWeight(special, val);
+    if (oral) updatePerformanceWeight(oral, 1 - val);
+  },
+});
+
+const atOverallWeight = computed<number>({
+  get: () => findPerformanceOfType(5)?.weight ?? 0,
+  set: (val: number) => {
+    const at = findPerformanceOfType(5);
+    const test = findPerformanceOfType(7);
+    updatePerformanceWeight(at, val);
+    if (test) updatePerformanceWeight(test, 1 - val);
+  },
+});
+
+const testOverallWeight = computed<number>({
+  get: () => findPerformanceOfType(7)?.weight ?? 0,
+  set: (val: number) => {
+    const test = findPerformanceOfType(7);
+    const at = findPerformanceOfType(5);
+    updatePerformanceWeight(test, val);
+    if (at) updatePerformanceWeight(at, 1 - val);
+  },
+});
+
+function handleUpdateSpecialPerformanceWeight(value: number | number[]) {
+  if (typeof value === "number") {
+    specialOverallWeight.value = 1 - value;
+  }
+}
+
+function handleUpdateTestPerformanceWeight(value: number | number[]) {
+  if (typeof value === "number") {
+    testOverallWeight.value = 1 - value;
+  }
 }
 </script>
 
@@ -142,25 +199,25 @@ function findPerformanceOfType(type: number) {
         "
       >
         <p-input-number
-          v-model="oralOverallPerformance.weight"
+          v-model="oralOverallWeight"
           show-buttons
           button-layout="vertical"
           :step="0.01"
-          @value-change="(value) => (specialOverallPerformance.weight = 1 - value)"
+          @value-change="(value) => (specialOverallWeight = 1 - value)"
         />
         <p-slider
-          v-model="oralOverallPerformance.weight"
+          v-model="oralOverallWeight"
           :min="0"
           :max="1"
           :step="0.01"
-          @change="(value) => (specialOverallPerformance.weight = 1 - value)"
+          @change="handleUpdateSpecialPerformanceWeight"
         />
         <p-input-number
-          v-model="specialOverallPerformance.weight"
+          v-model="specialOverallWeight"
           show-buttons
           button-layout="vertical"
           :step="0.01"
-          @value-change="(value) => (oralOverallPerformance.weight = 1 - value)"
+          @value-change="(value) => (oralOverallWeight = 1 - value)"
         />
       </div>
     </p-panel>
@@ -177,25 +234,25 @@ function findPerformanceOfType(type: number) {
         "
       >
         <p-input-number
-          v-model="atOverallPerformance.weight"
+          v-model="atOverallWeight"
           show-buttons
           button-layout="vertical"
           :step="0.01"
-          @value-change="(value) => (testOverallPerformance.weight = 1 - value)"
+          @value-change="(value) => (testOverallWeight = 1 - value)"
         />
         <p-slider
-          v-model="atOverallPerformance.weight"
+          v-model="atOverallWeight"
           :min="0"
           :max="1"
           :step="0.01"
-          @change="(value) => (testOverallPerformance.weight = 1 - value)"
+          @change="handleUpdateTestPerformanceWeight"
         />
         <p-input-number
-          v-model="testOverallPerformance.weight"
+          v-model="testOverallWeight"
           show-buttons
           button-layout="vertical"
           :step="0.01"
-          @value-change="(value) => (atOverallPerformance.weight = 1 - value)"
+          @value-change="(value) => (atOverallWeight = 1 - value)"
         />
       </div>
     </p-panel>
