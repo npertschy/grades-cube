@@ -51,8 +51,8 @@ export async function createSchoolYear(schoolYear: SchoolYear) {
     schoolYearStart,
   ]);
 
-  await createSemester(schoolYear.firstSemester!, newSchoolYear.lastInsertId);
-  await createSemester(schoolYear.secondSemester!, newSchoolYear.lastInsertId);
+  await createSemester(schoolYear.firstSemester!, newSchoolYear.lastInsertId!);
+  await createSemester(schoolYear.secondSemester!, newSchoolYear.lastInsertId!);
 }
 
 async function createSemester(semester: Semester, schoolYearId: number) {

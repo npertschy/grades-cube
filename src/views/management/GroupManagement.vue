@@ -302,7 +302,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                         }"
                         @click="toggleStudentSelection(studentItem)"
                       >
-                        {{ index + 1 }}.
+                        {{ Number(index) + 1 }}.
                         {{ formatStudent(studentItem) }}
                       </p-button>
                     </div>

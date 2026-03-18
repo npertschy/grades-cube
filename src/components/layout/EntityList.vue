@@ -15,7 +15,6 @@ const selectedEntity = defineModel<T>();
     :options="entities"
     class="min-h-full shadow-2"
     list-style="max-height:75vh"
-    :data-key="format"
   >
     <template #option="slotProps">
       <p class="text-center">

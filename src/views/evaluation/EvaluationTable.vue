@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useEvaluations } from "@/views/evaluation/EvaluationStore";
-import { ref, toRefs } from "vue";
+import { ref } from "vue";
 import PDataTable, { type DataTableCellEditCompleteEvent } from "primevue/datatable";
 import PColumn from "primevue/column";
 import PInputText from "primevue/inputtext";
@@ -8,15 +8,11 @@ import type { TreeNode } from "primevue/treenode";
 import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
 import type { Performance } from "@/components/evaluations/Performance";
 
-interface Props {
+const { performances, students } = defineProps<{
   selectedNode: TreeNode;
   performances: Performance[];
   students: EvaluatedStudent[];
-}
-
-const props = defineProps<Props>();
-
-const { performances, students } = toRefs(props);
+}>();
 
 const possibleOralGrades = ["++", "+", "0", "-", "--", "f"];
 
@@ -62,7 +58,7 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
   await updateGrade(grade);
 
   if (grade.performanceType === 0) {
-    const student = students.value[event.index];
+    const student = students[event.index];
     const oralGradesOfStudent = filterGradesByPerformanceType(student.grades, 0);
     const gradesFrequency = oralGradesOfStudent.reduce(
       (acc, grade) => {
@@ -79,7 +75,7 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
 
     const indexOfRecommendation = sum / oralGradesOfStudent.length;
 
-    const recommendationPerformance = performances.value.find((performance) => performance.type === 1);
+    const recommendationPerformance = performances.find((performance) => performance.type === 1);
     if (recommendationPerformance && recommendationPerformance.performanceId) {
       const recommendationGrade = student.grades.get(recommendationPerformance.performanceId);
       if (recommendationGrade) {
@@ -88,11 +84,11 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
       }
     }
   } else if (grade.performanceType === 3) {
-    const student = students.value[event.index];
+    const student = students[event.index];
 
     await updateOverallGradeByPerformanceType(student, 3, 4);
   } else if (grade.performanceType === 6) {
-    const student = students.value[event.index];
+    const student = students[event.index];
 
     await updateOverallGradeByPerformanceType(student, 6, 7);
   }
@@ -122,7 +118,7 @@ async function updateOverallGradeByPerformanceType(
 ) {
   const average = calculateAverageGrade(student.grades, performanceType);
 
-  const overallPerformance = performances.value.find((performance) => performance.type === overallPerformanceType);
+  const overallPerformance = performances.find((performance) => performance.type === overallPerformanceType);
   if (overallPerformance && overallPerformance.performanceId) {
     const overallGrade = student.grades.get(overallPerformance.performanceId);
     if (overallGrade) {

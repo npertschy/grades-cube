@@ -8,30 +8,26 @@ import PInputNumber from "primevue/inputnumber";
 import PPanel from "primevue/panel";
 import PRow from "primevue/row";
 import PSlider from "primevue/slider";
-import { computed, toRefs } from "vue";
+import { computed } from "vue";
 
-interface Props {
+const { performances } = defineProps<{
   performances: Performance[];
-}
-
-const props = defineProps<Props>();
+}>();
 const emit = defineEmits<{ (e: "update-performance", performance: Performance): void }>();
 
-const { performances } = toRefs(props);
-
 // derived lists (reactive)
-const specialPerformances = computed(() => performances.value.filter((performance) => performance.type === 3));
+const specialPerformances = computed(() => performances.filter((performance) => performance.type === 3));
 const specialWeightsTotal = computed(() =>
   specialPerformances.value.reduce((acc, performance) => acc + (performance.weight ?? 0), 0).toString(),
 );
 
-const testPerformances = computed(() => performances.value.filter((performance) => performance.type === 6));
+const testPerformances = computed(() => performances.filter((performance) => performance.type === 6));
 const testWeightsTotal = computed(() =>
   testPerformances.value.reduce((acc, performance) => acc + (performance.weight ?? 0), 0).toString(),
 );
 
 function findPerformanceOfType(type: number) {
-  return performances.value.find((performance) => performance.type === type);
+  return performances.find((performance) => performance.type === type);
 }
 
 function updatePerformanceWeight(perf: Performance | undefined, weight: number) {

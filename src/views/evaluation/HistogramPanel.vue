@@ -1,25 +1,21 @@
 <script setup lang="ts">
-import { computed, toRefs } from "vue";
+import { computed } from "vue";
 import PDrawer from "primevue/drawer";
 import PChart from "primevue/chart";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import type { EvaluatedStudent } from "@/components/evaluations/EvaluatedStudent";
 import type { Performance } from "@/components/evaluations/Performance";
 
-interface Props {
+const { showChartForPerformance, selectedColumn, performances, students } = defineProps<{
   showChartForPerformance: boolean;
   selectedColumn: number | undefined;
   performances: Performance[];
   students: EvaluatedStudent[];
-}
-
-const props = defineProps<Props>();
-
-const { showChartForPerformance, selectedColumn, performances, students } = toRefs(props);
+}>();
 
 const titleOfGradeChart = computed(() => {
-  if (selectedColumn.value) {
-    const name = performances.value.find((performance) => performance.id === selectedColumn.value)?.title;
+  if (selectedColumn) {
+    const name = performances.find((performance) => performance.id === selectedColumn)?.title;
 
     return `Notenübersicht für ${name}`;
   } else {
@@ -28,8 +24,8 @@ const titleOfGradeChart = computed(() => {
 });
 
 const chartData = computed(() => {
-  if (selectedColumn.value) {
-    const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
+  if (selectedColumn) {
+    const performance = performances.find((performance) => performance.id === selectedColumn);
     if (performance) {
       if (performance.type === 0) {
         return chartDataForOralPerformance(performance);
@@ -43,8 +39,8 @@ const chartData = computed(() => {
 });
 
 const options = computed(() => {
-  if (selectedColumn.value) {
-    const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
+  if (selectedColumn) {
+    const performance = performances.find((performance) => performance.id === selectedColumn);
     if (performance) {
       if (performance.type === 0) {
         return {
@@ -70,7 +66,7 @@ const options = computed(() => {
 
 function chartDataForOralPerformance(performance: Performance) {
   const labels = ["++", "+", "0", "-", "--", "f"];
-  const grades = students.value
+  const grades = students
     .map((student) => student.grades.get(performance.performanceId!)?.value)
     .filter((grade) => grade !== undefined)
     .filter((grade) => grade !== null)
@@ -103,7 +99,7 @@ function chartDataForOralPerformance(performance: Performance) {
 }
 
 function chartDataForNonOralPerformance(performance: Performance) {
-  const grades = students.value
+  const grades = students
     .map((student) => student.grades.get(performance.performanceId!)?.value)
     .filter((grade) => grade !== undefined)
     .filter((grade) => grade !== null)
@@ -157,7 +153,7 @@ function chartDataForNonOralPerformance(performance: Performance) {
 <template>
   <div>
     <p-drawer
-      v-model:visible="showChartForPerformance"
+      :visible="showChartForPerformance"
       position="bottom"
       :header="titleOfGradeChart"
       :modal="false"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Panel from "primevue/panel";
+import PPanel from "primevue/panel";
 
 const { header } = defineProps<{
   header: string;
@@ -7,14 +7,14 @@ const { header } = defineProps<{
 </script>
 
 <template>
-  <panel :header="header">
+  <p-panel :header="header">
     <div class="container">
       <slot name="list" />
       <div class="edit-area">
         <slot name="edit" />
       </div>
     </div>
-  </panel>
+  </p-panel>
 </template>
 
 <style>

@@ -6,13 +6,13 @@ const {
   showDeleteWhenDefined,
   saveAction,
   deleteAction,
-  saveDisabled,
+  saveDisabled = false,
   gridColumns = 8,
 } = defineProps<{
   showDeleteWhenDefined: T | undefined;
   saveAction: () => void;
   deleteAction: () => void;
-  saveDisabled: boolean;
+  saveDisabled?: boolean;
   gridColumns?: number;
 }>();
 

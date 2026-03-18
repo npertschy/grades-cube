@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import InputText from "primevue/inputtext";
+import PInputText from "primevue/inputtext";
 
 const { identifier, label } = defineProps<{
   identifier: string;
@@ -17,7 +17,7 @@ const value = defineModel<string>();
     >
       {{ label }}
     </label>
-    <input-text
+    <p-input-text
       v-model="value"
       :input-id="identifier"
       class="w-full mt-1"
