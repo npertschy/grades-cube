@@ -6,7 +6,8 @@ import PButton from "primevue/button";
 import PPopover from "primevue/popover";
 import PToggleSwitch from "primevue/toggleswitch";
 import { PrimeIcons } from "@primevue/core/api";
-import { ref, computed, watch } from "vue";
+import store from "@/store/KeyValueStore";
+import { ref, computed, watch, onMounted } from "vue";
 
 const items = ref([
   { label: "Verwalten", icon: PrimeIcons.DATABASE, route: "/management" },
@@ -14,20 +15,28 @@ const items = ref([
   { label: "Konfigurieren", icon: PrimeIcons.COG, route: "/configuration" },
 ]);
 
+const darkModeSelected = ref(false);
+
 const usermenu = ref();
 
 function toggle(event: Event) {
   usermenu.value.toggle(event);
 }
 
-const lightModeSelected = ref(false);
+const darkModeSelectedKey = "darkModeSelected";
 
-const themeSelection = computed(() => {
-  return lightModeSelected.value ? "Dunkles Design" : "Helles Design";
+onMounted(async () => {
+  const darkMode = (await store.get<boolean>(darkModeSelectedKey)) ?? false;
+  darkModeSelected.value = darkMode;
 });
 
-watch(lightModeSelected, () => {
-  document.body.classList.toggle("my-app-dark");
+const themeSelection = computed(() => {
+  return darkModeSelected.value ? "Dunkles Design" : "Helles Design";
+});
+
+watch(darkModeSelected, async (current) => {
+  document.documentElement.classList.toggle("my-app-dark");
+  await store.set(darkModeSelectedKey, current);
 });
 </script>
 
@@ -79,7 +88,7 @@ watch(lightModeSelected, () => {
         <p-popover ref="usermenu">
           <label for="theme-switch"> {{ themeSelection }} </label>
           <p-toggle-switch
-            v-model="lightModeSelected"
+            v-model="darkModeSelected"
             input-id="theme-switch"
           />
         </p-popover>

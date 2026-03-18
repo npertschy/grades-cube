@@ -108,12 +108,12 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
         <p-column
           field="title"
           header="Titel"
-          style="background-color: lightgreen"
+          style="background-color: var(--p-performance-special-background)"
         />
         <p-column
           field="weight"
           header="Gewichtung"
-          style="background-color: lightgreen"
+          style="background-color: var(--p-performance-special-background)"
         />
         <p-column-group type="footer">
           <p-row>
@@ -153,12 +153,12 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
         <p-column
           field="title"
           header="Titel"
-          style="background-color: lightcoral"
+          style="background-color: var(--p-performance-test-background)"
         />
         <p-column
           field="weight"
           header="Gewichtung"
-          style="background-color: lightcoral"
+          style="background-color: var(--p-performance-test-background)"
         />
         <p-column-group type="footer">
           <p-row>

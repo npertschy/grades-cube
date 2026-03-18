@@ -32,13 +32,13 @@ function backgroundColorByType(type: number) {
     case 0:
     case 1:
     case 2:
-      return { backgroundColor: "lightskyblue" };
+      return { backgroundColor: "var(--p-performance-oral-background)" };
     case 3:
     case 4:
-      return { backgroundColor: "lightgreen" };
+      return { backgroundColor: "var(--p-performance-special-background)" };
     case 6:
     case 7:
-      return { backgroundColor: "lightcoral" };
+      return { backgroundColor: "var(--p-performance-test-background)" };
     default:
       return {};
   }

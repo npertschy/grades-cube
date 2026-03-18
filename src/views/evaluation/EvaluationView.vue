@@ -12,6 +12,7 @@ import type { EvaluatedStudent } from "@/components/evaluations/EvaluatedStudent
 import type { Performance } from "@/components/evaluations/Performance";
 import EvaluationTable from "./EvaluationTable.vue";
 import GradeWeightsView from "./GradeWeightsView.vue";
+import TestGradeCalculator from "./TestGradeCalculator.vue";
 import HistogramPanel from "./HistogramPanel.vue";
 
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
@@ -39,6 +40,7 @@ const titleOfPerformance = ref("");
 
 const showChartForPerformance = ref(false);
 const showWeightsManagement = ref(false);
+const showCalculator = ref(false);
 
 onMounted(async () => {
   await loadTreeItems(selectedSchoolYear.value!, selectedSemester.value!);
@@ -199,7 +201,7 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
           <p-button
             severity="secondary"
             class="new-oral-performance"
-            style="color: lightskyblue"
+            style="color: var(--p-performance-oral-text)"
             @click="
               typeOfNewPerformance = 0;
               openAddPerformanceDialog = true;
@@ -211,7 +213,7 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
           <p-button
             severity="secondary"
             class="new-special-performance"
-            style="color: lightgreen"
+            style="color: var(--p-performance-special-text)"
             @click="
               typeOfNewPerformance = 3;
               openAddPerformanceDialog = true;
@@ -223,7 +225,7 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
           <p-button
             severity="secondary"
             class="new-test-performance"
-            style="color: lightcoral"
+            style="color: var(--p-performance-test-text)"
             @click="
               typeOfNewPerformance = 6;
               openAddPerformanceDialog = true;
@@ -262,15 +264,31 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
               ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
               : {}
           "
-          @click="showWeightsManagement = !showWeightsManagement"
+          @click="
+            showWeightsManagement = !showWeightsManagement;
+            if (showWeightsManagement) showCalculator = false;
+          "
+        />
+        <p-button
+          icon="pi pi-calculator"
+          severity="secondary"
+          :style="
+            showCalculator
+              ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
+              : {}
+          "
+          @click="
+            showCalculator = !showCalculator;
+            if (showCalculator) showWeightsManagement = false;
+          "
         />
       </template>
       <div
         style="display: grid; transition: 300ms"
         :style="[
           {
-            'grid-template-columns': showWeightsManagement ? '10fr 350px' : '10fr 0px',
-            'column-gap': showWeightsManagement ? '1rem' : '0',
+            'grid-template-columns': showWeightsManagement || showCalculator ? '10fr 350px' : '10fr 0px',
+            'column-gap': showWeightsManagement || showCalculator ? '1rem' : '0',
           },
         ]"
       >
@@ -287,6 +305,7 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
           @update-performance="handleUpdatePerformance"
           @update-performances="handleBulkUpdatePerformances"
         />
+        <test-grade-calculator v-if="showCalculator" />
       </div>
     </p-panel>
     <div
@@ -353,20 +372,20 @@ td:has(input) {
 }
 
 .new-oral-performance:hover {
-  background-color: lightskyblue;
-  border-color: lightskyblue;
-  color: white !important;
+  background-color: var(--p-performance-oral-background);
+  border-color: var(--p-performance-oral-border);
+  color: var(--p-performance-oral-color) !important;
 }
 
 .new-special-performance:hover {
-  background-color: lightgreen;
-  border-color: lightgreen;
-  color: white !important;
+  background-color: var(--p-performance-special-background);
+  border-color: var(--p-performance-special-border);
+  color: var(--p-performance-special-color) !important;
 }
 
 .new-test-performance:hover {
-  background-color: lightcoral;
-  border-color: lightcoral;
-  color: white !important;
+  background-color: var(--p-performance-test-background);
+  border-color: var(--p-performance-test-border);
+  color: var(--p-performance-test-color) !important;
 }
 </style>

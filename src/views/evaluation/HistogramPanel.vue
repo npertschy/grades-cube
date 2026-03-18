@@ -84,14 +84,18 @@ function chartDataForOralPerformance(performance: Performance) {
 
   const label = `Notenverteilung für ${performance.title} und ${grades.length} bewertete Schüler - Durchschnitt: ${labels[Math.floor(average) - 1]}`;
 
+  const documentStyle = getComputedStyle(document.documentElement);
+  const borderColor = documentStyle.getPropertyValue("--p-primary-color");
+  const backgroundColor = documentStyle.getPropertyValue("--p-highlight-focus-background");
+
   return {
     labels,
     datasets: [
       {
         label: label,
         data: histogram,
-        borderColor: "rgba(8, 145, 178, 0.5)",
-        backgroundColor: "rgba(236, 254, 255, 1)",
+        borderColor: borderColor,
+        backgroundColor: backgroundColor,
         borderWidth: 2,
       },
     ],
@@ -123,20 +127,24 @@ function chartDataForNonOralPerformance(performance: Performance) {
   const combinedLabels = Array.from({ length: 16 }, (_, i) => i);
   const backgroundData = combinedLabels.map((group) => grouped.filter((g) => g === group).length);
 
+  const documentStyle = getComputedStyle(document.documentElement);
+  const borderColor = documentStyle.getPropertyValue("--p-primary-color");
+  const backgroundColor = documentStyle.getPropertyValue("--p-highlight-focus-background");
+
   return {
     labels: gradeLabels,
     datasets: [
       {
         label: "Notenpunkte (15-0)",
-        backgroundColor: "rgba(8, 145, 178, 0.5)",
+        backgroundColor: borderColor,
         data: gradeCounts,
         grouped: false,
       },
       {
         label: "Noten (1–6)",
         data: backgroundData,
-        backgroundColor: "rgba(236, 254, 255, 1)",
-        borderColor: "rgba(8, 145, 178, 0.5)",
+        borderColor: borderColor,
+        backgroundColor: backgroundColor,
         borderWidth: 2,
         barPercentage: 3.5,
         grouped: false,
