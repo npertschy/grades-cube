@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import PInputText from "primevue/inputtext";
 import PDataTable from "primevue/datatable";
 import PColumn from "primevue/column";
@@ -11,6 +11,8 @@ const achievedPoints = ref<string | null>(null);
 // Standard German 15-point system mapping
 type GradeRow = {
   index: number;
+  upperPercent: number;
+  lowetPercent: number;
   upper: number;
   lower: number;
   gradePoint: number;
@@ -20,22 +22,22 @@ type GradeRow = {
 const selectedRow = ref<GradeRow | null>(null);
 
 const gradeMapping = [
-  { gradePoint: 15, grade: "1+" },
-  { gradePoint: 14, grade: "1" },
-  { gradePoint: 13, grade: "1-" },
-  { gradePoint: 12, grade: "2+" },
-  { gradePoint: 11, grade: "2" },
-  { gradePoint: 10, grade: "2-" },
-  { gradePoint: 9, grade: "3+" },
-  { gradePoint: 8, grade: "3" },
-  { gradePoint: 7, grade: "3-" },
-  { gradePoint: 6, grade: "4+" },
-  { gradePoint: 5, grade: "4" },
-  { gradePoint: 4, grade: "4-" },
-  { gradePoint: 3, grade: "5+" },
-  { gradePoint: 2, grade: "5" },
-  { gradePoint: 1, grade: "5-" },
-  { gradePoint: 0, grade: "6" },
+  { upperPercent: 100, lowetPercent: 95, gradePoint: 15, grade: "1+" },
+  { upperPercent: 94, lowetPercent: 90, gradePoint: 14, grade: "1" },
+  { upperPercent: 89, lowetPercent: 85, gradePoint: 13, grade: "1-" },
+  { upperPercent: 84, lowetPercent: 80, gradePoint: 12, grade: "2+" },
+  { upperPercent: 79, lowetPercent: 75, gradePoint: 11, grade: "2" },
+  { upperPercent: 74, lowetPercent: 70, gradePoint: 10, grade: "2-" },
+  { upperPercent: 69, lowetPercent: 65, gradePoint: 9, grade: "3+" },
+  { upperPercent: 64, lowetPercent: 60, gradePoint: 8, grade: "3" },
+  { upperPercent: 59, lowetPercent: 55, gradePoint: 7, grade: "3-" },
+  { upperPercent: 54, lowetPercent: 50, gradePoint: 6, grade: "4+" },
+  { upperPercent: 49, lowetPercent: 45, gradePoint: 5, grade: "4" },
+  { upperPercent: 44, lowetPercent: 40, gradePoint: 4, grade: "4-" },
+  { upperPercent: 39, lowetPercent: 35, gradePoint: 3, grade: "5+" },
+  { upperPercent: 34, lowetPercent: 30, gradePoint: 2, grade: "5" },
+  { upperPercent: 29, lowetPercent: 25, gradePoint: 1, grade: "5-" },
+  { upperPercent: 24, lowetPercent: 0, gradePoint: 0, grade: "6" },
 ];
 
 const gradeTable = ref<GradeRow[]>([]);
@@ -48,12 +50,13 @@ function computeLimits() {
 
   const rows: GradeRow[] = [];
   const total = Number(totalPoints.value);
-  const step = total / gradeMapping.length;
   for (let i = 0; i < gradeMapping.length; i++) {
-    const lower = Math.floor(total - step * (i + 1) + 1);
-    const upper = Math.floor(total - step * i);
+    const lower = Math.floor(total * (gradeMapping[i].lowetPercent / 100));
+    const upper = Math.floor(total * (gradeMapping[i].upperPercent / 100));
     rows.push({
       index: i,
+      upperPercent: gradeMapping[i].upperPercent,
+      lowetPercent: gradeMapping[i].lowetPercent,
       upper: upper < 0 ? 0 : upper,
       lower: lower < 0 ? 0 : lower,
       gradePoint: gradeMapping[i].gradePoint,
@@ -78,17 +81,25 @@ function onPointsChange() {
     selectedRow.value = null;
   }
 }
+
+const achievedPointsSummary = computed(() => {
+  if (selectedRow.value) {
+    return `Notenpunkte: ${selectedRow.value.gradePoint}, Note: ${selectedRow.value.grade}`;
+  }
+
+  return "";
+});
 </script>
 
 <template>
   <p-panel
-    header="Test Grade Calculator"
-    style="max-width: 500px; margin: 0 auto"
-    :pt="{ content: { style: 'padding: 3px' } }"
+    header="Notenrechner"
+    style="max-width: 500px"
+    :pt="{ content: { style: 'padding: 6px' } }"
   >
     <div>
       <div class="number-with-label">
-        <label for="totalPoints">Total Points:</label>
+        <label for="totalPoints">Gesamt:</label>
         <p-input-text
           v-model="totalPoints"
           input-id="totalPoints"
@@ -99,7 +110,7 @@ function onPointsChange() {
         />
       </div>
       <div class="number-with-label">
-        <label for="achievedPoints">Points Achieved:</label>
+        <label for="achievedPoints">Erreicht:</label>
         <p-input-text
           v-model="achievedPoints"
           input-id="achievedPoints"
@@ -108,6 +119,12 @@ function onPointsChange() {
           :max="totalPoints ? Number(totalPoints) : 0"
           @update:model-value="onPointsChange"
         />
+      </div>
+      <div class="number-with-label">
+        <p>Ergibt:</p>
+        <p style="width: 200px">
+          {{ achievedPointsSummary }}
+        </p>
       </div>
       <p-data-table
         v-model:selection="selectedRow"
@@ -118,26 +135,35 @@ function onPointsChange() {
         selection-mode="single"
         data-key="index"
       >
-        <PColumn
+        <p-column
+          field="upperPercent"
+          header="Von (%)"
+        />
+        <p-column
+          field="lowetPercent"
+          header="Bis (%)"
+        />
+        <p-column
           field="upper"
-          header="Upper Limit"
+          header="Von"
         />
-        <PColumn
+        <p-column
           field="lower"
-          header="Lower Limit"
+          header="Bis"
         />
-        <PColumn
+        <p-column
           field="gradePoint"
-          header="Grade Points"
+          header="Noten-punkte"
         />
-        <PColumn
+        <p-column
           field="grade"
-          header="Grade"
+          header="Note"
         />
       </p-data-table>
     </div>
   </p-panel>
 </template>
+
 <style>
 .highlight-row {
   background-color: #ffe082 !important;
