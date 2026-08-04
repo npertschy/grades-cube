@@ -151,7 +151,7 @@ watch([firstStartDate, firstEndDate], ([newFirstStartDate, newFirstEndDate]) => 
   }
 });
 
-watch([firstEndDate, firstEndDate, secondStartDate], ([newFirstEndDate, newFirstStartDate, newSecondStartDate]) => {
+watch([firstEndDate, firstStartDate, secondStartDate], ([newFirstEndDate, newFirstStartDate, newSecondStartDate]) => {
   if (!newFirstEndDate) {
     firstEndDateValidationErrorMessage.value = "Geben Sie bitte ein Enddatum für das erste Halbjahr an.";
   } else if (newSecondStartDate && relatedDatesInvalid(newFirstEndDate, newSecondStartDate)) {
