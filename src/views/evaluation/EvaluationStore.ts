@@ -45,10 +45,10 @@ function groupBy<T, K>(list: T[], keyGetter: (item: T) => K): Map<K, T[]> {
   list.forEach((item: T) => {
     const key = keyGetter(item);
     const collection = map.get(key);
-    if (!collection) {
-      map.set(key, [item]);
-    } else {
+    if (collection) {
       collection.push(item);
+    } else {
+      map.set(key, [item]);
     }
   });
   return map;
@@ -63,7 +63,7 @@ async function loadStudentsForGroup(group: Group): Promise<EvaluatedStudent[]> {
   return students.map((student): EvaluatedStudent => {
     return {
       student: student,
-      grades: new Map(),
+      grades: {},
     };
   });
 }

@@ -2,7 +2,7 @@ import type { Student } from "@/components/students/Student";
 
 export type EvaluatedStudent = {
   student: Student;
-  grades: Map<string, Grade>;
+  grades: Record<string, Grade>;
 };
 
 export type Grade = {

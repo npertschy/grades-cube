@@ -49,7 +49,7 @@ export class EvaluationGateway {
   async loadStudentsForCourse(course: Course): Promise<EvaluatedStudent[]> {
     const students: EvaluatedStudentEntity[] = await db.select(
       `
-      SELECT 
+      SELECT
        ZSTUDENT.Z_PK,
        ZSTUDENT.ZFIRSTNAME,
        ZSTUDENT.ZLASTNAME,
@@ -73,16 +73,16 @@ export class EvaluationGateway {
     );
 
     return students.map((student): EvaluatedStudent => {
-      const grades = new Map<string, Grade>();
+      const grades: Record<string, Grade> = {};
       const studentGrades: { [key: string]: GradeEntity } = JSON.parse(student.GRADES);
       Object.entries(studentGrades).forEach(([performanceId, gradeOfPerformance]) => {
-        const grade = gradeOfPerformance as GradeEntity;
-        grades.set(performanceId, {
+        const grade = gradeOfPerformance;
+        grades[performanceId] = {
           id: grade.GRADEID,
           value: grade.VALUE,
           performacneTitle: grade.TITLE,
           performanceType: grade.TYPE,
-        });
+        };
       });
       return {
         student: {

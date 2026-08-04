@@ -51,7 +51,7 @@ function handleColumnSelection(id: number) {
 
 async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
   const performanceId = event.field;
-  const grade: Grade = event.newData.grades.get(performanceId);
+  const grade: Grade = event.newData.grades[performanceId];
   const studentIndex = event.index;
   emit("grade-changed", { grade, studentIndex });
 }
@@ -68,6 +68,10 @@ function allowedGradesByPerformance(performance: Performance) {
     pattern,
     validateOnly: true,
   };
+}
+
+function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined {
+  return data.grades[field];
 }
 </script>
 
@@ -119,7 +123,7 @@ function allowedGradesByPerformance(performance: Performance) {
       </template>
       <template #body="{ data, column }">
         <span :class="selectedColumn === performance.id ? 'bold-text' : ''">
-          {{ data.grades.get(column.props.field)?.value }}
+          {{ gradeForField(data, column.props.field as string)?.value }}
         </span>
       </template>
       <template
@@ -127,7 +131,7 @@ function allowedGradesByPerformance(performance: Performance) {
         #editor="{ data, column }"
       >
         <p-input-text
-          v-model="data.grades.get(column.props.field).value"
+          v-model="gradeForField(data, column.props.field as string)!.value"
           v-keyfilter="allowedGradesByPerformance(performance)"
           style="width: 100%; padding-top: 3px; padding-bottom: 3px"
         />

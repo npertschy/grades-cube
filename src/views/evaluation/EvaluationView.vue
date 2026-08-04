@@ -66,8 +66,12 @@ watch(selectedNode, async (node) => {
       students.value = await loadStudentsForGroup(node.data);
       performances.value = [];
     } else if (node.type === "course") {
-      students.value = await loadStudentsForCourse(node.data);
-      performances.value = await loadPerformancesForCourse(node.data);
+      const [studentsForCourse, performancesForCourse] = await Promise.all([
+        loadStudentsForCourse(node.data),
+        loadPerformancesForCourse(node.data),
+      ]);
+      students.value = studentsForCourse;
+      performances.value = performancesForCourse;
     }
   } else {
     students.value = [];
@@ -76,8 +80,12 @@ watch(selectedNode, async (node) => {
 });
 
 async function reloadCourse() {
-  students.value = await loadStudentsForCourse(selectedNode.value?.data);
-  performances.value = await loadPerformancesForCourse(selectedNode.value?.data);
+  const [studentsForCourse, performancesForCourse] = await Promise.all([
+    loadStudentsForCourse(selectedNode.value?.data),
+    loadPerformancesForCourse(selectedNode.value?.data),
+  ]);
+  students.value = studentsForCourse;
+  performances.value = performancesForCourse;
 }
 
 const tableTitle = computed(() => {
@@ -199,7 +207,7 @@ async function handleGradeChanged(grade: Grade, studentIndex: number) {
 
     const recommendationPerformance = performances.value.find((performance) => performance.type === 1);
     if (recommendationPerformance && recommendationPerformance.performanceId) {
-      const recommendationGrade = student.grades.get(recommendationPerformance.performanceId);
+      const recommendationGrade = student.grades[recommendationPerformance.performanceId];
       if (recommendationGrade) {
         recommendationGrade.value = possibleOralGrades[Math.round(indexOfRecommendation - 1)];
         await updateGrade(recommendationGrade);
@@ -216,9 +224,8 @@ async function handleGradeChanged(grade: Grade, studentIndex: number) {
   }
 }
 
-function filterGradesByPerformanceType(grades: Map<string, Grade>, performanceType: number) {
-  return Array.from(grades)
-    .map(([, value]) => value)
+function filterGradesByPerformanceType(grades: Record<string, Grade>, performanceType: number) {
+  return Object.values(grades)
     .filter((value) => value.performanceType === performanceType)
     .filter((value) => value.value !== undefined)
     .filter((value) => value.value !== null)
@@ -236,7 +243,7 @@ async function updateOverallGradeByPerformanceType(
 
   const overallPerformance = performances.value.find((performance) => performance.type === overallPerformanceType);
   if (overallPerformance && overallPerformance.performanceId) {
-    const overallGrade = student.grades.get(overallPerformance.performanceId);
+    const overallGrade = student.grades[overallPerformance.performanceId];
     if (overallGrade) {
       overallGrade.value = Math.floor(average).toString();
       await updateGrade(overallGrade);
@@ -244,7 +251,7 @@ async function updateOverallGradeByPerformanceType(
   }
 }
 
-function calculateAverageGrade(grades: Map<string, Grade>, performanceType: number) {
+function calculateAverageGrade(grades: Record<string, Grade>, performanceType: number) {
   const filteredGrades = filterGradesByPerformanceType(grades, performanceType);
   const sum = filteredGrades.reduce((acc, grade) => acc + parseInt(grade), 0);
   return sum / filteredGrades.length;
