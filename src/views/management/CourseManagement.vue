@@ -13,7 +13,7 @@ import PDivider from "primevue/divider";
 import PDataTable from "primevue/datatable";
 import PDataView from "primevue/dataview";
 import PColumn from "primevue/column";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -40,7 +40,16 @@ const subject = ref<Subject>();
 const studentsOfCourse = ref<Student[]>([]);
 
 const { students, formatStudent } = useStudents();
-const studentList = ref([...students.value]);
+const studentQuery = shallowRef("");
+const studentList = computed<Student[]>(() => {
+  if (studentQuery.value === "") {
+    return [...students.value];
+  } else {
+    return students.value.filter((it) => {
+      return it.firstName?.includes(studentQuery.value) || it.lastName?.includes(studentQuery.value);
+    });
+  }
+});
 
 const availableGroups = ref<Group[]>([]);
 const availableSubjects = ref<Subject[]>([]);
@@ -127,16 +136,6 @@ async function handleRemovingStudent() {
   }
 }
 
-function searchStudents(event: AutoCompleteCompleteEvent) {
-  if (event.query === "") {
-    studentList.value = [...students.value];
-  } else {
-    studentList.value = students.value.filter((it) => {
-      return it.firstName?.includes(event.query) || it.lastName?.includes(event.query);
-    });
-  }
-}
-
 watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, currentSemester]) => {
   if (currentSchoolYear && currentSemester) {
     await loadAllCoursesForSchoolYearAndSemester(currentSchoolYear, currentSemester);
@@ -147,9 +146,13 @@ watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, current
 
 onMounted(async () => {
   if (selectedSchoolYear.value && selectedSemester.value) {
-    await loadAllCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value);
-    availableGroups.value = await loadAvailableGroupsForSchoolYear(selectedSchoolYear.value);
-    availableSubjects.value = await loadAvailableSubjectsForSchoolYear(selectedSchoolYear.value);
+  const [_, groups, subjects] = await Promise.all([
+    loadAllCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value),
+    loadAvailableGroupsForSchoolYear(selectedSchoolYear.value),
+    loadAvailableSubjectsForSchoolYear(selectedSchoolYear.value),
+  ]);
+  availableGroups.value = groups;
+  availableSubjects.value = subjects;
   }
 });
 
@@ -319,7 +322,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                         :suggestions="studentList"
                         class="w-full"
                         force-selection
-                        @complete="searchStudents"
+                        @complete="(event: AutoCompleteCompleteEvent) => studentQuery = event.query"
                       >
                         <template #option="slotProps">
                           <span>{{ formatStudent(slotProps.option) }}</span>

@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T">
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
-import { ref, toRefs } from "vue";
+import { computed, shallowRef, toRefs } from "vue";
 
 const props = defineProps<{
   identifier: string;
@@ -13,17 +13,15 @@ const { identifier, label, items, option } = toRefs(props);
 
 const value = defineModel<T[]>();
 
-const suggestions = ref<T[]>([...items.value]);
+const query = shallowRef("");
 
-function filterSuggestions(event: AutoCompleteCompleteEvent) {
-  if (event.query === "") {
-    suggestions.value = [...items.value];
-  } else {
-    suggestions.value = items.value.filter((item) => {
-      return option.value(item).includes(event.query);
-    });
+const suggestions = computed<T[]>(() => {
+  if (query.value === "") {
+    return items.value;
   }
-}
+  return items.value.filter((item) => option.value(item).includes(query.value));
+});
+
 </script>
 
 <template>
@@ -41,7 +39,7 @@ function filterSuggestions(event: AutoCompleteCompleteEvent) {
       :suggestions="suggestions"
       :option-label="option"
       class="w-full mt-1"
-      @complete="filterSuggestions"
+      @complete="(event: AutoCompleteCompleteEvent) => query = event.query"
     />
   </div>
 </template>

@@ -14,7 +14,7 @@ import PDivider from "primevue/divider";
 import PDataTable from "primevue/datatable";
 import PDataView from "primevue/dataview";
 import PColumn from "primevue/column";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, shallowRef, watch } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import type { Group } from "@/components/groups/Group";
@@ -36,7 +36,16 @@ const student = ref<Student>();
 const groupType = ref<number>();
 
 const { students, formatStudent } = useStudents();
-const studentList = ref([...students.value]);
+const studentQuery = shallowRef("");
+const studentList = computed<Student[]>(() => {
+  if (studentQuery.value === "") {
+    return [...students.value];
+  } else {
+    return students.value.filter((it) => {
+      return it.firstName?.includes(studentQuery.value) || it.lastName?.includes(studentQuery.value);
+    });
+  }
+});
 
 const selectedGroup = ref<Group | undefined>();
 const selectedStudent = ref<Student | undefined>();
@@ -113,16 +122,6 @@ async function handleRemovingStudent() {
   if (selectedStudent.value) {
     await removeStudentFromGroup(selectedStudent.value, selectedGroup.value!);
     await loadGroup(selectedGroup.value);
-  }
-}
-
-function searchStudents(event: AutoCompleteCompleteEvent) {
-  if (event.query === "") {
-    studentList.value = [...students.value];
-  } else {
-    studentList.value = students.value.filter((it) => {
-      return it.firstName?.includes(event.query) || it.lastName?.includes(event.query);
-    });
   }
 }
 
@@ -330,7 +329,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                         :suggestions="studentList"
                         class="w-full"
                         force-selection
-                        @complete="searchStudents"
+                        @complete="(event: AutoCompleteCompleteEvent) => studentQuery = event.query"
                       >
                         <template #option="slotProps">
                           <span>{{ formatStudent(slotProps.option) }}</span>
