@@ -9,7 +9,7 @@ import VueDevTools from "vite-plugin-vue-devtools";
 // https://vitejs.dev/config/
 export default defineConfig({
   build: {
-    target: ["es2022"],
+    target: ["es2024"],
   },
   plugins: [vue(), VueDevTools()],
   resolve: {
