@@ -8,7 +8,7 @@ import PButton from "primevue/button";
 import PDialog from "primevue/dialog";
 import PInputText from "primevue/inputtext";
 import type { TreeNode } from "primevue/treenode";
-import type { EvaluatedStudent } from "@/components/evaluations/EvaluatedStudent";
+import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
 import type { Performance } from "@/components/evaluations/Performance";
 import EvaluationTable from "./EvaluationTable.vue";
 import GradeWeightsView from "./GradeWeightsView.vue";
@@ -24,6 +24,7 @@ const {
   loadPerformancesForCourse,
   createPerformance,
   updatePerformance,
+  updateGrade,
 } = useEvaluations();
 
 const expandedKeys: TreeExpandedKeys = ref({});
@@ -172,6 +173,82 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
     }
   });
 }
+
+const possibleOralGrades = ["++", "+", "0", "-", "--", "f"];
+
+async function handleGradeChanged(grade: Grade, studentIndex: number) {
+  await updateGrade(grade);
+
+  if (grade.performanceType === 0) {
+    const student = students.value[studentIndex];
+    const oralGradesOfStudent = filterGradesByPerformanceType(student.grades, 0);
+    const gradesFrequency = oralGradesOfStudent.reduce(
+      (acc, grade) => {
+        acc[grade] = (acc[grade] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const sum = Object.entries(gradesFrequency).reduce((acc, [grade, count]) => {
+      const gradeIndex = possibleOralGrades.indexOf(grade);
+      return acc + (gradeIndex + 1) * count; // zero base index
+    }, 0);
+
+    const indexOfRecommendation = sum / oralGradesOfStudent.length;
+
+    const recommendationPerformance = performances.value.find((performance) => performance.type === 1);
+    if (recommendationPerformance && recommendationPerformance.performanceId) {
+      const recommendationGrade = student.grades.get(recommendationPerformance.performanceId);
+      if (recommendationGrade) {
+        recommendationGrade.value = possibleOralGrades[Math.round(indexOfRecommendation - 1)];
+        await updateGrade(recommendationGrade);
+      }
+    }
+  } else if (grade.performanceType === 3) {
+    const student = students.value[studentIndex];
+
+    await updateOverallGradeByPerformanceType(student, 3, 4);
+  } else if (grade.performanceType === 6) {
+    const student = students.value[studentIndex];
+
+    await updateOverallGradeByPerformanceType(student, 6, 7);
+  }
+}
+
+function filterGradesByPerformanceType(grades: Map<string, Grade>, performanceType: number) {
+  return Array.from(grades)
+    .map(([, value]) => value)
+    .filter((value) => value.performanceType === performanceType)
+    .filter((value) => value.value !== undefined)
+    .filter((value) => value.value !== null)
+    .filter((value) => value.value !== "")
+    .map((value) => value.value)
+    .filter((value) => value !== "f");
+}
+
+async function updateOverallGradeByPerformanceType(
+  student: EvaluatedStudent,
+  performanceType: number,
+  overallPerformanceType: number,
+) {
+  const average = calculateAverageGrade(student.grades, performanceType);
+
+  const overallPerformance = performances.value.find((performance) => performance.type === overallPerformanceType);
+  if (overallPerformance && overallPerformance.performanceId) {
+    const overallGrade = student.grades.get(overallPerformance.performanceId);
+    if (overallGrade) {
+      overallGrade.value = Math.floor(average).toString();
+      await updateGrade(overallGrade);
+    }
+  }
+}
+
+function calculateAverageGrade(grades: Map<string, Grade>, performanceType: number) {
+  const filteredGrades = filterGradesByPerformanceType(grades, performanceType);
+  const sum = filteredGrades.reduce((acc, grade) => acc + parseInt(grade), 0);
+  return sum / filteredGrades.length;
+}
 </script>
 
 <template>
@@ -298,6 +375,7 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
           :students="students"
           @performances-updated="reloadCourse"
           @selected-column="(id) => (selectedColumn = id)"
+          @grade-changed="({ grade, studentIndex }) => handleGradeChanged(grade, studentIndex)"
         />
         <grade-weights-view
           v-if="showWeightsManagement"
