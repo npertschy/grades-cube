@@ -5,7 +5,7 @@ import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import AutoCompleteWithLabel from "@/components/layout/AutoCompleteWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
-import PCard from "primevue/card";
+import PPanel from "primevue/panel";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
 import { useSubjects } from "@/components/subjects/SubjectStore";
@@ -104,24 +104,24 @@ onMounted(async () => {
         <p-divider />
         <custom-transition>
           <div v-show="selectedSubject">
-            <p-card class="shadow-2">
-              <template #title>Fach</template>
-              <template #content>
-                <auto-complete-with-label
-                  v-model="name"
-                  identifier="nameField"
-                  label="Name"
-                  :items="allSubjects"
-                  :option="formatSubject"
-                />
-              </template>
-            </p-card>
+            <p-panel
+              header="Fach"
+              :pt="{ title: { style: { fontSize: '1.25rem' } } }"
+            >
+              <auto-complete-with-label
+                v-model="name"
+                identifier="nameField"
+                label="Name"
+                :items="allSubjects"
+                :option="formatSubject"
+              />
 
-            <save-and-delete-buttons
-              :show-delete-when-defined="selectedSubject"
-              :save-action="handleSave"
-              :delete-action="handleRemove"
-            />
+              <save-and-delete-buttons
+                :show-delete-when-defined="selectedSubject"
+                :save-action="handleSave"
+                :delete-action="handleRemove"
+              />
+            </p-panel>
           </div>
         </custom-transition>
       </template>

@@ -4,7 +4,7 @@ import { definePreset } from "@primeuix/themes";
 const customPreset = definePreset(Aura, {
   semantic: {
     primary: {
-      0: "#ffffff",
+      0: "{cyan.0}",
       50: "{cyan.50}",
       100: "{cyan.100}",
       200: "{cyan.200}",
@@ -20,20 +20,6 @@ const customPreset = definePreset(Aura, {
 
     colorScheme: {
       light: {
-        surface: {
-          0: "#ffffff",
-          50: "{zinc.50}",
-          100: "{zinc.100}",
-          200: "{zinc.200}",
-          300: "{zinc.300}",
-          400: "{zinc.400}",
-          500: "{zinc.500}",
-          600: "{zinc.600}",
-          700: "{zinc.700}",
-          800: "{zinc.800}",
-          900: "{zinc.900}",
-          950: "{zinc.950}",
-        },
         primary: {
           color: "{primary.500}",
           contrastColor: "#ffffff",
@@ -52,40 +38,26 @@ const customPreset = definePreset(Aura, {
         performance: {
           oral: {
             color: "white",
-            background: "lightskyblue",
-            border: "lightskyblue",
-            text: "lightskyblue",
+            background: "{sky.400}",
+            border: "{sky.400}",
+            text: "{sky.400}",
           },
           special: {
             color: "white",
-            background: "lightgreen",
-            border: "lightgreen",
-            text: "lightgreen",
+            background: "{green.400}",
+            border: "{green.400}",
+            text: "{green.400}",
           },
           test: {
             color: "white",
-            background: "lightcoral",
-            border: "lightcoral",
-            text: "lightcoral",
+            background: "{red.400}",
+            border: "{red.400}",
+            text: "{red.400}",
           },
         },
       },
 
       dark: {
-        surface: {
-          0: "#ffffff",
-          50: "{zinc.50}",
-          100: "{zinc.100}",
-          200: "{zinc.200}",
-          300: "{zinc.300}",
-          400: "{zinc.400}",
-          500: "{zinc.500}",
-          600: "{zinc.600}",
-          700: "{zinc.700}",
-          800: "{zinc.800}",
-          900: "{zinc.900}",
-          950: "{zinc.950}",
-        },
         primary: {
           color: "{primary.400}",
           contrastColor: "{surface.900}",

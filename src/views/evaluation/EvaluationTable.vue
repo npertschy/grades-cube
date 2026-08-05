@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import PDataTable, { type DataTableCellEditCompleteEvent } from "primevue/datatable";
 import PColumn from "primevue/column";
 import PInputText from "primevue/inputtext";
@@ -20,21 +20,27 @@ const emit = defineEmits<{
 
 const selectedColumn = ref<number>();
 
-function backgroundColorByType(type: number) {
-  switch (type) {
-    case 0:
-    case 1:
-    case 2:
-      return { backgroundColor: "var(--p-performance-oral-background)" };
-    case 3:
-    case 4:
-      return { backgroundColor: "var(--p-performance-special-background)" };
-    case 6:
-    case 7:
-      return { backgroundColor: "var(--p-performance-test-background)" };
-    default:
-      return {};
-  }
+function columnStyle(performance: Performance) {
+  const charWidth = 0.6;
+  const padding = 1.5;
+  const width = Math.max(3, Math.min(12, performance.title.length * charWidth + padding));
+
+  const bgColors: Record<number, string> = {
+    0: "var(--p-performance-oral-background)",
+    1: "var(--p-performance-oral-background)",
+    2: "var(--p-performance-oral-background)",
+    3: "var(--p-performance-special-background)",
+    4: "var(--p-performance-special-background)",
+    6: "var(--p-performance-test-background)",
+    7: "var(--p-performance-test-background)",
+  };
+
+  return {
+    width: `${width}rem`,
+    minWidth: "2rem",
+    maxWidth: "12rem",
+    ...(bgColors[performance.type] ? { backgroundColor: bgColors[performance.type] } : {}),
+  };
 }
 
 function handleColumnSelection(id: number) {
@@ -70,6 +76,12 @@ function allowedGradesByPerformance(performance: Performance) {
   };
 }
 
+const gradeValidation = computed(() =>
+  Object.fromEntries(
+    performances.map(p => [p.id, allowedGradesByPerformance(p)])
+  )
+)
+
 function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined {
   return data.grades[field];
 }
@@ -85,6 +97,7 @@ function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined
     row-hover
     edit-mode="cell"
     style="overflow-x: scroll"
+    :virtual-scroller-options="{ itemSize: 32 }"
     @cell-edit-complete="handleGradeChanged"
   >
     <p-column
@@ -109,8 +122,7 @@ function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined
       v-for="performance in performances"
       :key="performance.id"
       :field="performance.performanceId"
-      :style="backgroundColorByType(performance.type)"
-      style="width: fit-content; min-width: 2rem"
+      :style="columnStyle(performance)"
     >
       <template #header>
         <span
@@ -132,7 +144,7 @@ function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined
       >
         <p-input-text
           v-model="gradeForField(data, column.props.field as string)!.value"
-          v-keyfilter="allowedGradesByPerformance(performance)"
+          v-keyfilter="gradeValidation[performance.id!]"
           style="width: 100%; padding-top: 3px; padding-bottom: 3px"
         />
       </template>
@@ -140,9 +152,22 @@ function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined
   </p-data-table>
 </template>
 
-<style>
+<style scoped>
 td:has(input) {
   padding: 0px 8px !important;
+  overflow: hidden;
+}
+
+:deep(.p-datatable-tbody > tr > td .p-cell-editor-wrapper) {
+  display: block;
+  width: 100%;
+}
+
+:deep(.p-inputtext) {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .bold-text {

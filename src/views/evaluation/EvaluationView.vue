@@ -256,6 +256,17 @@ function calculateAverageGrade(grades: Record<string, Grade>, performanceType: n
   const sum = filteredGrades.reduce((acc, grade) => acc + parseInt(grade), 0);
   return sum / filteredGrades.length;
 }
+
+function sidePanelButtonStyle(selected: boolean) {
+  return {
+    backgroundColor: selected ? "var(--p-highlight-focus-background)" : "",
+    color: selected ? "var(--p-highlight-color)" : "",
+  };
+}
+
+const showChartForPerformanceButtonStyle = computed(() => sidePanelButtonStyle(showChartForPerformance.value));
+const showWeightsManagementButtonStyle = computed(() => sidePanelButtonStyle(showWeightsManagement.value));
+const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalculator.value));
 </script>
 
 <template>
@@ -333,21 +344,13 @@ function calculateAverageGrade(grades: Record<string, Grade>, performanceType: n
         <p-button
           icon="pi pi-chart-bar"
           severity="secondary"
-          :style="
-            showChartForPerformance
-              ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
-              : {}
-          "
+          :style="showChartForPerformanceButtonStyle"
           @click="showChartForPerformance = !showChartForPerformance"
         />
         <p-button
           icon="pi pi-percentage"
           severity="secondary"
-          :style="
-            showWeightsManagement
-              ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
-              : {}
-          "
+          :style="showWeightsManagementButtonStyle"
           @click="
             showWeightsManagement = !showWeightsManagement;
             if (showWeightsManagement) showCalculator = false;
@@ -356,11 +359,7 @@ function calculateAverageGrade(grades: Record<string, Grade>, performanceType: n
         <p-button
           icon="pi pi-calculator"
           severity="secondary"
-          :style="
-            showCalculator
-              ? { 'background-color': 'var(--p-highlight-focus-background)', color: 'var(--p-highlight-color)' }
-              : {}
-          "
+          :style="showCalculatorButtonStyle"
           @click="
             showCalculator = !showCalculator;
             if (showCalculator) showWeightsManagement = false;
@@ -435,11 +434,6 @@ function calculateAverageGrade(grades: Record<string, Grade>, performanceType: n
   </div>
 </template>
 
-<style>
-td:has(input) {
-  padding: 0px 8px !important;
-}
-</style>
 <style scoped>
 .container {
   display: grid;

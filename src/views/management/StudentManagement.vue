@@ -6,7 +6,7 @@ import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import AutoCompleteListWithLabel from "@/components/layout/AutoCompleteListWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
-import PCard from "primevue/card";
+import PPanel from "primevue/panel";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
 import type { Student } from "@/components/students/Student";
@@ -141,9 +141,10 @@ onMounted(async () => {
         <p-divider />
         <custom-transition>
           <div v-show="selectedStudent">
-            <p-card class="shadow-2">
-              <template #title>Schüler</template>
-              <template #content>
+          <p-panel
+            header="Schüler"
+            :pt="{ title: { style: { fontSize: '1.25rem' } } }"
+          >
                 <div class="label-over-input">
                   <input-with-label
                     v-model="firstName"
@@ -170,13 +171,12 @@ onMounted(async () => {
                     :option="(course: Course) => course.group?.name! + ' ' + course.subject?.name"
                   />
                 </div>
-              </template>
-            </p-card>
             <save-and-delete-buttons
               :show-delete-when-defined="selectedStudent"
               :save-action="handleSave"
               :delete-action="handleRemove"
             />
+                        </p-panel>
           </div>
         </custom-transition>
       </template>

@@ -8,7 +8,7 @@ import PInputGroup from "primevue/inputgroup";
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
 import PSelectButton from "primevue/selectbutton";
-import PCard from "primevue/card";
+import PPanel from "primevue/panel";
 import PDivider from "primevue/divider";
 import PDataTable from "primevue/datatable";
 import PDataView from "primevue/dataview";
@@ -146,13 +146,13 @@ watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, current
 
 onMounted(async () => {
   if (selectedSchoolYear.value && selectedSemester.value) {
-  const [_, groups, subjects] = await Promise.all([
-    loadAllCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value),
-    loadAvailableGroupsForSchoolYear(selectedSchoolYear.value),
-    loadAvailableSubjectsForSchoolYear(selectedSchoolYear.value),
-  ]);
-  availableGroups.value = groups;
-  availableSubjects.value = subjects;
+    const [_, groups, subjects] = await Promise.all([
+      loadAllCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value),
+      loadAvailableGroupsForSchoolYear(selectedSchoolYear.value),
+      loadAvailableSubjectsForSchoolYear(selectedSchoolYear.value),
+    ]);
+    availableGroups.value = groups;
+    availableSubjects.value = subjects;
   }
 });
 
@@ -205,140 +205,138 @@ function toggleStudentSelection(selectionFromClick: Student) {
           class="edit-area"
         >
           <div class="group-area">
-            <p-card class="shadow-2">
-              <template #title> Kurs </template>
-              <template #content>
-                <object-auto-complete-with-label
-                  v-model="group"
-                  identifier="groupField"
-                  label="Klasse"
-                  :items="availableGroups"
-                  :option="(group: Group) => group.name!"
-                />
-                <object-auto-complete-with-label
-                  v-model="subject"
-                  identifier="subjectField"
-                  label="Fach"
-                  :items="availableSubjects"
-                  :option="(subject: Subject) => subject.name!"
-                />
-              </template>
-            </p-card>
-            <save-and-delete-buttons
-              :show-delete-when-defined="selectedCourse"
-              :save-action="handleSave"
-              :delete-action="handleRemove"
-              :grid-columns="3"
-            />
+            <p-panel
+              header="Kurs"
+              :pt="{ title: { style: { fontSize: '1.25rem' } } }"
+            >
+              <object-auto-complete-with-label
+                v-model="group"
+                identifier="groupField"
+                label="Klasse"
+                :items="availableGroups"
+                :option="(group: Group) => group.name!"
+              />
+              <object-auto-complete-with-label
+                v-model="subject"
+                identifier="subjectField"
+                label="Fach"
+                :items="availableSubjects"
+                :option="(subject: Subject) => subject.name!"
+              />
+              <save-and-delete-buttons
+                :show-delete-when-defined="selectedCourse"
+                :save-action="handleSave"
+                :delete-action="handleRemove"
+                :grid-columns="3"
+              />
+            </p-panel>
           </div>
           <div
             v-show="selectedCourse && selectedCourse.id && selectedCourse.id > 0"
             class="students-area"
           >
-            <p-card class="shadow-2">
-              <template #content>
-                <p-data-view
-                  :value="studentsOfCourse"
-                  :layout="layout"
-                  data-key="id"
-                  :pt="{
-                    header: () => ({ style: { padding: '0 0 0.75rem 0' } }),
-                  }"
-                >
-                  <template #header>
-                    <div style="display: grid; grid-template-columns: auto auto; justify-content: space-between">
-                      <div class="p-card-title">{{ numberOfStudents }} Schüler</div>
-                      <p-select-button
-                        v-model="layout"
-                        :options="layoutOptions"
-                        :allow-empty="false"
-                      >
-                        <template #option="{ option }">
-                          <i :class="[option === 'list' ? 'pi pi-bars' : 'pi pi-table']" />
-                        </template>
-                      </p-select-button>
-                    </div>
-                  </template>
-                  <template #list="listProps">
-                    <p-data-table
-                      v-model:selection="selectedStudent"
-                      :value="listProps.items"
-                      data-key="id"
-                      selection-mode="single"
-                      scrollable
-                      scroll-height="55vh"
+            <p-panel :pt="{ header: { style: { display: 'none' } } }">
+              <p-data-view
+                :value="studentsOfCourse"
+                :layout="layout"
+                data-key="id"
+                :pt="{
+                  header: () => ({ style: { padding: '18px 0 0.75rem 0' } }),
+                }"
+              >
+                <template #header>
+                  <div style="display: grid; grid-template-columns: auto auto; justify-content: space-between">
+                    <div style="font-size: 1.25rem; font-weight: bold">{{ numberOfStudents }} Schüler</div>
+                    <p-select-button
+                      v-model="layout"
+                      :options="layoutOptions"
+                      :allow-empty="false"
                     >
-                      <p-column header="#">
-                        <template #body="headerProps">
-                          {{ headerProps.index + 1 }}
-                        </template>
-                      </p-column>
-                      <p-column header="Name">
-                        <template #body="bodyProps">
-                          {{ bodyProps.data.firstName }}
-                          {{ bodyProps.data.lastName }}
-                        </template>
-                      </p-column>
-                    </p-data-table>
-                  </template>
-                  <template #grid="gridProps">
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 3px; padding-top: 3px">
-                      <p-button
-                        v-for="(studentItem, index) in gridProps.items"
-                        :key="index"
-                        outlined
-                        severity="secondary"
-                        style="padding: 2px"
-                        :class="{
-                          'highlight-button': selectedStudent == studentItem,
-                        }"
-                        @click="toggleStudentSelection(studentItem)"
-                      >
-                        {{ Number(index) + 1 }}.
-                        {{ formatStudent(studentItem) }}
-                      </p-button>
-                    </div>
-                  </template>
-                </p-data-view>
-                <div class="label-over-input mt-2">
-                  <div>
-                    <label
-                      for="pupilName"
-                      class="font-semibold"
-                    >
-                      Schüler zum Kurs hinzufügen
-                    </label>
-                    <p-input-group>
-                      <p-button
-                        icon="pi pi-check"
-                        severity="success"
-                        :disabled="!student"
-                        @click="handleAddingStudent"
-                      />
-                      <p-auto-complete
-                        v-model="student"
-                        input-id="pupilName"
-                        :option-label="formatStudent"
-                        :suggestions="studentList"
-                        class="w-full"
-                        force-selection
-                        @complete="(event: AutoCompleteCompleteEvent) => studentQuery = event.query"
-                      >
-                        <template #option="slotProps">
-                          <span>{{ formatStudent(slotProps.option) }}</span>
-                        </template>
-                      </p-auto-complete>
-                      <p-button
-                        icon="pi pi-times"
-                        severity="danger"
-                        :disabled="!student"
-                        @click="handleRemovingStudent"
-                      />
-                    </p-input-group>
+                      <template #option="{ option }">
+                        <i :class="[option === 'list' ? 'pi pi-bars' : 'pi pi-table']" />
+                      </template>
+                    </p-select-button>
                   </div>
+                </template>
+                <template #list="listProps">
+                  <p-data-table
+                    v-model:selection="selectedStudent"
+                    :value="listProps.items"
+                    data-key="id"
+                    selection-mode="single"
+                    scrollable
+                    scroll-height="55vh"
+                  >
+                    <p-column header="#">
+                      <template #body="headerProps">
+                        {{ headerProps.index + 1 }}
+                      </template>
+                    </p-column>
+                    <p-column header="Name">
+                      <template #body="bodyProps">
+                        {{ bodyProps.data.firstName }}
+                        {{ bodyProps.data.lastName }}
+                      </template>
+                    </p-column>
+                  </p-data-table>
+                </template>
+                <template #grid="gridProps">
+                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px 3px; padding-top: 3px">
+                    <p-button
+                      v-for="(studentItem, index) in gridProps.items"
+                      :key="index"
+                      outlined
+                      severity="secondary"
+                      style="padding: 2px"
+                      :class="{
+                        'highlight-button': selectedStudent == studentItem,
+                      }"
+                      @click="toggleStudentSelection(studentItem)"
+                    >
+                      {{ Number(index) + 1 }}.
+                      {{ formatStudent(studentItem) }}
+                    </p-button>
+                  </div>
+                </template>
+              </p-data-view>
+              <div class="label-over-input mt-2">
+                <div>
+                  <label
+                    for="pupilName"
+                    class="font-semibold"
+                  >
+                    Schüler zum Kurs hinzufügen
+                  </label>
+                  <p-input-group>
+                    <p-button
+                      icon="pi pi-check"
+                      severity="success"
+                      :disabled="!student"
+                      @click="handleAddingStudent"
+                    />
+                    <p-auto-complete
+                      v-model="student"
+                      input-id="pupilName"
+                      :option-label="formatStudent"
+                      :suggestions="studentList"
+                      class="w-full"
+                      force-selection
+                      @complete="(event: AutoCompleteCompleteEvent) => (studentQuery = event.query)"
+                    >
+                      <template #option="slotProps">
+                        <span>{{ formatStudent(slotProps.option) }}</span>
+                      </template>
+                    </p-auto-complete>
+                    <p-button
+                      icon="pi pi-times"
+                      severity="danger"
+                      :disabled="!student"
+                      @click="handleRemovingStudent"
+                    />
+                  </p-input-group>
                 </div>
-              </template>
-            </p-card>
+              </div>
+            </p-panel>
           </div>
         </div>
       </custom-transition>

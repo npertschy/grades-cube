@@ -4,7 +4,7 @@ import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import DatePickerWithLabel from "@/components/layout/DatePickerWithLabel.vue";
-import PCard from "primevue/card";
+import PPanel from "primevue/panel";
 import PDivider from "primevue/divider";
 import { computed, ref, watch } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
@@ -207,46 +207,39 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
       <p-divider />
       <custom-transition>
         <div v-show="selectedSchoolYear">
-          <p-card class="shadow-2">
-            <template #title>Erstes Halbjahr</template>
-            <template #content>
-              <div class="label-over-input">
-                <date-picker-with-label
-                  v-model="firstStartDate"
-                  label="Start erstes Halbjahr"
-                  :validation-error-message="firstStartDateValidationErrorMessage"
-                />
-                <date-picker-with-label
-                  v-model="firstEndDate"
-                  label="Ende erstes Halbjahr"
-                  :validation-error-message="firstEndDateValidationErrorMessage"
-                />
-              </div>
-            </template>
-          </p-card>
-          <p-card class="shadow-2 mt-2">
-            <template #title>Zweites Halbjahr</template>
-            <template #content>
-              <div class="label-over-input">
-                <date-picker-with-label
-                  v-model="secondStartDate"
-                  label="Start zweites Halbjahr"
-                  :validation-error-message="secondStartDateValidationErrorMessage"
-                />
-                <date-picker-with-label
-                  v-model="secondEndDate"
-                  label="Ende zweites Halbjahr"
-                  :validation-error-message="secondEndDateValidationErrorMessage"
-                />
-              </div>
-            </template>
-          </p-card>
+          <p-panel
+            header="Schuljahr"
+            :pt="{ title: { style: { fontSize: '1.25rem' } } }"
+          >
+            <div class="label-over-input">
+              <date-picker-with-label
+                v-model="firstStartDate"
+                label="Start erstes Halbjahr"
+                :validation-error-message="firstStartDateValidationErrorMessage"
+              />
+              <date-picker-with-label
+                v-model="firstEndDate"
+                label="Ende erstes Halbjahr"
+                :validation-error-message="firstEndDateValidationErrorMessage"
+              />
+              <date-picker-with-label
+                v-model="secondStartDate"
+                label="Start zweites Halbjahr"
+                :validation-error-message="secondStartDateValidationErrorMessage"
+              />
+              <date-picker-with-label
+                v-model="secondEndDate"
+                label="Ende zweites Halbjahr"
+                :validation-error-message="secondEndDateValidationErrorMessage"
+              />
+            </div>
           <save-and-delete-buttons
             :show-delete-when-defined="selectedSchoolYear"
             :save-action="handleSave"
             :delete-action="handleRemove"
             :save-disabled="disableSave"
           />
+        </p-panel>
         </div>
       </custom-transition>
     </template>
@@ -258,6 +251,7 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 0.5rem;
+    row-gap: 1.5rem;
 }
 
 .calender-input {

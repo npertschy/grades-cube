@@ -34,10 +34,14 @@ const themeSelection = computed(() => {
   return darkModeSelected.value ? "Dunkles Design" : "Helles Design";
 });
 
-watch(darkModeSelected, async (current) => {
-  document.documentElement.classList.toggle("my-app-dark");
-  await store.set(darkModeSelectedKey, current);
-});
+watch(
+  darkModeSelected,
+  async (current) => {
+    document.documentElement.classList.toggle("my-app-dark", current);
+    await store.set(darkModeSelectedKey, current);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -86,11 +90,13 @@ watch(darkModeSelected, async (current) => {
           @click="toggle"
         />
         <p-popover ref="usermenu">
-          <label for="theme-switch"> {{ themeSelection }} </label>
-          <p-toggle-switch
-            v-model="darkModeSelected"
-            input-id="theme-switch"
-          />
+          <div style="display: grid; grid-template-columns: 1fr 1fr; align-items: center; column-gap: 0.5rem">
+            <label for="theme-switch"> {{ themeSelection }} </label>
+            <p-toggle-switch
+              v-model="darkModeSelected"
+              input-id="theme-switch"
+            />
+          </div>
         </p-popover>
       </div>
     </template>

@@ -17,7 +17,7 @@ const { header } = defineProps<{
   </p-panel>
 </template>
 
-<style>
+<style scoped>
 .container {
   display: grid;
   grid-template-columns: 2fr repeat(10, 1fr);

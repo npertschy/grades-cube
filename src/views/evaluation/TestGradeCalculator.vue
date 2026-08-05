@@ -164,11 +164,7 @@ const achievedPointsSummary = computed(() => {
   </p-panel>
 </template>
 
-<style>
-.highlight-row {
-  background-color: #ffe082 !important;
-}
-
+<style scoped>
 .number-with-label {
   display: grid;
   grid-template-columns: 1fr 1fr;
