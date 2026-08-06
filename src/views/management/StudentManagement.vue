@@ -6,7 +6,7 @@ import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import AutoCompleteListWithLabel from "@/components/layout/AutoCompleteListWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
-import PPanel from "primevue/panel";
+import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
 import type { Student } from "@/components/students/Student";
@@ -141,42 +141,39 @@ onMounted(async () => {
         <p-divider />
         <custom-transition>
           <div v-show="selectedStudent">
-          <p-panel
-            header="Schüler"
-            :pt="{ title: { style: { fontSize: '1.25rem' } } }"
-          >
-                <div class="label-over-input">
-                  <input-with-label
-                    v-model="firstName"
-                    identifier="firstNameField"
-                    label="Vorname"
-                  />
-                  <input-with-label
-                    v-model="lastName"
-                    identifier="lastNameField"
-                    label="Nachname"
-                  />
-                  <auto-complete-list-with-label
-                    v-model="groups"
-                    identifier="groupField"
-                    label="Klassen"
-                    :items="availableGroups"
-                    :option="(group: Group) => group.name!"
-                  />
-                  <auto-complete-list-with-label
-                    v-model="courses"
-                    identifier="courseField"
-                    label="Kurse"
-                    :items="[]"
-                    :option="(course: Course) => course.group?.name! + ' ' + course.subject?.name"
-                  />
-                </div>
-            <save-and-delete-buttons
-              :show-delete-when-defined="selectedStudent"
-              :save-action="handleSave"
-              :delete-action="handleRemove"
-            />
-                        </p-panel>
+            <content-editing-panel header="Schüler">
+              <div class="label-over-input">
+                <input-with-label
+                  v-model="firstName"
+                  identifier="firstNameField"
+                  label="Vorname"
+                />
+                <input-with-label
+                  v-model="lastName"
+                  identifier="lastNameField"
+                  label="Nachname"
+                />
+                <auto-complete-list-with-label
+                  v-model="groups"
+                  identifier="groupField"
+                  label="Klassen"
+                  :items="availableGroups"
+                  :option="(group: Group) => group.name!"
+                />
+                <auto-complete-list-with-label
+                  v-model="courses"
+                  identifier="courseField"
+                  label="Kurse"
+                  :items="[]"
+                  :option="(course: Course) => course.group?.name! + ' ' + course.subject?.name"
+                />
+              </div>
+              <save-and-delete-buttons
+                :show-delete-when-defined="selectedStudent"
+                :save-action="handleSave"
+                :delete-action="handleRemove"
+              />
+            </content-editing-panel>
           </div>
         </custom-transition>
       </template>

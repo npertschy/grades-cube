@@ -5,7 +5,7 @@ import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import AutoCompleteWithLabel from "@/components/layout/AutoCompleteWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
-import PPanel from "primevue/panel";
+import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
 import { useSubjects } from "@/components/subjects/SubjectStore";
@@ -104,9 +104,8 @@ onMounted(async () => {
         <p-divider />
         <custom-transition>
           <div v-show="selectedSubject">
-            <p-panel
+            <content-editing-panel
               header="Fach"
-              :pt="{ title: { style: { fontSize: '1.25rem' } } }"
             >
               <auto-complete-with-label
                 v-model="name"
@@ -121,7 +120,7 @@ onMounted(async () => {
                 :save-action="handleSave"
                 :delete-action="handleRemove"
               />
-            </p-panel>
+            </content-editing-panel>
           </div>
         </custom-transition>
       </template>

@@ -4,7 +4,7 @@ import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import DatePickerWithLabel from "@/components/layout/DatePickerWithLabel.vue";
-import PPanel from "primevue/panel";
+import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { computed, ref, watch } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
@@ -207,9 +207,8 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
       <p-divider />
       <custom-transition>
         <div v-show="selectedSchoolYear">
-          <p-panel
+          <content-editing-panel
             header="Schuljahr"
-            :pt="{ title: { style: { fontSize: '1.25rem' } } }"
           >
             <div class="label-over-input">
               <date-picker-with-label
@@ -239,7 +238,7 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
             :delete-action="handleRemove"
             :save-disabled="disableSave"
           />
-        </p-panel>
+        </content-editing-panel>
         </div>
       </custom-transition>
     </template>

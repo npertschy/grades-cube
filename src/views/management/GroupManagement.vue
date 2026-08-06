@@ -4,12 +4,12 @@ import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
+import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PInputGroup from "primevue/inputgroup";
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
 import PSelectButton from "primevue/selectbutton";
 import PRadioButton from "primevue/radiobutton";
-import PPanel from "primevue/panel";
 import PDivider from "primevue/divider";
 import PDataTable from "primevue/datatable";
 import PDataView from "primevue/dataview";
@@ -188,9 +188,8 @@ function toggleStudentSelection(selectionFromClick: Student) {
           class="edit-area"
         >
           <div class="group-area">
-            <p-panel
+            <content-editing-panel
               header="Klasse"
-              :pt="{ title: { style: { fontSize: '1.25rem' } } }"
             >
               <input-with-label
                 v-model="name"
@@ -236,7 +235,7 @@ function toggleStudentSelection(selectionFromClick: Student) {
                 :delete-action="handleRemove"
                 :grid-columns="3"
               />
-            </p-panel>
+            </content-editing-panel>
           </div>
           <div
             v-show="selectedGroup && selectedGroup.id && selectedGroup.id > 0"
