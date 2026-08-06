@@ -39,8 +39,7 @@ watch(
   async (current) => {
     document.documentElement.classList.toggle("my-app-dark", current);
     await store.set(darkModeSelectedKey, current);
-  },
-  { immediate: true },
+  }
 );
 </script>
 
