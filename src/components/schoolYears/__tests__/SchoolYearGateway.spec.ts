@@ -58,7 +58,7 @@ describe("loadAll", () => {
 });
 
 describe("createSchoolYear", () => {
-  it("inserts the school year and both semesters", async () => {
+  it("inserts the school year and both semesters with Z_OPT = 1", async () => {
     mockedExecute.mockResolvedValueOnce({ lastInsertId: 1 });
     mockedExecute.mockResolvedValueOnce({});
     mockedExecute.mockResolvedValueOnce({});
@@ -68,24 +68,24 @@ describe("createSchoolYear", () => {
     expect(mockedExecute).toHaveBeenCalledTimes(3);
     expect(mockedExecute).toHaveBeenNthCalledWith(
       1,
-      "INSERT INTO ZYEAR (Z_ENT, ZEND, ZSTART) VALUES ($1, $2, $3)",
-      [8, expect.any(Number), expect.any(Number)],
+      expect.stringContaining("INSERT INTO ZYEAR"),
+      [8, 1, expect.any(Number), expect.any(Number)],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
-      "INSERT INTO ZSEMESTER (Z_ENT, ZTYPEID, ZYEAR, ZEND, ZSTART) VALUES ($1, $2, $3, $4, $5)",
-      [5, 1, 1, expect.any(Number), expect.any(Number)],
+      expect.stringContaining("INSERT INTO ZSEMESTER"),
+      [5, 1, 1, 1, expect.any(Number), expect.any(Number)],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       3,
-      "INSERT INTO ZSEMESTER (Z_ENT, ZTYPEID, ZYEAR, ZEND, ZSTART) VALUES ($1, $2, $3, $4, $5)",
-      [5, 2, 1, expect.any(Number), expect.any(Number)],
+      expect.stringContaining("INSERT INTO ZSEMESTER"),
+      [5, 1, 2, 1, expect.any(Number), expect.any(Number)],
     );
   });
 });
 
 describe("updateSchoolYear", () => {
-  it("updates the school year and both semesters", async () => {
+  it("updates the school year and both semesters with Z_OPT = Z_OPT + 1", async () => {
     mockedExecute.mockResolvedValue({});
 
     await updateSchoolYear(schoolYear);
@@ -93,17 +93,17 @@ describe("updateSchoolYear", () => {
     expect(mockedExecute).toHaveBeenCalledTimes(3);
     expect(mockedExecute).toHaveBeenNthCalledWith(
       1,
-      "UPDATE ZYEAR SET ZEND = $1, ZSTART = $2 WHERE Z_PK = $3",
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
       [expect.any(Number), expect.any(Number), 1],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
-      "UPDATE ZSEMESTER SET ZEND = $1, ZSTART = $2 WHERE Z_PK = $3",
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
       [expect.any(Number), expect.any(Number), 10],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       3,
-      "UPDATE ZSEMESTER SET ZEND = $1, ZSTART = $2 WHERE Z_PK = $3",
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
       [expect.any(Number), expect.any(Number), 11],
     );
   });

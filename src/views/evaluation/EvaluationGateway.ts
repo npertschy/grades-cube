@@ -11,9 +11,13 @@ import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import { db } from "@/store/Database";
 import { dateToCoreData, coreDataToUnix } from "@/store/DateConversion";
+import { Z_ENT } from "@/store/EntityId";
 import type { QueryResult } from "@tauri-apps/plugin-sql";
 
-export async function loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semester: Semester): Promise<Course[]> {
+export async function loadCoursesForSchoolYearAndSemester(
+  schoolYear: SchoolYear,
+  semester: Semester,
+): Promise<Course[]> {
   const courses: FullCourseEntity[] = await db.select(
     `
 	SELECT ZCOURSE.Z_PK, ZCOURSE.ZDAYS, ZGROUP.Z_PK AS GROUPID, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.Z_PK AS SUBJECTID, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE
@@ -147,10 +151,12 @@ export async function loadStudentsForGroup(group: Group): Promise<Student[]> {
 export async function createPerformance(performance: Performance, students: Student[]): Promise<void> {
   const newCourseId: QueryResult = await db.execute(
     `
-      INSERT INTO ZPERFORMANCE (ZEDITABLE, ZSORTORDER, ZTYPE, ZCOURSE, ZDATE, ZWEIGHT, ZTITLE)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      INSERT INTO ZPERFORMANCE (Z_ENT, Z_OPT, ZEDITABLE, ZSORTORDER, ZTYPE, ZCOURSE, ZDATE, ZWEIGHT, ZTITLE)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `,
     [
+      Z_ENT.ZPERFORMANCE,
+      1,
       performance.editable ? 1 : 0,
       performance.sortOrder,
       performance.type,
@@ -164,10 +170,10 @@ export async function createPerformance(performance: Performance, students: Stud
   for (const student of students) {
     await db.execute(
       `
-        INSERT INTO ZGRADE (ZPERFORMANCE, ZSTUDENT)
-        VALUES ($1, $2)
+        INSERT INTO ZGRADE (Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
+        VALUES ($1, $2, $3, $4)
         `,
-      [newCourseId.lastInsertId, student.id],
+      [Z_ENT.ZGRADE, 1, newCourseId.lastInsertId, student.id],
     );
   }
 }
@@ -176,7 +182,7 @@ export async function updatePerformance(performance: Performance): Promise<void>
   await db.execute(
     `
       UPDATE ZPERFORMANCE
-      SET ZWEIGHT = $1, ZTITLE = $2
+      SET ZWEIGHT = $1, ZTITLE = $2, Z_OPT = Z_OPT + 1
       WHERE Z_PK = $3
       `,
     [performance.weight, performance.title, performance.id],
@@ -187,7 +193,7 @@ export async function updateGrade(grade: Grade): Promise<void> {
   await db.execute(
     `
       UPDATE ZGRADE
-      SET ZVALUE = $1
+      SET ZVALUE = $1, Z_OPT = Z_OPT + 1
       WHERE Z_PK = $2
       `,
     [grade.value, grade.id],

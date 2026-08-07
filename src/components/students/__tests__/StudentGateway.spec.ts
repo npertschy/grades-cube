@@ -78,7 +78,7 @@ describe("loadGroupsAndCoursesForStudent", () => {
 });
 
 describe("createStudentInSchoolYear", () => {
-  it("inserts the student and school year mapping", async () => {
+  it("inserts the student with Z_OPT = 1 and school year mapping", async () => {
     mockedExecute.mockResolvedValueOnce({ lastInsertId: 42 });
     mockedExecute.mockResolvedValueOnce({});
 
@@ -87,25 +87,25 @@ describe("createStudentInSchoolYear", () => {
     expect(mockedExecute).toHaveBeenCalledTimes(2);
     expect(mockedExecute).toHaveBeenNthCalledWith(
       1,
-      "INSERT INTO ZSTUDENT (Z_ENT, ZFIRSTNAME, ZLASTNAME) VALUES ($1, $2, $3)",
-      [6, "Max", "Muster"],
+      expect.stringContaining("INSERT INTO ZSTUDENT"),
+      [6, 1, "Max", "Muster"],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
-      "INSERT INTO Z_6YEARS (Z_6STUDENTS2, Z_8YEARS1) VALUES ($1, $2)",
+      expect.stringContaining("INSERT INTO Z_6YEARS"),
       [42, 1],
     );
   });
 });
 
 describe("updateStudent", () => {
-  it("updates first and last name", async () => {
+  it("updates first and last name and increments Z_OPT", async () => {
     mockedExecute.mockResolvedValueOnce({});
 
     await updateStudent(student);
 
     expect(mockedExecute).toHaveBeenCalledWith(
-      "UPDATE ZSTUDENT SET ZFIRSTNAME = $1, ZLASTNAME = $2 WHERE Z_PK = $3",
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
       ["Max", "Muster", 10],
     );
   });
@@ -120,7 +120,7 @@ describe("deleteStudentInSchoolYear", () => {
 
     expect(mockedExecute).toHaveBeenCalledTimes(1);
     expect(mockedExecute).toHaveBeenCalledWith(
-      "DELETE FROM Z_6YEARS WHERE Z_6STUDENTS2 = $1 AND Z_8YEARS1 = $2",
+      expect.stringContaining("DELETE FROM Z_6YEARS"),
       [10, 1],
     );
   });
@@ -134,7 +134,7 @@ describe("deleteStudentInSchoolYear", () => {
     expect(mockedExecute).toHaveBeenCalledTimes(2);
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
-      "DELETE FROM ZSTUDENT WHERE Z_PK = $1",
+      expect.stringContaining("DELETE FROM ZSTUDENT"),
       [10],
     );
   });

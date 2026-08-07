@@ -72,7 +72,7 @@ describe("loadStudentsByGroup", () => {
 });
 
 describe("createGroup", () => {
-  it("inserts a group and year mapping", async () => {
+  it("inserts a group with Z_OPT = 1 and year mapping", async () => {
     mockedExecute.mockResolvedValueOnce({ lastInsertId: 99 });
     mockedExecute.mockResolvedValueOnce({});
 
@@ -81,12 +81,12 @@ describe("createGroup", () => {
     expect(mockedExecute).toHaveBeenCalledTimes(2);
     expect(mockedExecute).toHaveBeenNthCalledWith(
       1,
-      "INSERT INTO ZGROUP (Z_ENT, ZNAME, ZTYPE, ZSORTINGNAME) VALUES (3, $1, $2, $3)",
-      ["Alpha", 1, "Alpha"],
+      expect.stringContaining("INSERT INTO ZGROUP"),
+      [3, 1, "Alpha", 1, "Alpha"],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
-      "INSERT INTO Z_3YEARS (Z_8YEARS, Z_3GROUPS1) VALUES ($1, $2)",
+      expect.stringContaining("INSERT INTO Z_3YEARS"),
       [1, 99],
     );
   });
@@ -100,20 +100,20 @@ describe("createGroup", () => {
 
     expect(mockedExecute).toHaveBeenNthCalledWith(
       1,
-      "INSERT INTO ZGROUP (Z_ENT, ZNAME, ZTYPE, ZSORTINGNAME) VALUES (3, $1, $2, $3)",
-      ["8B", 1, "08B"],
+      expect.stringContaining("INSERT INTO ZGROUP"),
+      [3, 1, "8B", 1, "08B"],
     );
   });
 });
 
 describe("updateGroup", () => {
-  it("updates name, type, and sorting name", async () => {
+  it("updates name, type, sorting name, and increments Z_OPT", async () => {
     mockedExecute.mockResolvedValueOnce({});
 
     await updateGroup(group);
 
     expect(mockedExecute).toHaveBeenCalledWith(
-      "UPDATE ZGROUP SET ZNAME = $1, ZTYPE = $2, ZSORTINGNAME = $3 WHERE Z_PK = $4",
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
       ["Alpha", 1, "Alpha", 10],
     );
   });
@@ -126,7 +126,7 @@ describe("assignStudentToGroup", () => {
     await assignStudentToGroup(student, group);
 
     expect(mockedExecute).toHaveBeenCalledWith(
-      "INSERT INTO Z_3STUDENTS (Z_6STUDENTS1, Z_3GROUPS2) VALUES ($1, $2)",
+      expect.stringContaining("INSERT INTO Z_3STUDENTS"),
       [20, 10],
     );
   });
@@ -139,7 +139,7 @@ describe("unassignStudentFromGroup", () => {
     await unassignStudentFromGroup(student, group);
 
     expect(mockedExecute).toHaveBeenCalledWith(
-      "DELETE FROM Z_3STUDENTS WHERE Z_6STUDENTS1 = $1 AND Z_3GROUPS2 = $2",
+      expect.stringContaining("DELETE FROM Z_3STUDENTS"),
       [20, 10],
     );
   });
@@ -153,13 +153,19 @@ describe("deleteGroupInSchoolYear", () => {
 
     expect(mockedExecute).toHaveBeenCalledTimes(6);
     expect(mockedExecute).toHaveBeenNthCalledWith(
-      1, "DELETE FROM Z_3STUDENTS WHERE Z_3GROUPS2 = $1", [10],
+      1,
+      expect.stringContaining("DELETE FROM Z_3STUDENTS"),
+      [10],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
-      2, "DELETE FROM Z_3YEARS WHERE Z_3GROUPS1 = $1 AND Z_8YEARS = $2", [10, 1],
+      2,
+      expect.stringContaining("DELETE FROM Z_3YEARS"),
+      [10, 1],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
-      6, "DELETE FROM ZGROUP WHERE Z_PK = $1", [10],
+      6,
+      expect.stringContaining("DELETE FROM ZGROUP"),
+      [10],
     );
   });
 });

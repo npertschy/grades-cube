@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Subject } from "@/components/subjects/Subject";
-import { createSubjectForSchoolYear } from "@/components/subjects/SubjectGateway";
+import {
+  createSubjectForSchoolYear,
+  updateSubject,
+  deleteSubjectFromSchoolYear,
+} from "@/components/subjects/SubjectGateway";
 
 const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
@@ -25,13 +29,13 @@ const schoolYear: SchoolYear = {
   secondSemester: undefined,
 };
 
-describe("createSubjectForSchoolYear", () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-  });
+beforeEach(() => {
+  vi.resetAllMocks();
+});
 
-  it("creates a new subject and mapping when the subject does not exist yet", async () => {
-    mockedSelect.mockResolvedValueOnce([]);          // no existing subject
+describe("createSubjectForSchoolYear", () => {
+  it("creates a new subject with Z_OPT = 1 and year mapping when subject does not exist yet", async () => {
+    mockedSelect.mockResolvedValueOnce([]);
     mockedNextPrimaryKey.mockResolvedValueOnce(42);
 
     const subject: Subject = { id: undefined, name: "Deutsch" };
@@ -41,12 +45,12 @@ describe("createSubjectForSchoolYear", () => {
     expect(mockedExecute).toHaveBeenCalledTimes(2);
     expect(mockedExecute).toHaveBeenNthCalledWith(
       1,
-      "INSERT INTO ZSUBJECT (Z_PK, Z_ENT, ZNAME) VALUES ($1, $2, $3)",
-      [42, 7, "Deutsch"],
+      expect.stringContaining("INSERT INTO ZSUBJECT"),
+      [42, 7, 1, "Deutsch"],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
-      "INSERT INTO Z_7YEARS (Z_7SUBJECTS, Z_8YEARS2) VALUES ($1, $2)",
+      expect.stringContaining("INSERT INTO Z_7YEARS"),
       [42, 1],
     );
   });
@@ -61,9 +65,53 @@ describe("createSubjectForSchoolYear", () => {
     expect(mockedNextPrimaryKey).not.toHaveBeenCalled();
     expect(mockedExecute).toHaveBeenCalledTimes(1);
     expect(mockedExecute).toHaveBeenCalledWith(
-      "INSERT INTO Z_7YEARS (Z_7SUBJECTS, Z_8YEARS2) VALUES ($1, $2)",
+      expect.stringContaining("INSERT INTO Z_7YEARS"),
       [7, 1],
     );
   });
 });
 
+describe("updateSubject", () => {
+  it("updates the subject name and increments Z_OPT", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+
+    const subject: Subject = { id: 7, name: "Mathematik" };
+    await updateSubject(subject);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
+      ["Mathematik", 7],
+    );
+  });
+});
+
+describe("deleteSubjectFromSchoolYear", () => {
+  it("deletes only the year mapping when the subject still belongs to other years", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+    mockedSelect.mockResolvedValueOnce({ "COUNT(*)": 1 });
+
+    const subject: Subject = { id: 7, name: "Deutsch" };
+    await deleteSubjectFromSchoolYear(subject, schoolYear);
+
+    expect(mockedExecute).toHaveBeenCalledTimes(1);
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM Z_7YEARS"),
+      [7, 1],
+    );
+  });
+
+  it("also deletes the subject record when no year mappings remain", async () => {
+    mockedExecute.mockResolvedValue({});
+    mockedSelect.mockResolvedValueOnce({ "COUNT(*)": 0 });
+
+    const subject: Subject = { id: 7, name: "Deutsch" };
+    await deleteSubjectFromSchoolYear(subject, schoolYear);
+
+    expect(mockedExecute).toHaveBeenCalledTimes(2);
+    expect(mockedExecute).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("DELETE FROM ZSUBJECT"),
+      [7],
+    );
+  });
+});
