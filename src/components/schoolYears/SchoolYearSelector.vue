@@ -56,12 +56,12 @@ watch(selectedSemester, async (current) => {
     :option-label="formatSchoolYear"
     show-clear
     placeholder="Schuljahr auswählen"
-    class="w-full"
+    fluid
   />
   <select-button
     v-model="selectedSemester"
     :options="semesters"
     :option-label="(option: Semester) => option.type + '. Semester'"
-    data-key="type"
+    dataKey="type"
   />
 </template>

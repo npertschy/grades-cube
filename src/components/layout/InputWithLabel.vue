@@ -19,8 +19,9 @@ const value = defineModel<string>();
     </label>
     <p-input-text
       v-model="value"
-      :input-id="identifier"
-      class="w-full mt-1"
+      :id="identifier"
+      class="mt-1"
+      fluid
     />
   </div>
 </template>

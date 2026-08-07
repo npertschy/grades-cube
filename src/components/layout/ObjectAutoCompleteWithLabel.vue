@@ -12,8 +12,7 @@ const { identifier, label, items, option } = defineProps<{
 const value = defineModel<T>();
 
 const query = shallowRef("");
-const suggestions = computed<T[]>(
-() => {
+const suggestions = computed<T[]>(() => {
   if (query.value === "") {
     return items;
   }

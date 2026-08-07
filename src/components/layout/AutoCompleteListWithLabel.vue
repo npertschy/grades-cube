@@ -21,7 +21,6 @@ const suggestions = computed<T[]>(() => {
   }
   return items.value.filter((item) => option.value(item).includes(query.value));
 });
-
 </script>
 
 <template>
@@ -38,14 +37,9 @@ const suggestions = computed<T[]>(() => {
       :input-id="identifier"
       :suggestions="suggestions"
       :option-label="option"
+      :pt="{ inputMultiple: { style: 'width: 100%' } }"
       class="w-full mt-1"
       @complete="(event: AutoCompleteCompleteEvent) => query = event.query"
     />
   </div>
 </template>
-
-<style scoped>
-div :deep(ul) {
-  width: 100%;
-}
-</style>
