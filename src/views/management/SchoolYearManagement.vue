@@ -6,7 +6,7 @@ import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import DatePickerWithLabel from "@/components/layout/DatePickerWithLabel.vue";
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useRoute } from "vue-router";
@@ -31,37 +31,66 @@ const secondEndDateValidationErrorMessage = ref<string | undefined>(
   "Geben Sie bitte ein Enddatum für das zweite Halbjahr an.",
 );
 
-const { schoolYears, addSchoolYear, formatSchoolYear, removeSchoolYear } = useSchoolYears();
+const { schoolYears, loadAllSchoolYears, addSchoolYear, editSchoolYear, formatSchoolYear, removeSchoolYear } =
+  useSchoolYears();
+
+onMounted(async () => {
+  await loadAllSchoolYears();
+});
 
 const selectedSchoolYear = ref<SchoolYear | undefined>();
 if (route.query["index"]) {
   selectedSchoolYear.value = schoolYears.value[+route.query["index"]];
 }
 
-function handleSave() {
-  const id = selectedSchoolYear.value ? selectedSchoolYear.value.id : undefined;
-  const schoolYear: SchoolYear = {
-    id: id,
-    start: firstStartDate.value,
-    end: secondEndDate.value,
-    firstSemester: {
-      id: undefined,
-      type: 1,
+async function handleSave() {
+  if (selectedSchoolYear.value?.id) {
+    const schoolYear: SchoolYear = {
+      id: selectedSchoolYear.value.id,
       start: firstStartDate.value,
-      end: firstEndDate.value,
-    },
-    secondSemester: {
-      id: undefined,
-      type: 2,
-      start: secondStartDate.value,
       end: secondEndDate.value,
-    },
-  };
+      firstSemester: {
+        id: selectedSchoolYear.value.firstSemester?.id,
+        type: 1,
+        start: firstStartDate.value,
+        end: firstEndDate.value,
+      },
+      secondSemester: {
+        id: selectedSchoolYear.value.secondSemester?.id,
+        type: 2,
+        start: secondStartDate.value,
+        end: secondEndDate.value,
+      },
+    };
 
-  addSchoolYear(schoolYear, () => {
-    resetDates();
-    selectedSchoolYear.value = undefined;
-  });
+    await editSchoolYear(schoolYear, () => {
+      resetDates();
+      selectedSchoolYear.value = undefined;
+    });
+  } else {
+    const schoolYear: SchoolYear = {
+      id: undefined,
+      start: firstStartDate.value,
+      end: secondEndDate.value,
+      firstSemester: {
+        id: undefined,
+        type: 1,
+        start: firstStartDate.value,
+        end: firstEndDate.value,
+      },
+      secondSemester: {
+        id: undefined,
+        type: 2,
+        start: secondStartDate.value,
+        end: secondEndDate.value,
+      },
+    };
+
+    addSchoolYear(schoolYear, () => {
+      resetDates();
+      selectedSchoolYear.value = undefined;
+    });
+  }
 }
 
 watch(selectedSchoolYear, (current) => loadSchoolYear(current));
@@ -207,9 +236,7 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
       <p-divider />
       <custom-transition>
         <div v-show="selectedSchoolYear">
-          <content-editing-panel
-            header="Schuljahr"
-          >
+          <content-editing-panel header="Schuljahr">
             <div class="label-over-input">
               <date-picker-with-label
                 v-model="firstStartDate"
@@ -232,13 +259,13 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
                 :validation-error-message="secondEndDateValidationErrorMessage"
               />
             </div>
-          <save-and-delete-buttons
-            :show-delete-when-defined="selectedSchoolYear"
-            :save-action="handleSave"
-            :delete-action="handleRemove"
-            :save-disabled="disableSave"
-          />
-        </content-editing-panel>
+            <save-and-delete-buttons
+              :show-delete-when-defined="selectedSchoolYear"
+              :save-action="handleSave"
+              :delete-action="handleRemove"
+              :save-disabled="disableSave"
+            />
+          </content-editing-panel>
         </div>
       </custom-transition>
     </template>
@@ -250,7 +277,7 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 0.5rem;
-    row-gap: 1.5rem;
+  row-gap: 1.5rem;
 }
 
 .calender-input {

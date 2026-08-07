@@ -8,10 +8,12 @@ import { useRouter } from "vue-router";
 import store from "@/store/KeyValueStore";
 import type { Semester } from "@/components/schoolYears/Semester";
 
-const { schoolYears, formatSchoolYear } = useSchoolYears();
+const { schoolYears, loadAllSchoolYears, formatSchoolYear } = useSchoolYears();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
 onMounted(async () => {
+  await loadAllSchoolYears();
+
   const id = await store.get("selectedSchoolYear");
   selectedSchoolYear.value = schoolYears.value.find((schoolYear) => {
     return schoolYear.id === id;

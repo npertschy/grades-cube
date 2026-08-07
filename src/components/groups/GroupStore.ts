@@ -1,16 +1,22 @@
 import type { Group } from "@/components/groups/Group";
-import { GroupGateway } from "@/components/groups/GroupGateway";
+import {
+  assignStudentToGroup,
+  createGroup,
+  deleteGroupInSchoolYear,
+  loadGroupsBySchoolYearAndSemester,
+  loadStudentsByGroup,
+  unassignStudentFromGroup,
+  updateGroup,
+} from "@/components/groups/GroupGateway";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Student } from "@/components/students/Student";
 import { ref } from "vue";
-
-const groupGateway = new GroupGateway();
 
 const groups = ref<Group[]>([]);
 
 async function loadAllGroupsForSchoolYearAndSemester(schoolYear: SchoolYear) {
   groups.value.length = 0;
-  const all = await groupGateway.loadGroupsForSchoolYearAndSemester(schoolYear);
+  const all = await loadGroupsBySchoolYearAndSemester(schoolYear);
   groups.value.push(
     {
       id: 0,
@@ -24,36 +30,36 @@ async function loadAllGroupsForSchoolYearAndSemester(schoolYear: SchoolYear) {
 }
 
 async function loadStudentsForGroup(group: Group): Promise<Student[]> {
-  return await groupGateway.loadStudentsForGroup(group);
+  return await loadStudentsByGroup(group);
 }
 
 async function addGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  await groupGateway.createGroup(group, schoolYear);
+  await createGroup(group, schoolYear);
   await loadAllGroupsForSchoolYearAndSemester(schoolYear);
 
   cleanup();
 }
 
 async function editGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  await groupGateway.updateGroup(group);
+  await updateGroup(group);
   await loadAllGroupsForSchoolYearAndSemester(schoolYear);
 
   cleanup();
 }
 
 async function removeGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  await groupGateway.deleteGroupInSchoolYear(group, schoolYear);
+  await deleteGroupInSchoolYear(group, schoolYear);
   await loadAllGroupsForSchoolYearAndSemester(schoolYear);
 
   cleanup();
 }
 
 async function addStudentToGroup(student: Student, group: Group) {
-  await groupGateway.addStudentToGroup(student, group);
+  await assignStudentToGroup(student, group);
 }
 
 async function removeStudentFromGroup(student: Student, group: Group) {
-  await groupGateway.removeStudentFromGroup(student, group);
+  await unassignStudentFromGroup(student, group);
 }
 
 export function useGroups() {

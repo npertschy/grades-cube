@@ -1,17 +1,23 @@
 import { ref } from "vue";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
-import { StudentGateway } from "@/components/students/StudentGateway";
+import {
+  createStudentInSchoolYear,
+  deleteStudentInSchoolYear,
+  loadAllStudentsForSchoolYear,
+  loadCoursesBySchoolYearAndSemester,
+  loadGroupsAndCoursesForStudent,
+  loadGroupsBySchoolYear,
+  updateStudent,
+} from "@/components/students/StudentGateway";
 import type { Student } from "@/components/students/Student";
-
-const studentGateway = new StudentGateway();
 
 const students = ref<Student[]>([]);
 
 async function loadStudentsForSchoolYear(schoolYear: SchoolYear) {
   students.value.length = 0;
 
-  const all = await studentGateway.loadAllStudentsForSchoolYear(schoolYear);
+  const all = await loadAllStudentsForSchoolYear(schoolYear);
   students.value.push(
     {
       id: 0,
@@ -24,58 +30,41 @@ async function loadStudentsForSchoolYear(schoolYear: SchoolYear) {
   );
 }
 
-async function loadGroupsAndCoursesFor(
-  student: Student,
-  schoolYear: SchoolYear,
-  semester: Semester,
-) {
-  return await studentGateway.loadGroupsAndCoursesForStudent(
-    student,
-    schoolYear,
-    semester,
-  );
+async function loadGroupsAndCoursesFor(student: Student, schoolYear: SchoolYear, semester: Semester) {
+  return await loadGroupsAndCoursesForStudent(student, schoolYear, semester);
 }
 
-async function addStudent(
-  studentToAdd: Student,
-  schoolYear: SchoolYear,
-  cleanup: () => void,
-) {
-  await studentGateway.createStudentInSchoolYear(studentToAdd, schoolYear);
+async function addStudent(studentToAdd: Student, schoolYear: SchoolYear, cleanup: () => void) {
+  await createStudentInSchoolYear(studentToAdd, schoolYear);
+  await loadStudentsForSchoolYear(schoolYear);
+
+  cleanup();
+}
+
+async function editStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
+  await updateStudent(student);
   await loadStudentsForSchoolYear(schoolYear);
 
   cleanup();
 }
 
 function formatStudent(item: Student) {
-  return item.id === 0
-    ? "Neuen Schüler anlegen"
-    : item.firstName + " " + item.lastName;
+  return item.id === 0 ? "Neuen Schüler anlegen" : item.firstName + " " + item.lastName;
 }
 
-async function removeStudent(
-  student: Student,
-  schoolYear: SchoolYear,
-  cleanup: () => void,
-) {
-  await studentGateway.deleteStudentInSchoolYear(student, schoolYear);
+async function removeStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
+  await deleteStudentInSchoolYear(student, schoolYear);
   await loadStudentsForSchoolYear(schoolYear);
 
   cleanup();
 }
 
 async function loadGroupsForSchoolYear(schoolYear: SchoolYear) {
-  return studentGateway.loadGroupsForSchoolYear(schoolYear);
+  return await loadGroupsBySchoolYear(schoolYear);
 }
 
-function loadCoursesForSchoolYearAndSemester(
-  schoolYear: SchoolYear,
-  semester: Semester,
-) {
-  return studentGateway.loadCoursesForSchoolYearAndSemester(
-    schoolYear,
-    semester,
-  );
+async function loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semester: Semester) {
+  return await loadCoursesBySchoolYearAndSemester(schoolYear, semester);
 }
 
 export function useStudents() {
@@ -84,6 +73,7 @@ export function useStudents() {
     loadStudentsForSchoolYear,
     loadGroupsAndCoursesFor,
     addStudent,
+    editStudent,
     formatStudent,
     removeStudent,
     loadGroupsForSchoolYear,

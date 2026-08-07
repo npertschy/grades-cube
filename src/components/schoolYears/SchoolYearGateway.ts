@@ -1,13 +1,9 @@
-import Database, { type QueryResult } from "@tauri-apps/plugin-sql";
-import { appLocalDataDir } from "@tauri-apps/api/path";
+import { type QueryResult } from "@tauri-apps/plugin-sql";
 import type { SchoolYear } from "./SchoolYear";
 import type { Semester } from "./Semester";
 import type { SchoolYearEntity } from "./SchoolYearEntity";
 import type { SemesterEntity } from "./SemesterEntity";
-import { coreDataToUnix, dateToCoreData } from "@/store/Database";
-
-const path = (await appLocalDataDir()) + "/db/Notenwuerfel.sqlite";
-const db = await Database.load("sqlite:" + path);
+import { db, coreDataToUnix, dateToCoreData } from "@/store/Database";
 
 export async function loadAll(): Promise<SchoolYear[]> {
   const years: SchoolYearEntity[] = await db.select("SELECT * FROM ZYEAR");
@@ -65,4 +61,27 @@ async function createSemester(semester: Semester, schoolYearId: number) {
     semesterEnd,
     semesterStart,
   ]);
+}
+
+export async function updateSchoolYear(schoolYear: SchoolYear) {
+    const schoolYearStart = dateToCoreData(schoolYear.start!);
+    const schoolYearEnd = dateToCoreData(schoolYear.end!);
+    await db.execute("UPDATE ZYEAR SET ZEND = $1, ZSTART = $2 WHERE Z_PK = $3", [
+        schoolYearEnd,
+        schoolYearStart,
+        schoolYear.id,
+    ]);
+
+    await updateSemester(schoolYear.firstSemester!);
+    await updateSemester(schoolYear.secondSemester!);
+}
+
+async function updateSemester(semester: Semester) {
+    const semesterStart = dateToCoreData(semester.start!);
+    const semesterEnd = dateToCoreData(semester.end!);
+    await db.execute("UPDATE ZSEMESTER SET ZEND = $1, ZSTART = $2 WHERE Z_PK = $3", [
+        semesterEnd,
+        semesterStart,
+        semester.id,
+    ]);
 }

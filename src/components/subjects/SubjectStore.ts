@@ -1,16 +1,20 @@
 import { ref } from "vue";
 import type { Subject } from "./Subject";
-import { SubjectGateway } from "@/components/subjects/SubjectGateway";
+import {
+  createSubjectForSchoolYear,
+  deleteSubjectFromSchoolYear,
+  loadAll,
+  loadSubjectsBySchoolYear,
+  updateSubject,
+} from "@/components/subjects/SubjectGateway";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-
-const subjectGateway = new SubjectGateway();
 
 const subjects = ref<Subject[]>([]);
 
 async function loadSubjectsForSchoolYear(schoolYear: SchoolYear) {
   subjects.value.length = 0;
 
-  const all = await subjectGateway.loadSubjectsForSchoolYear(schoolYear);
+  const all = await loadSubjectsBySchoolYear(schoolYear);
   subjects.value.push(
     {
       id: 0,
@@ -21,14 +25,14 @@ async function loadSubjectsForSchoolYear(schoolYear: SchoolYear) {
 }
 
 async function addSubject(subjectToAdd: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  await subjectGateway.createSubjectForSchoolYear(subjectToAdd, schoolYear);
+  await createSubjectForSchoolYear(subjectToAdd, schoolYear);
   await loadSubjectsForSchoolYear(schoolYear);
 
   cleanup();
 }
 
 async function editSubject(subject: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  await subjectGateway.updateSubject(subject);
+  await updateSubject(subject);
   await loadSubjectsForSchoolYear(schoolYear);
 
   cleanup();
@@ -39,14 +43,14 @@ function formatSubject(item: Subject) {
 }
 
 async function removeSubject(subject: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  await subjectGateway.deleteSubjectFromSchoolYear(subject, schoolYear);
+  await deleteSubjectFromSchoolYear(subject, schoolYear);
   await loadSubjectsForSchoolYear(schoolYear);
 
   cleanup();
 }
 
 async function loadAllSubjects() {
-  return await subjectGateway.loadAllSubjects();
+  return await loadAll();
 }
 
 export function useSubjects() {
@@ -57,6 +61,6 @@ export function useSubjects() {
     formatSubject,
     removeSubject,
     editSubject,
-    loadAllSubjects
+    loadAllSubjects,
   };
 }

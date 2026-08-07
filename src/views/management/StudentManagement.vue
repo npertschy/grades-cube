@@ -25,6 +25,7 @@ const {
   loadStudentsForSchoolYear,
   loadGroupsAndCoursesFor,
   addStudent,
+  editStudent,
   formatStudent,
   removeStudent,
   loadGroupsForSchoolYear,
@@ -36,13 +37,32 @@ const selectedStudent = ref<Student | undefined>();
 const availableGroups = ref<Group[]>([]);
 const availableCourses = ref<Course[]>([]);
 
+onMounted(async () => {
+  if (selectedSchoolYear.value) {
+    const [_, groups, courses] = await Promise.all([
+      await loadStudentsForSchoolYear(selectedSchoolYear.value),
+      await loadGroupsForSchoolYear(selectedSchoolYear.value),
+      await loadCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value!),
+    ]);
+    availableGroups.value = groups;
+    availableCourses.value = courses;
+  }
+});
+
 async function handleSave() {
   if (selectedStudent.value?.id) {
     const student = {
       id: selectedStudent.value.id,
       firstName: firstName.value,
       lastName: lastName.value,
+      groups: groups.value,
+      courses: courses.value,
     };
+
+    await editStudent(student, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedStudent.value = undefined;
+    });
   } else {
     const student: Student = {
       id: undefined,
@@ -104,17 +124,6 @@ watch(selectedSemester, async (current) => {
       return student.id === previouslySelection?.id;
     });
     document.getElementsByClassName("p-listbox-item p-highlight").item(0)?.scrollIntoView(true);
-  }
-});
-
-onMounted(async () => {
-  if (selectedSchoolYear.value) {
-    await loadStudentsForSchoolYear(selectedSchoolYear.value);
-    availableGroups.value = await loadGroupsForSchoolYear(selectedSchoolYear.value);
-    availableCourses.value = await loadCoursesForSchoolYearAndSemester(
-      selectedSchoolYear.value,
-      selectedSemester.value!,
-    );
   }
 });
 </script>
