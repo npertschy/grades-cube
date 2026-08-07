@@ -59,6 +59,18 @@ const selectedStudent = ref<Student | undefined>();
 
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 
+onMounted(async () => {
+  if (selectedSchoolYear.value && selectedSemester.value) {
+    const [_, groups, subjects] = await Promise.all([
+      loadAllCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value),
+      loadAvailableGroupsForSchoolYear(selectedSchoolYear.value),
+      loadAvailableSubjectsForSchoolYear(selectedSchoolYear.value),
+    ]);
+    availableGroups.value = groups;
+    availableSubjects.value = subjects;
+  }
+});
+
 async function handleSave() {
   if (selectedCourse.value?.id) {
     const course: Course = {
@@ -141,18 +153,6 @@ watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, current
     await loadAllCoursesForSchoolYearAndSemester(currentSchoolYear, currentSemester);
     selectedCourse.value = undefined;
     resetInputs();
-  }
-});
-
-onMounted(async () => {
-  if (selectedSchoolYear.value && selectedSemester.value) {
-    const [_, groups, subjects] = await Promise.all([
-      loadAllCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value),
-      loadAvailableGroupsForSchoolYear(selectedSchoolYear.value),
-      loadAvailableSubjectsForSchoolYear(selectedSchoolYear.value),
-    ]);
-    availableGroups.value = groups;
-    availableSubjects.value = subjects;
   }
 });
 

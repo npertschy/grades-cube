@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends { name: string | undefined }">
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
-import { computed, ref, shallowRef } from "vue";
+import { computed, shallowRef } from "vue";
 
 const { identifier, label, items, option } = defineProps<{
   identifier: string;

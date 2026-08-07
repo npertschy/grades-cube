@@ -52,6 +52,12 @@ const selectedStudent = ref<Student | undefined>();
 
 const { selectedSchoolYear } = useSchoolYearSelection();
 
+onMounted(async () => {
+  if (selectedSchoolYear.value) {
+    await loadAllGroupsForSchoolYearAndSemester(selectedSchoolYear.value);
+  }
+});
+
 async function handleSave() {
   if (selectedGroup.value?.id) {
     const group = {
@@ -130,12 +136,6 @@ watch(selectedSchoolYear, async (current) => {
     await loadAllGroupsForSchoolYearAndSemester(current);
     selectedGroup.value = undefined;
     resetInputs();
-  }
-});
-
-onMounted(async () => {
-  if (selectedSchoolYear.value) {
-    await loadAllGroupsForSchoolYearAndSemester(selectedSchoolYear.value);
   }
 });
 

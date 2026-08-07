@@ -34,7 +34,6 @@ const deleteButtonStart = computed(() => {
     <p-button
       label="Speichern"
       class="save-button"
-      outlined
       severity="success"
       :disabled="saveDisabled"
       @click="saveAction"
@@ -43,7 +42,6 @@ const deleteButtonStart = computed(() => {
       v-show="showDeleteButton"
       label="Löschen"
       class="delete-button"
-      outlined
       severity="danger"
       @click="deleteAction"
     />

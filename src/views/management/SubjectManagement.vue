@@ -104,9 +104,7 @@ onMounted(async () => {
         <p-divider />
         <custom-transition>
           <div v-show="selectedSubject">
-            <content-editing-panel
-              header="Fach"
-            >
+            <content-editing-panel header="Fach">
               <auto-complete-with-label
                 v-model="name"
                 identifier="nameField"
