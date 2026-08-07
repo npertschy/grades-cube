@@ -1,50 +1,69 @@
-import { afterEach, describe, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Subject } from "@/components/subjects/Subject";
-import { SubjectGateway } from "@/components/subjects/SubjectGateway";
+import { createSubjectForSchoolYear } from "@/components/subjects/SubjectGateway";
 
-const { mockedDb, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
-  mockedDb: vi.fn(),
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
+  mockedSelect: vi.fn(),
   mockedExecute: vi.fn(),
   mockedNextPrimaryKey: vi.fn(),
 }));
 
-vi.mock("@/store/Database", () => {
-  return {
-    db: mockedDb,
+vi.mock("@/store/Database", () => ({
+  db: {
+    select: mockedSelect,
     execute: mockedExecute,
-    nextPrimaryKey: mockedNextPrimaryKey,
-  };
-});
+  },
+  nextPrimaryKey: mockedNextPrimaryKey,
+}));
 
-describe.skip("SubjectManagement", () => {
-  describe("testing create subject", () => {
-    afterEach(() => {
-      vi.restoreAllMocks();
-    });
-    it("should create a new subject when subject by name is not present yet", () => {
-      const sut = new SubjectGateway();
+const schoolYear: SchoolYear = {
+  id: 1,
+  start: undefined,
+  end: undefined,
+  firstSemester: undefined,
+  secondSemester: undefined,
+};
 
-      const subject: Subject = {
-        id: undefined,
-        name: "Deutsch",
-      };
+describe("createSubjectForSchoolYear", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
 
-      const schoolYear: SchoolYear = {
-        id: 1,
-        start: undefined,
-        end: undefined,
-        firstSemester: undefined,
-        secondSemester: undefined,
-      };
+  it("creates a new subject and mapping when the subject does not exist yet", async () => {
+    mockedSelect.mockResolvedValueOnce([]);          // no existing subject
+    mockedNextPrimaryKey.mockResolvedValueOnce(42);
 
-      sut.createSubjectForSchoolYear(subject, schoolYear);
+    const subject: Subject = { id: undefined, name: "Deutsch" };
+    await createSubjectForSchoolYear(subject, schoolYear);
 
-      // nextPrimaryKey.mockImplementationOnce(() => 1);
-      // expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Subject")
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Subject");
+    expect(mockedExecute).toHaveBeenCalledTimes(2);
+    expect(mockedExecute).toHaveBeenNthCalledWith(
+      1,
+      "INSERT INTO ZSUBJECT (Z_PK, Z_ENT, ZNAME) VALUES ($1, $2, $3)",
+      [42, 7, "Deutsch"],
+    );
+    expect(mockedExecute).toHaveBeenNthCalledWith(
+      2,
+      "INSERT INTO Z_7YEARS (Z_7SUBJECTS, Z_8YEARS2) VALUES ($1, $2)",
+      [42, 1],
+    );
+  });
 
-      // execute.mockImplementationOnce(async () => { Promise.resolve({}) })
-      // expect(mockedExecute).toHaveBeenCalledTimes(1)
-    });
+  it("only creates the year mapping when the subject already exists", async () => {
+    const existing = [{ Z_PK: 7, ZNAME: "Deutsch" }];
+    mockedSelect.mockResolvedValueOnce(existing);
+
+    const subject: Subject = { id: undefined, name: "Deutsch" };
+    await createSubjectForSchoolYear(subject, schoolYear);
+
+    expect(mockedNextPrimaryKey).not.toHaveBeenCalled();
+    expect(mockedExecute).toHaveBeenCalledTimes(1);
+    expect(mockedExecute).toHaveBeenCalledWith(
+      "INSERT INTO Z_7YEARS (Z_7SUBJECTS, Z_8YEARS2) VALUES ($1, $2)",
+      [7, 1],
+    );
   });
 });
+

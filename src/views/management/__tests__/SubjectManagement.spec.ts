@@ -1,71 +1,69 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import PrimeVue from "primevue/config";
 import SubjectManagement from "@/views/management/SubjectManagement.vue";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 
-vi.mock("@/components/subjects/SubjectGateway", () => {
-  const SubjectGateway = vi.fn(() => ({
-    loadSubjectsForSchoolYear: vi.fn().mockResolvedValue([
-      {
-        id: 1,
-        name: "Deutsch",
-      },
-      {
-        id: 2,
-        name: "Englisch",
-      },
-      {
-        id: 3,
-        name: "Sport",
-      },
-    ]),
-    createSubjectForSchoolYear: vi.fn(),
-    updateSubject: vi.fn(),
-    loadAllSubjects: vi.fn().mockResolvedValue([]),
-  }));
-  return { SubjectGateway };
-});
+const { mockedLoadSubjectsBySchoolYear, mockedLoadAll } = vi.hoisted(() => ({
+  mockedLoadSubjectsBySchoolYear: vi.fn(),
+  mockedLoadAll: vi.fn(),
+}));
+
+vi.mock("@/components/subjects/SubjectGateway", () => ({
+  loadSubjectsBySchoolYear: mockedLoadSubjectsBySchoolYear,
+  loadAll: mockedLoadAll,
+  createSubjectForSchoolYear: vi.fn(),
+  updateSubject: vi.fn(),
+  deleteSubjectFromSchoolYear: vi.fn(),
+}));
+
+const schoolYear = {
+  id: 1,
+  start: undefined,
+  end: undefined,
+  firstSemester: undefined,
+  secondSemester: undefined,
+};
+
+const subjects = [
+  { id: 1, name: "Deutsch" },
+  { id: 2, name: "Englisch" },
+  { id: 3, name: "Sport" },
+];
 
 describe("SubjectManagement", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+  beforeEach(() => {
+    mockedLoadSubjectsBySchoolYear.mockResolvedValue(subjects);
+    mockedLoadAll.mockResolvedValue(subjects);
+    useSchoolYearSelection().selectedSchoolYear.value = schoolYear;
   });
 
-  const wrapper = mount(SubjectManagement, {
-    global: {
-      plugins: [PrimeVue],
-    },
+  async function mountAndFlush() {
+    const wrapper = mount(SubjectManagement, { global: { plugins: [PrimeVue] } });
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("displays all subjects plus the default 'create' entry in the list", async () => {
+    const wrapper = await mountAndFlush();
+    const items = wrapper.findAll("li[class='p-listbox-option']");
+    expect(items).toHaveLength(4);
   });
 
-  useSchoolYearSelection().selectedSchoolYear.value = {
-    id: 1,
-    start: undefined,
-    end: undefined,
-    firstSemester: undefined,
-    secondSemester: undefined,
-  };
+  it("shows 'Neues Fach anlegen' as the first list entry", async () => {
+    const wrapper = await mountAndFlush();
+    const items = wrapper.findAll("li[class='p-listbox-option']");
+    expect(items[0].text()).toEqual("Neues Fach anlegen");
+  });
 
-  describe("given subjects", () => {
-    it("should display subjects in a list", () => {
-      const listElements = wrapper.findAll("li");
-      expect(listElements).toHaveLength(4);
-    });
+  it("populates the name input when a subject is selected", async () => {
+    const wrapper = await mountAndFlush();
+    const items = wrapper.findAll("li[class='p-listbox-option']");
 
-    it("should display a default list entry as first item", () => {
-      const listElements = wrapper.findAll("li");
-      const defaultElement = listElements.shift();
-      expect(defaultElement?.text()).toEqual("Neues Fach anlegen");
-    });
+    await items[1].trigger("click");
+    await flushPromises();
 
-    it("should display the selected subject in a text input", async () => {
-      const listElements = wrapper.findAll("li");
-
-      const subjectItem = listElements.at(1);
-      await subjectItem?.trigger("click");
-
-      const input = wrapper.find("input");
-      expect(input.element.value).toEqual(subjectItem?.text());
-    });
+    const input = wrapper.find("input");
+    expect(input.element.value).toEqual("Deutsch");
   });
 });

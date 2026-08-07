@@ -1,0 +1,199 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  loadCoursesForSchoolYearAndSemester,
+  loadStudentsForCourse,
+  loadPerformancesForCourse,
+  loadStudentsForGroup,
+  createPerformance,
+  updatePerformance,
+  updateGrade,
+} from "@/views/evaluation/EvaluationGateway";
+import type { Course } from "@/components/courses/Course";
+import type { Group } from "@/components/groups/Group";
+import type { Performance } from "@/components/evaluations/Performance";
+import type { Student } from "@/components/students/Student";
+import { coreDataToUnix } from "@/store/DateConversion";
+
+const { mockedSelect, mockedExecute } = vi.hoisted(() => ({
+  mockedSelect: vi.fn(),
+  mockedExecute: vi.fn(),
+}));
+
+vi.mock("@/store/Database", () => ({
+  db: {
+    select: mockedSelect,
+    execute: mockedExecute,
+  },
+}));
+
+const schoolYear = { id: 1, start: undefined, end: undefined, firstSemester: undefined, secondSemester: undefined };
+const semester = { id: 2, type: 1, start: undefined, end: undefined };
+const course: Course = {
+  id: 5,
+  group: { id: 3, name: "5A", sortingName: "5A", type: 0, students: [] },
+  subject: { id: 7, name: "Deutsch" },
+  semester,
+  schoolYear,
+  days: undefined,
+};
+const group: Group = { id: 3, name: "5A", sortingName: "5A", type: 0, students: [] };
+
+beforeEach(() => {
+  vi.resetAllMocks();
+});
+
+describe("loadCoursesForSchoolYearAndSemester", () => {
+  it("returns mapped courses", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 5, ZDAYS: 3, GROUPID: 3, GROUPNAME: "5A", SUBJECTID: 7, SUBJECTNAME: "Deutsch" },
+    ]);
+
+    const result = await loadCoursesForSchoolYearAndSemester(schoolYear, semester);
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      id: 5,
+      days: 3,
+      group: { id: 3, name: "5A" },
+      subject: { id: 7, name: "Deutsch" },
+      semester,
+      schoolYear,
+    });
+  });
+});
+
+describe("loadStudentsForCourse", () => {
+  it("parses the JSON GRADES column into a grades record", async () => {
+    const gradesJson = JSON.stringify({
+      "1": { GRADEID: 10, VALUE: 2, TITLE: "Test", TYPE: "written" },
+    });
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADES: gradesJson },
+    ]);
+
+    const result = await loadStudentsForCourse(course);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].student).toMatchObject({ id: 20, firstName: "Max", lastName: "Muster" });
+    expect(result[0].grades["1"]).toMatchObject({
+      id: 10,
+      value: 2,
+      performacneTitle: "Test",
+      performanceType: "written",
+    });
+  });
+});
+
+describe("loadPerformancesForCourse", () => {
+  it("maps entity fields including coreDataToUnix date conversion", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 1, ZEDITABLE: 1, ZSORTORDER: 0, ZTYPE: "written", ZCOURSE: 5, ZDATE: 0, ZWEIGHT: 0.5, ZTITLE: "KA1" },
+    ]);
+
+    const result = await loadPerformancesForCourse(course);
+
+    expect(result[0]).toMatchObject({
+      id: 1,
+      performanceId: "1",
+      editable: true,
+      sortOrder: 0,
+      type: "written",
+      courseId: 5,
+      date: coreDataToUnix(0),
+      weight: 0.5,
+      title: "KA1",
+    });
+  });
+
+  it("maps ZEDITABLE = 0 to editable: false", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 2, ZEDITABLE: 0, ZSORTORDER: 1, ZTYPE: "oral", ZCOURSE: 5, ZDATE: 0, ZWEIGHT: 0.5, ZTITLE: "Oral" },
+    ]);
+
+    const result = await loadPerformancesForCourse(course);
+
+    expect(result[0].editable).toBe(false);
+  });
+});
+
+describe("loadStudentsForGroup", () => {
+  it("returns students ordered by the query", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 1, ZFIRSTNAME: "Anna", ZLASTNAME: "Bauer" },
+      { Z_PK: 2, ZFIRSTNAME: "Max", ZLASTNAME: "Muster" },
+    ]);
+
+    const result = await loadStudentsForGroup(group);
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatchObject({ id: 1, firstName: "Anna", lastName: "Bauer" });
+  });
+});
+
+describe("createPerformance", () => {
+  it("inserts the performance then a grade row for each student", async () => {
+    mockedExecute.mockResolvedValueOnce({ lastInsertId: 99 });
+    mockedExecute.mockResolvedValue({});
+
+    const performance: Performance = {
+      id: undefined,
+      performanceId: undefined,
+      editable: true,
+      sortOrder: 0,
+      type: "written",
+      courseId: 5,
+      date: coreDataToUnix(0),
+      weight: 0.5,
+      title: "KA1",
+    };
+    const students: Student[] = [
+      { id: 10, firstName: "A", lastName: "B", groups: [], courses: [] },
+      { id: 11, firstName: "C", lastName: "D", groups: [], courses: [] },
+    ];
+
+    await createPerformance(performance, students);
+
+    expect(mockedExecute).toHaveBeenCalledTimes(3);
+    expect(mockedExecute).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      [99, 10],
+    );
+    expect(mockedExecute).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      [99, 11],
+    );
+  });
+});
+
+describe("updatePerformance", () => {
+  it("updates weight and title", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+
+    const performance: Performance = {
+      id: 1, performanceId: "1", editable: true, sortOrder: 0,
+      type: "written", courseId: 5, date: coreDataToUnix(0), weight: 0.25, title: "KA2",
+    };
+
+    await updatePerformance(performance);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE ZPERFORMANCE"),
+      [0.25, "KA2", 1],
+    );
+  });
+});
+
+describe("updateGrade", () => {
+  it("updates the grade value", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+
+    await updateGrade({ id: 10, value: 3, performacneTitle: "KA1", performanceType: "written" });
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE ZGRADE"),
+      [3, 10],
+    );
+  });
+});
