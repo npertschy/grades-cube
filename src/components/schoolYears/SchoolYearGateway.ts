@@ -3,7 +3,8 @@ import type { SchoolYear } from "./SchoolYear";
 import type { Semester } from "./Semester";
 import type { SchoolYearEntity } from "./SchoolYearEntity";
 import type { SemesterEntity } from "./SemesterEntity";
-import { db, coreDataToUnix, dateToCoreData } from "@/store/Database";
+import { db } from "@/store/Database";
+import { coreDataToUnix, dateToCoreData } from "@/store/DateConversion";
 
 export async function loadAll(): Promise<SchoolYear[]> {
   const years: SchoolYearEntity[] = await db.select("SELECT * FROM ZYEAR");

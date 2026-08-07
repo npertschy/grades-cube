@@ -3,18 +3,24 @@ import type { EvaluatedStudent, Grade } from "@/components/evaluations/Evaluated
 import type { Group } from "@/components/groups/Group";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
-import { EvaluationGateway } from "@/views/evaluation/EvaluationGateway";
+import {
+  loadCoursesForSchoolYearAndSemester,
+  loadStudentsForCourse as gatewayLoadStudentsForCourse,
+  loadStudentsForGroup as gatewayLoadStudentsForGroup,
+  loadPerformancesForCourse as gatewayLoadPerformancesForCourse,
+  createPerformance as gatewayCreatePerformance,
+  updatePerformance as gatewayUpdatePerformance,
+  updateGrade as gatewayUpdateGrade,
+} from "@/views/evaluation/EvaluationGateway";
 import type { Performance } from "@/components/evaluations/Performance";
 import type { TreeNode } from "primevue/treenode";
 import { ref } from "vue";
 
 const treeItems = ref<TreeNode[]>([]);
 
-const evaluationGateway = new EvaluationGateway();
-
 async function loadTreeItems(schoolYear: SchoolYear, semester: Semester) {
   treeItems.value.length = 0;
-  const courses = await evaluationGateway.loadCoursesForSchoolYearAndSemester(schoolYear, semester);
+  const courses = await loadCoursesForSchoolYearAndSemester(schoolYear, semester);
   const groupings = groupBy(courses, (course: Course) => course.group!.id);
 
   groupings.forEach((coursesOfGroup) => {
@@ -55,11 +61,11 @@ function groupBy<T, K>(list: T[], keyGetter: (item: T) => K): Map<K, T[]> {
 }
 
 async function loadStudentsForCourse(course: Course): Promise<EvaluatedStudent[]> {
-  return await evaluationGateway.loadStudentsForCourse(course);
+  return await gatewayLoadStudentsForCourse(course);
 }
 
 async function loadStudentsForGroup(group: Group): Promise<EvaluatedStudent[]> {
-  const students = await evaluationGateway.loadStudentsForGroup(group);
+  const students = await gatewayLoadStudentsForGroup(group);
   return students.map((student): EvaluatedStudent => {
     return {
       student: student,
@@ -69,7 +75,7 @@ async function loadStudentsForGroup(group: Group): Promise<EvaluatedStudent[]> {
 }
 
 async function loadPerformancesForCourse(course: Course) {
-  return await evaluationGateway.loadPerformancesForCourse(course);
+  return await gatewayLoadPerformancesForCourse(course);
 }
 
 async function createPerformance(
@@ -79,23 +85,23 @@ async function createPerformance(
 ) {
   const newWeight = 1 / (existingPerformances.length + 1);
   newPerformance.weight = newWeight;
-  await evaluationGateway.createPerformance(
+  await gatewayCreatePerformance(
     newPerformance,
     students.map((student) => student.student),
   );
 
   for (const performance of existingPerformances) {
     performance.weight = newWeight;
-    await evaluationGateway.updatePerformance(performance);
+    await gatewayUpdatePerformance(performance);
   }
 }
 
 async function updatePerformance(performance: Performance) {
-  await evaluationGateway.updatePerformance(performance);
+  await gatewayUpdatePerformance(performance);
 }
 
 async function updateGrade(grade: Grade) {
-  await evaluationGateway.updateGrade(grade);
+  await gatewayUpdateGrade(grade);
 }
 
 export function useEvaluations() {
