@@ -13,6 +13,7 @@ import type { Group } from "@/components/groups/Group";
 import type { Performance } from "@/components/evaluations/Performance";
 import type { Student } from "@/components/students/Student";
 import { coreDataToUnix } from "@/store/DateConversion";
+import { Z_ENT } from "@/store/EntityId";
 
 const { mockedSelect, mockedExecute } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
@@ -140,7 +141,7 @@ describe("createPerformance", () => {
       performanceId: undefined,
       editable: true,
       sortOrder: 0,
-      type: "written",
+      type: 6,
       courseId: 5,
       date: coreDataToUnix(0),
       weight: 0.5,
@@ -157,12 +158,12 @@ describe("createPerformance", () => {
     expect(mockedExecute).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining("INSERT INTO ZGRADE"),
-      [99, 10],
+      [Z_ENT.ZGRADE, 1, 99, 10],
     );
     expect(mockedExecute).toHaveBeenNthCalledWith(
       3,
       expect.stringContaining("INSERT INTO ZGRADE"),
-      [99, 11],
+      [Z_ENT.ZGRADE, 1, 99, 11],
     );
   });
 });
@@ -173,7 +174,7 @@ describe("updatePerformance", () => {
 
     const performance: Performance = {
       id: 1, performanceId: "1", editable: true, sortOrder: 0,
-      type: "written", courseId: 5, date: coreDataToUnix(0), weight: 0.25, title: "KA2",
+      type: 6, courseId: 5, date: coreDataToUnix(0), weight: 0.25, title: "KA2",
     };
 
     await updatePerformance(performance);
@@ -189,11 +190,11 @@ describe("updateGrade", () => {
   it("updates the grade value", async () => {
     mockedExecute.mockResolvedValueOnce({});
 
-    await updateGrade({ id: 10, value: 3, performacneTitle: "KA1", performanceType: "written" });
+    await updateGrade({ id: 10, value: "3", performacneTitle: "KA1", performanceType: 6});
 
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("UPDATE ZGRADE"),
-      [3, 10],
+      ["3", 10],
     );
   });
 });

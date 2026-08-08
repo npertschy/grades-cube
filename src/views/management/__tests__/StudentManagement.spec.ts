@@ -80,7 +80,7 @@ describe("StudentManagement", () => {
 
     const labels = wrapper.findAll("label");
     const firstNameLabel = labels.find((l) => l.text() === "Vorname");
-    const input = wrapper.find(`input[input-id="${firstNameLabel?.element.htmlFor}"]`);
+    const input = wrapper.find(`input[id="${firstNameLabel?.element.htmlFor}"]`);
 
     expect(input.attributes("value")).toEqual("Max");
   });

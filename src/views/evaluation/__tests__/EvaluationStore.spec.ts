@@ -87,12 +87,12 @@ describe("createPerformance", () => {
     mockedUpdatePerformance.mockResolvedValue({});
 
     const existing: Performance[] = [
-      { id: 1, performanceId: "1", editable: true, sortOrder: 0, type: "written", courseId: 5, date: coreDataToUnix(0), weight: 0.5, title: "KA1" },
-      { id: 2, performanceId: "2", editable: true, sortOrder: 1, type: "written", courseId: 5, date: coreDataToUnix(0), weight: 0.5, title: "KA2" },
+      { id: 1, performanceId: "1", editable: true, sortOrder: 0, type: 6, courseId: 5, date: coreDataToUnix(0), weight: 0.5, title: "KA1" },
+      { id: 2, performanceId: "2", editable: true, sortOrder: 1, type: 6, courseId: 5, date: coreDataToUnix(0), weight: 0.5, title: "KA2" },
     ];
     const newPerformance: Performance = {
       id: undefined, performanceId: undefined, editable: true, sortOrder: 2,
-      type: "written", courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA3",
+      type: 6, courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA3",
     };
     const students: EvaluatedStudent[] = [
       { student: { id: 10, firstName: "A", lastName: "B", groups: [], courses: [] }, grades: {} },
@@ -112,11 +112,11 @@ describe("createPerformance", () => {
     mockedUpdatePerformance.mockResolvedValue({});
 
     const existing: Performance[] = [
-      { id: 1, performanceId: "1", editable: true, sortOrder: 0, type: "written", courseId: 5, date: coreDataToUnix(0), weight: 1, title: "KA1" },
+      { id: 1, performanceId: "1", editable: true, sortOrder: 0, type: 6, courseId: 5, date: coreDataToUnix(0), weight: 1, title: "KA1" },
     ];
     const newPerformance: Performance = {
       id: undefined, performanceId: undefined, editable: true, sortOrder: 1,
-      type: "written", courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA2",
+      type: 6, courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA2",
     };
 
     const { createPerformance } = useEvaluations();
@@ -131,7 +131,7 @@ describe("createPerformance", () => {
 
     const newPerformance: Performance = {
       id: undefined, performanceId: undefined, editable: true, sortOrder: 0,
-      type: "written", courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA1",
+      type: 6, courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA1",
     };
 
     const { createPerformance } = useEvaluations();

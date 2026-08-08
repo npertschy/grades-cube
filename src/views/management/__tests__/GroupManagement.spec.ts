@@ -76,7 +76,7 @@ describe("GroupManagement", () => {
 
     const labels = wrapper.findAll("label");
     const nameLabel = labels.find((l) => l.text() === "Name");
-    const input = wrapper.find(`input[input-id="${nameLabel?.element.htmlFor}"]`);
+    const input = wrapper.find(`input[id="${nameLabel?.element.htmlFor}"]`);
 
     expect(input.attributes("value")).toEqual("5A");
   });
