@@ -67,8 +67,8 @@ export async function loadStudentsForCourse(course: Course): Promise<EvaluatedSt
       ) AS GRADES
       FROM ZSTUDENT
       INNER JOIN Z_1STUDENTS ON ZSTUDENT.Z_PK = Z_1STUDENTS.Z_6STUDENTS AND Z_1STUDENTS.Z_1COURSES = $1
-      LEFT JOIN ZGRADE ON ZGRADE.ZSTUDENT = ZSTUDENT.Z_PK
-      LEFT JOIN ZPERFORMANCE ON ZPERFORMANCE.Z_PK = ZGRADE.ZPERFORMANCE AND ZPERFORMANCE.ZCOURSE = $1
+      LEFT JOIN ZPERFORMANCE ON ZPERFORMANCE.ZCOURSE = $1
+      LEFT JOIN ZGRADE ON ZGRADE.ZSTUDENT = ZSTUDENT.Z_PK AND ZGRADE.ZPERFORMANCE = ZPERFORMANCE.Z_PK
       GROUP BY ZSTUDENT.Z_PK, ZSTUDENT.ZFIRSTNAME, ZSTUDENT.ZLASTNAME;
       `,
     [course.id],
@@ -78,12 +78,11 @@ export async function loadStudentsForCourse(course: Course): Promise<EvaluatedSt
     const grades: Record<string, Grade> = {};
     const studentGrades: { [key: string]: GradeEntity } = JSON.parse(student.GRADES);
     Object.entries(studentGrades).forEach(([performanceId, gradeOfPerformance]) => {
-      const grade = gradeOfPerformance;
       grades[performanceId] = {
-        id: grade.GRADEID,
-        value: grade.VALUE,
-        performanceTitle: grade.TITLE,
-        performanceType: grade.TYPE,
+        id: gradeOfPerformance.GRADEID,
+        value: gradeOfPerformance.VALUE,
+        performanceTitle: gradeOfPerformance.TITLE,
+        performanceType: gradeOfPerformance.TYPE,
       };
     });
     return {
