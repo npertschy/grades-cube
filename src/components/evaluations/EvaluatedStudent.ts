@@ -8,6 +8,6 @@ export type EvaluatedStudent = {
 export type Grade = {
   id: number;
   value: string;
-  performacneTitle: string;
+  performanceTitle: string;
   performanceType: number;
 };

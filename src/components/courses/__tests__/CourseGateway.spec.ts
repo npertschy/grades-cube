@@ -2,22 +2,32 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Course } from "@/components/courses/Course";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
+import type { Student } from "@/components/students/Student";
 import {
   loadCoursesBySchoolYearAndSemester,
   loadStudentsByCourse,
   loadAvailableGroupsBySchoolYear,
   loadAvailableSubjectsBySchoolYear,
+  createCourse,
+  updateCourse,
+  deleteCourseInSchoolYear,
+  assignStudentToCourse,
+  unassignStudentFromCourse,
 } from "@/components/courses/CourseGateway";
+import { Z_ENT } from "@/store/EntityId";
 
-const { mockedSelect } = vi.hoisted(() => ({
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
+  mockedExecute: vi.fn(),
+  mockedNextPrimaryKey: vi.fn(),
 }));
 
 vi.mock("@/store/Database", () => ({
   db: {
     select: mockedSelect,
-    execute: vi.fn(),
+    execute: mockedExecute,
   },
+  nextPrimaryKey: mockedNextPrimaryKey,
 }));
 
 const schoolYear: SchoolYear = {
@@ -36,8 +46,10 @@ const course: Course = {
   subject: { id: 7, name: "Deutsch" },
   semester,
   schoolYear,
-  days: undefined,
+  days: {},
 };
+
+const student: Student = { id: 20, firstName: "Max", lastName: "Muster", groups: [], courses: [] };
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -55,7 +67,7 @@ describe("loadCoursesBySchoolYearAndSemester", () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
       id: 5,
-      days: 3,
+      days: {},
       group: { id: 3, name: "5A" },
       subject: { id: 7, name: "Deutsch" },
     });
@@ -106,5 +118,133 @@ describe("loadAvailableSubjectsBySchoolYear", () => {
     const result = await loadAvailableSubjectsBySchoolYear(schoolYear);
 
     expect(result).toEqual([{ id: 7, name: "Deutsch" }]);
+  });
+});
+
+describe("createCourse", () => {
+  it("inserts a course with nextPrimaryKey inside a transaction", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(99);
+    mockedExecute.mockResolvedValue({});
+
+    await createCourse(course, schoolYear, semester);
+
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Course");
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZCOURSE"),
+      [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}],
+    );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(99);
+    mockedExecute.mockResolvedValueOnce({});
+    mockedExecute.mockRejectedValueOnce(new Error("constraint"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(createCourse(course, schoolYear, semester)).rejects.toThrow("constraint");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
+  });
+});
+
+describe("updateCourse", () => {
+  it("updates group, subject, days, and increments Z_OPT", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+
+    await updateCourse(course);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("Z_OPT = Z_OPT + 1"),
+      [3, 7, {}, 5],
+    );
+  });
+});
+
+describe("deleteCourseInSchoolYear", () => {
+  it("deletes grades, performances, student assignments and the course inside a transaction", async () => {
+    mockedExecute.mockResolvedValue({});
+
+    await deleteCourseInSchoolYear(course);
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.some((s) => s.includes("DELETE FROM ZGRADE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZPERFORMANCE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM Z_1STUDENTS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZCOURSE"))).toBe(true);
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+    mockedExecute.mockRejectedValueOnce(new Error("db error"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(deleteCourseInSchoolYear(course)).rejects.toThrow("db error");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
+  });
+});
+
+describe("assignStudentToCourse", () => {
+  it("inserts the student-course mapping and creates blank grade rows for each existing performance", async () => {
+    mockedExecute.mockResolvedValue({});
+    mockedSelect.mockResolvedValueOnce([{ Z_PK: 11 }, { Z_PK: 12 }]);
+    mockedNextPrimaryKey.mockResolvedValueOnce(201);
+    mockedNextPrimaryKey.mockResolvedValueOnce(202);
+
+    await assignStudentToCourse(student, course);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO Z_1STUDENTS"),
+      [5, 20],
+    );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      [201, Z_ENT.ZGRADE, 1, 11, 20],
+    );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      [202, Z_ENT.ZGRADE, 1, 12, 20],
+    );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("inserts only the Z_1STUDENTS row when the course has no performances", async () => {
+    mockedExecute.mockResolvedValue({});
+    mockedSelect.mockResolvedValueOnce([]);
+
+    await assignStudentToCourse(student, course);
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("INSERT INTO Z_1STUDENTS"))).toBe(true);
+    expect(calls.some((s) => s.includes("INSERT INTO ZGRADE"))).toBe(false);
+  });
+});
+
+describe("unassignStudentFromCourse", () => {
+  it("deletes the student's grades and the student-course mapping inside a transaction", async () => {
+    mockedExecute.mockResolvedValue({});
+
+    await unassignStudentFromCourse(student, course);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM ZGRADE"),
+      [20, 5],
+    );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM Z_1STUDENTS"),
+      [5, 20],
+    );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.at(-1)).toContain("COMMIT");
   });
 });

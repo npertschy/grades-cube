@@ -17,7 +17,7 @@
 - ✅ `nextPrimaryKey()` — reads/increments `Z_PRIMARYKEY` table for Core Data-compatible PK allocation
 - 🟡 **Reload on school-year / semester change** — management views (Student, Group, Subject, Course) and the Evaluation view do **not** watch the global `selectedSchoolYear` / `selectedSemester` signals; switching the selector does not reload data in any of these views. Every view that depends on the selection must add a `watch` on both values and re-run its load function.
 - 🐞 Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
-- 🟡 Test coverage: only `SubjectGateway` and `StudentManagement` / `SubjectManagement` views have partial tests; Groups, Courses, School Years, and the entire Evaluation domain have none
+- ✅ Test coverage: all gateway functions and all management views have tests
 - ⬜ No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
 - ⬜ No delete-confirmation dialogs anywhere (destructive actions fire immediately)
 
@@ -53,16 +53,15 @@ All business tables carry Core Data's `Z_PK` / `Z_ENT` / `Z_OPT` columns. Timest
 - ✅ Create school year + two semesters (Core Data timestamps, cross-field date validation)
 - ✅ Edit school year / semester dates
 - ✅ Format / display school year label
-- ⬜ **Delete school year** — `removeSchoolYear()` in `SchoolYearStore` is an empty no-op; no SQL delete exists in `SchoolYearGateway`. Must cascade-delete: both `ZSEMESTER` rows, all `Z_3YEARS` / `Z_6YEARS` / `Z_7YEARS` join rows, all `ZCOURSE` rows (and their cascades — see Course delete), then `ZYEAR`.
+- ✅ **Delete school year** — `deleteSchoolYear()` cascade-deletes: ZGRADE → ZPERFORMANCE → Z_1STUDENTS → ZCOURSE → Z_3YEARS → Z_6YEARS → Z_7YEARS → ZSEMESTER → ZYEAR, all inside a transaction. `removeSchoolYear()` in `SchoolYearStore` still needs to call this.
 
 ### 3.2 Subjects (`SubjectGateway`, `SubjectStore`, `SubjectManagement`)
 
 - ✅ Load subjects by school year
 - ✅ Load all subjects (for autocomplete)
-- ✅ Create subject — insert `ZSUBJECT` (via `nextPrimaryKey("Subject")`) + `Z_7YEARS` link; or link-only if subject already exists in another year
+- ✅ Create subject — `INSERT OR IGNORE` on `ZSUBJECT` (unique index on ZNAME); if inserted use new PK, else SELECT existing PK; check for existing `Z_7YEARS` link and insert only if missing. All inside a transaction.
 - ✅ Edit subject name
-- ✅ Delete subject — removes `Z_7YEARS` link; deletes `ZSUBJECT` only if no other year link remains
-- 🐞 Remove debug `console.log` statements in `SubjectGateway.ts` (lines 23, 28)
+- ✅ Delete subject — removes `Z_7YEARS` link inside a transaction; deletes `ZSUBJECT` only if no other year link remains
 
 ### 3.3 Students (`StudentGateway`, `StudentStore`, `StudentManagement`)
 
@@ -83,7 +82,7 @@ All business tables carry Core Data's `Z_PK` / `Z_ENT` / `Z_OPT` columns. Timest
 - ✅ Load students belonging to a group
 - ✅ Assign / unassign student to/from group (`Z_3STUDENTS`)
 - ✅ Delete group — cascade intended: `Z_3STUDENTS`, `Z_3YEARS`, grades, performances, courses for that group in the year, then `ZGROUP`
-- 🐞 **Invalid SQLite syntax** in `GroupGateway.deleteGroupInSchoolYear` (lines 67–86): `DELETE … INNER JOIN` is not valid SQLite. Rewrite as subqueries, e.g. `DELETE FROM ZGRADE WHERE ZPERFORMANCE IN (SELECT Z_PK FROM ZPERFORMANCE WHERE ZCOURSE IN (SELECT Z_PK FROM ZCOURSE WHERE ZGROUP = $1 AND ZYEAR = $2))` and similar for `ZPERFORMANCE` and `ZCOURSE`.
+- ✅ **Fixed SQLite syntax** in `GroupGateway.deleteGroupInSchoolYear`: rewrote invalid `DELETE … INNER JOIN` as subquery-based deletes.
 - ❓ **Open question** (`GroupGateway.ts:109` TODO): when a student is unassigned from a group, should they also be removed from all courses that belong to that group? Decide and implement.
 
 ### 3.5 Courses (`CourseGateway`, `CourseStore`, `CourseManagement`)
@@ -94,11 +93,11 @@ This is the most critical incomplete area. The UI is fully built; the entire per
 - ✅ Load students enrolled in a course
 - ✅ Load available groups for a school year (for course creation)
 - ✅ Load available subjects for a school year (for course creation)
-- ⬜ **Create course** (`CourseGateway.createCourse` — empty body): insert `ZCOURSE` with `ZGROUP`, `ZSUBJECT`, `ZYEAR`, `ZSEMESTER`. Note: `ZDAYS` serialization format must be clarified (currently a blob in the DB).
-- ⬜ **Update course** (`CourseGateway.updateCourse` — empty body): update `ZGROUP`, `ZSUBJECT`, `ZDAYS` as needed.
-- ⬜ **Delete course** (`CourseGateway.deleteCourseInSchoolYear` — empty body): cascade-delete `ZGRADE` rows (for all performances of that course), `ZPERFORMANCE` rows, `Z_1STUDENTS` links, then `ZCOURSE`.
-- ⬜ **Assign student to course** (`CourseGateway.assignStudentToCourse` — empty body): insert row into `Z_1STUDENTS`; also create blank `ZGRADE` rows for each existing `ZPERFORMANCE` of that course.
-- ⬜ **Unassign student from course** (`CourseGateway.unassignStudentFromCourse` — empty body): delete from `Z_1STUDENTS`; decide whether to delete that student's `ZGRADE` rows.
+- ✅ **Create course**: inserts `ZCOURSE` with `ZGROUP`, `ZSUBJECT`, `ZYEAR`, `ZSEMESTER`, `ZDAYS` via `nextPrimaryKey("Course")`, inside a transaction. Note: `ZDAYS` serialization format (blob) is still unresolved — see §5.3.
+- ✅ **Update course**: updates `ZGROUP`, `ZSUBJECT`, `ZDAYS`, and increments `Z_OPT`.
+- ✅ **Delete course**: cascade-deletes ZGRADE (subquery via ZPERFORMANCE) → ZPERFORMANCE → Z_1STUDENTS → ZCOURSE, inside a transaction.
+- ✅ **Assign student to course**: inserts `Z_1STUDENTS` row and creates blank `ZGRADE` rows for every existing `ZPERFORMANCE` of the course, inside a transaction.
+- ✅ **Unassign student from course**: deletes the student's `ZGRADE` rows for that course's performances, then removes the `Z_1STUDENTS` link, inside a transaction.
 
 ---
 
@@ -211,19 +210,19 @@ Because Core Data originally managed all FK integrity, cascade deletes, and PK a
 
 | Gateway | Create | Read | Update | Delete | Cascades correct | PK strategy |
 |---|---|---|---|---|---|---|
-| `SchoolYearGateway` | ✅ | ✅ | ✅ | ⬜ missing | — | `lastInsertId` |
+| `SchoolYearGateway` | ✅ | ✅ | ✅ | ✅ | ✅ (full cascade) | `nextPrimaryKey` |
 | `SubjectGateway` | ✅ | ✅ | ✅ | ✅ | ✅ (Z_7YEARS + orphan check) | `nextPrimaryKey` |
-| `StudentGateway` | ✅ | ✅ | ✅ | ✅ | ✅ (Z_6YEARS + orphan check) | `lastInsertId` |
-| `GroupGateway` | ✅ | ✅ | ✅ | 🐞 SQL bug | 🐞 invalid syntax | `lastInsertId` |
-| `CourseGateway` | ⬜ | ✅ | ⬜ | ⬜ | ⬜ | — |
-| `EvaluationGateway` | ✅ (perf+grades) | ✅ | ✅ | ⬜ missing | — | `lastInsertId` |
+| `StudentGateway` | ✅ | ✅ | ✅ | ✅ | ✅ (Z_6YEARS + orphan check) | `nextPrimaryKey` |
+| `GroupGateway` | ✅ | ✅ | ✅ | ✅ | ✅ (subquery cascade) | `nextPrimaryKey` |
+| `CourseGateway` | ✅ | ✅ | ✅ | ✅ | ✅ (ZGRADE→ZPERF→Z_1STUDENTS→ZCOURSE) | `nextPrimaryKey` |
+| `EvaluationGateway` | ✅ (perf+grades) | ✅ | ✅ | ✅ | ✅ (ZGRADE before ZPERFORMANCE) | `nextPrimaryKey` |
 
 **Specific items:**
 
-- ⬜ Verify that `Z_OPT` (Core Data's optimistic-lock counter) is incremented on every `UPDATE` — Core Data increments it; if the original app is ever used again on the same file, stale `Z_OPT` values may cause issues
-- ⬜ Verify `Z_ENT` is set correctly on every `INSERT` (each entity has a fixed entity number in the Core Data model; e.g. ZYEAR=8, ZSEMESTER=5, ZSTUDENT=6, ZGROUP=3, ZSUBJECT=7)
-- ⬜ Audit whether all `nextPrimaryKey` vs `lastInsertId` choices are intentional — `SubjectGateway` uses `nextPrimaryKey` (required because Core Data tracks Z_MAX per entity) but student/group/course gateways use `lastInsertId`; confirm the latter is safe for the Core Data schema
-- 🐞 Fix `GroupGateway.deleteGroupInSchoolYear` invalid `DELETE … INNER JOIN` SQL (see §3.4)
-- ⬜ Add delete to `SchoolYearGateway` with correct cascade order (see §3.1)
-- ⬜ Implement all 5 missing `CourseGateway` mutation functions (see §3.5)
-- ⬜ Add delete to `EvaluationGateway` for performances (and their grades) — currently there is no way to remove a performance once created
+- ✅ `Z_OPT` incremented on every `UPDATE` across all gateways
+- ✅ `Z_ENT` set correctly on every `INSERT` via the `Z_ENT` constants map
+- ✅ All gateways use `nextPrimaryKey` for Core Data-compatible PK allocation
+- ✅ `GroupGateway.deleteGroupInSchoolYear` invalid SQL fixed (see §3.4)
+- ✅ `SchoolYearGateway.deleteSchoolYear` implemented with correct cascade order (see §3.1)
+- ✅ All 5 `CourseGateway` mutation functions implemented (see §3.5)
+- ✅ `deletePerformance` added to `EvaluationGateway`: deletes all `ZGRADE` rows then the `ZPERFORMANCE` row, inside a transaction.

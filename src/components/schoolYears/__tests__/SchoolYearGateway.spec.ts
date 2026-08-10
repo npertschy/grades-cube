@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-import { loadAll, createSchoolYear, updateSchoolYear } from "@/components/schoolYears/SchoolYearGateway";
+import { loadAll, createSchoolYear, updateSchoolYear, deleteSchoolYear } from "@/components/schoolYears/SchoolYearGateway";
 import { coreDataToUnix } from "@/store/DateConversion";
+import { Z_ENT } from "@/store/EntityId";
 
-const { mockedSelect, mockedExecute } = vi.hoisted(() => ({
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
   mockedExecute: vi.fn(),
+  mockedNextPrimaryKey: vi.fn(),
 }));
 
 vi.mock("@/store/Database", () => ({
@@ -13,6 +15,7 @@ vi.mock("@/store/Database", () => ({
     select: mockedSelect,
     execute: mockedExecute,
   },
+  nextPrimaryKey: mockedNextPrimaryKey,
 }));
 
 const COREDATA_ZERO = 0;
@@ -58,53 +61,106 @@ describe("loadAll", () => {
 });
 
 describe("createSchoolYear", () => {
-  it("inserts the school year and both semesters with Z_OPT = 1", async () => {
-    mockedExecute.mockResolvedValueOnce({ lastInsertId: 1 });
-    mockedExecute.mockResolvedValueOnce({});
-    mockedExecute.mockResolvedValueOnce({});
+  it("inserts the school year and both semesters with nextPrimaryKey inside a transaction", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(1);
+    mockedNextPrimaryKey.mockResolvedValueOnce(10);
+    mockedNextPrimaryKey.mockResolvedValueOnce(11);
+    mockedExecute.mockResolvedValue({});
 
     await createSchoolYear(schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(3);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      1,
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Year");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Semester");
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZYEAR"),
-      [8, 1, expect.any(Number), expect.any(Number)],
+      [1, Z_ENT.ZYEAR, 1, expect.any(Number), expect.any(Number)],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZSEMESTER"),
-      [5, 1, 1, 1, expect.any(Number), expect.any(Number)],
+      [10, Z_ENT.ZSEMESTER, 1, 1, 1, expect.any(Number), expect.any(Number)],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      3,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZSEMESTER"),
-      [5, 1, 2, 1, expect.any(Number), expect.any(Number)],
+      [11, Z_ENT.ZSEMESTER, 1, 2, 1, expect.any(Number), expect.any(Number)],
     );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(1);
+    mockedExecute.mockResolvedValueOnce({});
+    mockedExecute.mockRejectedValueOnce(new Error("db error"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(createSchoolYear(schoolYear)).rejects.toThrow("db error");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });
 
 describe("updateSchoolYear", () => {
-  it("updates the school year and both semesters with Z_OPT = Z_OPT + 1", async () => {
+  it("updates the school year and both semesters with Z_OPT = Z_OPT + 1 inside a transaction", async () => {
     mockedExecute.mockResolvedValue({});
 
     await updateSchoolYear(schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(3);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining("Z_OPT = Z_OPT + 1"),
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE ZYEAR"),
       [expect.any(Number), expect.any(Number), 1],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining("Z_OPT = Z_OPT + 1"),
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE ZSEMESTER"),
       [expect.any(Number), expect.any(Number), 10],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      3,
-      expect.stringContaining("Z_OPT = Z_OPT + 1"),
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("UPDATE ZSEMESTER"),
       [expect.any(Number), expect.any(Number), 11],
     );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+});
+
+describe("deleteSchoolYear", () => {
+  it("cascade-deletes all related data in the correct order inside a transaction", async () => {
+    mockedExecute.mockResolvedValue({});
+
+    await deleteSchoolYear(schoolYear);
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.some((s) => s.includes("DELETE FROM ZGRADE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZPERFORMANCE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM Z_1STUDENTS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZCOURSE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM Z_3YEARS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM Z_6YEARS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM Z_7YEARS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZSEMESTER"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZYEAR"))).toBe(true);
+    expect(calls.at(-1)).toContain("COMMIT");
+
+    const gradeIdx = calls.findIndex((s) => s.includes("DELETE FROM ZGRADE"));
+    const perfIdx = calls.findIndex((s) => s.includes("DELETE FROM ZPERFORMANCE"));
+    const courseIdx = calls.findIndex((s) => s.includes("DELETE FROM ZCOURSE"));
+    const yearIdx = calls.findIndex((s) => s.includes("DELETE FROM ZYEAR"));
+    expect(gradeIdx).toBeLessThan(perfIdx);
+    expect(perfIdx).toBeLessThan(courseIdx);
+    expect(courseIdx).toBeLessThan(yearIdx);
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+    mockedExecute.mockRejectedValueOnce(new Error("db error"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(deleteSchoolYear(schoolYear)).rejects.toThrow("db error");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });

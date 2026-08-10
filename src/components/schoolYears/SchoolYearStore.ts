@@ -1,6 +1,6 @@
 import { ref } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
-import { loadAll, createSchoolYear, updateSchoolYear } from "./SchoolYearGateway";
+import { loadAll, createSchoolYear, deleteSchoolYear, updateSchoolYear } from "./SchoolYearGateway";
 
 const schoolYears = ref<SchoolYear[]>([]);
 
@@ -31,9 +31,9 @@ function formatSchoolYear(item: SchoolYear) {
   return item.id === 0 ? "Neues Schuljahr anlegen" : item.start?.getFullYear() + "/" + item.end?.getFullYear();
 }
 
-function removeSchoolYear(schoolYear: SchoolYear) {
-  
-
+async function removeSchoolYear(schoolYear: SchoolYear) {
+  await deleteSchoolYear(schoolYear);
+  await loadAll();
 }
 
 async function editSchoolYear(schoolYear: SchoolYear, cleanup: () => void) {

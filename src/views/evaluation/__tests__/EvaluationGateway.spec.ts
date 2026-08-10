@@ -7,6 +7,7 @@ import {
   createPerformance,
   updatePerformance,
   updateGrade,
+  deletePerformance,
 } from "@/views/evaluation/EvaluationGateway";
 import type { Course } from "@/components/courses/Course";
 import type { Group } from "@/components/groups/Group";
@@ -15,9 +16,10 @@ import type { Student } from "@/components/students/Student";
 import { coreDataToUnix } from "@/store/DateConversion";
 import { Z_ENT } from "@/store/EntityId";
 
-const { mockedSelect, mockedExecute } = vi.hoisted(() => ({
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
   mockedExecute: vi.fn(),
+  mockedNextPrimaryKey: vi.fn(),
 }));
 
 vi.mock("@/store/Database", () => ({
@@ -25,6 +27,7 @@ vi.mock("@/store/Database", () => ({
     select: mockedSelect,
     execute: mockedExecute,
   },
+  nextPrimaryKey: mockedNextPrimaryKey,
 }));
 
 const schoolYear = { id: 1, start: undefined, end: undefined, firstSemester: undefined, secondSemester: undefined };
@@ -79,7 +82,7 @@ describe("loadStudentsForCourse", () => {
     expect(result[0].grades["1"]).toMatchObject({
       id: 10,
       value: 2,
-      performacneTitle: "Test",
+      performanceTitle: "Test",
       performanceType: "written",
     });
   });
@@ -132,8 +135,10 @@ describe("loadStudentsForGroup", () => {
 });
 
 describe("createPerformance", () => {
-  it("inserts the performance then a grade row for each student", async () => {
-    mockedExecute.mockResolvedValueOnce({ lastInsertId: 99 });
+  it("inserts the performance then a grade row for each student using nextPrimaryKey inside a transaction", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(99);
+    mockedNextPrimaryKey.mockResolvedValueOnce(201);
+    mockedNextPrimaryKey.mockResolvedValueOnce(202);
     mockedExecute.mockResolvedValue({});
 
     const performance: Performance = {
@@ -154,17 +159,23 @@ describe("createPerformance", () => {
 
     await createPerformance(performance, students);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(3);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining("INSERT INTO ZGRADE"),
-      [Z_ENT.ZGRADE, 1, 99, 10],
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Performance");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Grade");
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZPERFORMANCE"),
+      [99, Z_ENT.ZPERFORMANCE, 1, 1, 0, 6, 5, expect.any(Number), 0.5, "KA1"],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      3,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZGRADE"),
-      [Z_ENT.ZGRADE, 1, 99, 11],
+      [201, Z_ENT.ZGRADE, 1, 99, 10],
     );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      [202, Z_ENT.ZGRADE, 1, 99, 11],
+    );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls[calls.length - 1]).toContain("COMMIT");
   });
 });
 
@@ -190,11 +201,39 @@ describe("updateGrade", () => {
   it("updates the grade value", async () => {
     mockedExecute.mockResolvedValueOnce({});
 
-    await updateGrade({ id: 10, value: "3", performacneTitle: "KA1", performanceType: 6});
+    await updateGrade({ id: 10, value: "3", performanceTitle: "KA1", performanceType: 6 });
 
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("UPDATE ZGRADE"),
       ["3", 10],
     );
+  });
+});
+
+describe("deletePerformance", () => {
+  it("deletes all grades and then the performance inside a transaction", async () => {
+    mockedExecute.mockResolvedValue({});
+
+    const performance: Performance = {
+      id: 1, performanceId: "1", editable: true, sortOrder: 0,
+      type: 6, courseId: 5, date: coreDataToUnix(0), weight: 0.5, title: "KA1",
+    };
+
+    await deletePerformance(performance);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM ZGRADE"),
+      [1],
+    );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM ZPERFORMANCE"),
+      [1],
+    );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.at(-1)).toContain("COMMIT");
+    const gradeIdx = calls.findIndex((s) => s.includes("DELETE FROM ZGRADE"));
+    const perfIdx = calls.findIndex((s) => s.includes("DELETE FROM ZPERFORMANCE"));
+    expect(gradeIdx).toBeLessThan(perfIdx);
   });
 });

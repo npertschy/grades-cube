@@ -8,7 +8,8 @@ import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { Subject } from "@/components/subjects/Subject";
 import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
-import { db } from "@/store/Database";
+import { db, nextPrimaryKey } from "@/store/Database";
+import { Z_ENT } from "@/store/EntityId";
 
 export async function loadCoursesBySchoolYearAndSemester(
   schoolYear: SchoolYear,
@@ -16,10 +17,10 @@ export async function loadCoursesBySchoolYearAndSemester(
 ): Promise<Course[]> {
   const courses: FullCourseEntity[] = await db.select(
     `
-        SELECT ZCOURSE.Z_PK, ZCOURSE.ZDAYS, ZGROUP.Z_PK AS GROUPID, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.Z_PK AS SUBJECTID, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE 
+        SELECT ZCOURSE.Z_PK, ZCOURSE.ZDAYS, ZGROUP.Z_PK AS GROUPID, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.Z_PK AS SUBJECTID, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE
         INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK
         INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK
-        WHERE ZYEAR = $1 
+        WHERE ZYEAR = $1
         AND ZSEMESTER = $2
     `,
     [schoolYear.id, semester.id],
@@ -49,8 +50,8 @@ export async function loadCoursesBySchoolYearAndSemester(
 export async function loadStudentsByCourse(course: Course): Promise<Student[]> {
   const students: StudentEntity[] = await db.select(
     `
-      SELECT * FROM ZSTUDENT 
-      INNER JOIN Z_1STUDENTS ON Z_PK = Z_1STUDENTS.Z_6STUDENTS 
+      SELECT * FROM ZSTUDENT
+      INNER JOIN Z_1STUDENTS ON Z_PK = Z_1STUDENTS.Z_6STUDENTS
       WHERE Z_1STUDENTS.Z_1COURSES = $1
       `,
     [course.id],
@@ -70,7 +71,7 @@ export async function loadStudentsByCourse(course: Course): Promise<Student[]> {
 export async function loadAvailableGroupsBySchoolYear(schoolYear: SchoolYear): Promise<Group[]> {
   const groups: GroupEntity[] = await db.select(
     `
-      SELECT * FROM ZGROUP 
+      SELECT * FROM ZGROUP
       INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1
       WHERE Z_3YEARS.Z_8YEARS = $1
       `,
@@ -106,12 +107,134 @@ export async function loadAvailableSubjectsBySchoolYear(schoolYear: SchoolYear):
   });
 }
 
-export async function createCourse(course: Course, schoolYear: SchoolYear, semester: Semester) {}
+export async function createCourse(course: Course, schoolYear: SchoolYear, semester: Semester) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    const id = await nextPrimaryKey("Course");
+    await db.execute(
+      `
+      INSERT INTO ZCOURSE (Z_PK, Z_ENT, Z_OPT, ZGROUP, ZSUBJECT, ZSEMESTER, ZYEAR, ZDAYS)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `,
+      [id, Z_ENT.ZCOURSE, 1, course.group!.id, course.subject!.id, semester.id, schoolYear.id, course.days ?? null],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
+}
 
-export async function updateCourse(course: Course) {}
+export async function updateCourse(course: Course) {
+  await db.execute(
+    `
+    UPDATE ZCOURSE
+    SET ZGROUP = $1, ZSUBJECT = $2, ZDAYS = $3, Z_OPT = Z_OPT + 1
+    WHERE Z_PK = $4
+    `,
+    [course.group!.id, course.subject!.id, course.days ?? null, course.id],
+  );
+}
 
-export async function deleteCourseInSchoolYear(course: Course, schoolYear: SchoolYear, semester: Semester) {}
+export async function deleteCourseInSchoolYear(course: Course) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      DELETE FROM ZGRADE
+      WHERE Z_PK IN (
+        SELECT ZGRADE.Z_PK FROM ZGRADE
+        INNER JOIN ZPERFORMANCE ON ZPERFORMANCE.Z_PK = ZGRADE.ZPERFORMANCE
+        WHERE ZPERFORMANCE.ZCOURSE = $1
+      )
+      `,
+      [course.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM ZPERFORMANCE
+      WHERE ZCOURSE = $1
+      `,
+      [course.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM Z_1STUDENTS
+      WHERE Z_1COURSES = $1
+      `,
+      [course.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM ZCOURSE
+      WHERE Z_PK = $1
+      `,
+      [course.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
+}
 
-export async function assignStudentToCourse(student: Student, course: Course) {}
+export async function assignStudentToCourse(student: Student, course: Course) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      INSERT INTO Z_1STUDENTS (Z_1COURSES, Z_6STUDENTS)
+      VALUES ($1, $2)
+      `,
+      [course.id, student.id],
+    );
 
-export async function unassignStudentFromCourse(student: Student, course: Course) {}
+    type PerformanceRow = { Z_PK: number };
+    const performances: PerformanceRow[] = await db.select(
+      `SELECT Z_PK FROM ZPERFORMANCE WHERE ZCOURSE = $1`,
+      [course.id],
+    );
+    for (const performance of performances) {
+      const gradeId = await nextPrimaryKey("Grade");
+      await db.execute(
+        `
+        INSERT INTO ZGRADE (Z_PK, Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [gradeId, Z_ENT.ZGRADE, 1, performance.Z_PK, student.id],
+      );
+    }
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
+}
+
+export async function unassignStudentFromCourse(student: Student, course: Course) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      DELETE FROM ZGRADE
+      WHERE ZSTUDENT = $1
+      AND ZPERFORMANCE IN (
+        SELECT Z_PK FROM ZPERFORMANCE WHERE ZCOURSE = $2
+      )
+      `,
+      [student.id, course.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM Z_1STUDENTS
+      WHERE Z_1COURSES = $1
+      AND Z_6STUDENTS = $2
+      `,
+      [course.id, student.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
+}

@@ -10,9 +10,10 @@ import {
   deleteStudentInSchoolYear,
 } from "@/components/students/StudentGateway";
 
-const { mockedSelect, mockedExecute } = vi.hoisted(() => ({
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
   mockedExecute: vi.fn(),
+  mockedNextPrimaryKey: vi.fn(),
 }));
 
 vi.mock("@/store/Database", () => ({
@@ -20,6 +21,7 @@ vi.mock("@/store/Database", () => ({
     select: mockedSelect,
     execute: mockedExecute,
   },
+  nextPrimaryKey: mockedNextPrimaryKey,
 }));
 
 const schoolYear: SchoolYear = {
@@ -78,23 +80,24 @@ describe("loadGroupsAndCoursesForStudent", () => {
 });
 
 describe("createStudentInSchoolYear", () => {
-  it("inserts the student with Z_OPT = 1 and school year mapping", async () => {
-    mockedExecute.mockResolvedValueOnce({ lastInsertId: 42 });
-    mockedExecute.mockResolvedValueOnce({});
+  it("inserts the student with nextPrimaryKey and school year mapping inside a transaction", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(42);
+    mockedExecute.mockResolvedValue({});
 
     await createStudentInSchoolYear(student, schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(2);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      1,
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Student");
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZSTUDENT"),
-      [6, 1, "Max", "Muster"],
+      [42, 6, 1, "Max", "Muster"],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO Z_6YEARS"),
       [42, 1],
     );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls[calls.length - 1]).toContain("COMMIT");
   });
 });
 
@@ -113,27 +116,28 @@ describe("updateStudent", () => {
 
 describe("deleteStudentInSchoolYear", () => {
   it("deletes only the year mapping when the student still belongs to other years", async () => {
-    mockedExecute.mockResolvedValueOnce({});
-    mockedSelect.mockResolvedValueOnce({ "COUNT(*)": 1 });
+    mockedExecute.mockResolvedValue({});
+    mockedSelect.mockResolvedValueOnce([{ "COUNT(*)": 1 }]);
 
     await deleteStudentInSchoolYear(student, schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(1);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("DELETE FROM Z_6YEARS"),
       [10, 1],
+    );
+    expect(mockedExecute).not.toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM ZSTUDENT"),
+      expect.anything(),
     );
   });
 
   it("also deletes the student record when no year mappings remain", async () => {
     mockedExecute.mockResolvedValue({});
-    mockedSelect.mockResolvedValueOnce({ "COUNT(*)": 0 });
+    mockedSelect.mockResolvedValueOnce([{ "COUNT(*)": 0 }]);
 
     await deleteStudentInSchoolYear(student, schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(2);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("DELETE FROM ZSTUDENT"),
       [10],
     );

@@ -1,9 +1,8 @@
-import { type QueryResult } from "@tauri-apps/plugin-sql";
 import type { SchoolYear } from "./SchoolYear";
 import type { Semester } from "./Semester";
 import type { SchoolYearEntity } from "./SchoolYearEntity";
 import type { SemesterEntity } from "./SemesterEntity";
-import { db } from "@/store/Database";
+import { db, nextPrimaryKey } from "@/store/Database";
 import { coreDataToUnix, dateToCoreData } from "@/store/DateConversion";
 import { Z_ENT } from "@/store/EntityId";
 
@@ -43,46 +42,62 @@ export async function loadAll(): Promise<SchoolYear[]> {
 }
 
 export async function createSchoolYear(schoolYear: SchoolYear) {
-  const schoolYearStart = dateToCoreData(schoolYear.start!);
-  const schoolYearEnd = dateToCoreData(schoolYear.end!);
-  const newSchoolYear: QueryResult = await db.execute(
-    `
-    INSERT INTO ZYEAR (Z_ENT, Z_OPT, ZEND, ZSTART)
-    VALUES ($1, $2, $3, $4)
-    `,
-    [Z_ENT.ZYEAR, 1, schoolYearEnd, schoolYearStart],
-  );
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    const schoolYearStart = dateToCoreData(schoolYear.start!);
+    const schoolYearEnd = dateToCoreData(schoolYear.end!);
+    const yearId = await nextPrimaryKey("Year");
+    await db.execute(
+      `
+      INSERT INTO ZYEAR (Z_PK, Z_ENT, Z_OPT, ZEND, ZSTART)
+      VALUES ($1, $2, $3, $4, $5)
+      `,
+      [yearId, Z_ENT.ZYEAR, 1, schoolYearEnd, schoolYearStart],
+    );
 
-  await createSemester(schoolYear.firstSemester!, newSchoolYear.lastInsertId!);
-  await createSemester(schoolYear.secondSemester!, newSchoolYear.lastInsertId!);
+    await createSemester(schoolYear.firstSemester!, yearId);
+    await createSemester(schoolYear.secondSemester!, yearId);
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
 
 async function createSemester(semester: Semester, schoolYearId: number) {
   const semesterStart = dateToCoreData(semester.start!);
   const semesterEnd = dateToCoreData(semester.end!);
+  const semesterId = await nextPrimaryKey("Semester");
   await db.execute(
     `
-    INSERT INTO ZSEMESTER (Z_ENT, Z_OPT, ZTYPEID, ZYEAR, ZEND, ZSTART)
-    VALUES ($1, $2, $3, $4, $5, $6)
+    INSERT INTO ZSEMESTER (Z_PK, Z_ENT, Z_OPT, ZTYPEID, ZYEAR, ZEND, ZSTART)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     `,
-    [Z_ENT.ZSEMESTER, 1, semester.type, schoolYearId, semesterEnd, semesterStart],
+    [semesterId, Z_ENT.ZSEMESTER, 1, semester.type, schoolYearId, semesterEnd, semesterStart],
   );
 }
 
 export async function updateSchoolYear(schoolYear: SchoolYear) {
-  const schoolYearStart = dateToCoreData(schoolYear.start!);
-  const schoolYearEnd = dateToCoreData(schoolYear.end!);
-  await db.execute(
-    `
-    UPDATE ZYEAR
-    SET ZEND = $1, ZSTART = $2, Z_OPT = Z_OPT + 1
-    WHERE Z_PK = $3
-    `,
-    [schoolYearEnd, schoolYearStart, schoolYear.id],
-  );
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    const schoolYearStart = dateToCoreData(schoolYear.start!);
+    const schoolYearEnd = dateToCoreData(schoolYear.end!);
+    await db.execute(
+      `
+      UPDATE ZYEAR
+      SET ZEND = $1, ZSTART = $2, Z_OPT = Z_OPT + 1
+      WHERE Z_PK = $3
+      `,
+      [schoolYearEnd, schoolYearStart, schoolYear.id],
+    );
 
-  await updateSemester(schoolYear.firstSemester!);
-  await updateSemester(schoolYear.secondSemester!);
+    await updateSemester(schoolYear.firstSemester!);
+    await updateSemester(schoolYear.secondSemester!);
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
 
 async function updateSemester(semester: Semester) {
@@ -96,4 +111,70 @@ async function updateSemester(semester: Semester) {
     `,
     [semesterEnd, semesterStart, semester.id],
   );
+}
+
+export async function deleteSchoolYear(schoolYear: SchoolYear) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      DELETE FROM ZGRADE
+      WHERE Z_PK IN (
+        SELECT ZGRADE.Z_PK FROM ZGRADE
+        INNER JOIN ZPERFORMANCE ON ZPERFORMANCE.Z_PK = ZGRADE.ZPERFORMANCE
+        INNER JOIN ZCOURSE ON ZCOURSE.Z_PK = ZPERFORMANCE.ZCOURSE
+        WHERE ZCOURSE.ZYEAR = $1
+      )
+      `,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM ZPERFORMANCE
+      WHERE Z_PK IN (
+        SELECT ZPERFORMANCE.Z_PK FROM ZPERFORMANCE
+        INNER JOIN ZCOURSE ON ZCOURSE.Z_PK = ZPERFORMANCE.ZCOURSE
+        WHERE ZCOURSE.ZYEAR = $1
+      )
+      `,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM Z_1STUDENTS
+      WHERE Z_1COURSES IN (
+        SELECT Z_PK FROM ZCOURSE WHERE ZYEAR = $1
+      )
+      `,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `DELETE FROM ZCOURSE WHERE ZYEAR = $1`,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `DELETE FROM Z_3YEARS WHERE Z_8YEARS = $1`,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `DELETE FROM Z_6YEARS WHERE Z_8YEARS1 = $1`,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `DELETE FROM Z_7YEARS WHERE Z_8YEARS2 = $1`,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `DELETE FROM ZSEMESTER WHERE ZYEAR = $1`,
+      [schoolYear.id],
+    );
+    await db.execute(
+      `DELETE FROM ZYEAR WHERE Z_PK = $1`,
+      [schoolYear.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }

@@ -9,10 +9,9 @@ import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
-import { db } from "@/store/Database";
+import { db, nextPrimaryKey } from "@/store/Database";
 import { dateToCoreData, coreDataToUnix } from "@/store/DateConversion";
 import { Z_ENT } from "@/store/EntityId";
-import type { QueryResult } from "@tauri-apps/plugin-sql";
 
 export async function loadCoursesForSchoolYearAndSemester(
   schoolYear: SchoolYear,
@@ -67,10 +66,9 @@ export async function loadStudentsForCourse(course: Course): Promise<EvaluatedSt
          )
       ) AS GRADES
       FROM ZSTUDENT
-      INNER JOIN Z_1STUDENTS ON ZSTUDENT.Z_PK = Z_1STUDENTS.Z_6STUDENTS
-      INNER JOIN ZGRADE ON ZGRADE.ZSTUDENT = ZSTUDENT.Z_PK
-      INNER JOIN ZPERFORMANCE ON ZPERFORMANCE.Z_PK = ZGRADE.ZPERFORMANCE
-      WHERE ZPERFORMANCE.ZCOURSE = $1
+      INNER JOIN Z_1STUDENTS ON ZSTUDENT.Z_PK = Z_1STUDENTS.Z_6STUDENTS AND Z_1STUDENTS.Z_1COURSES = $1
+      LEFT JOIN ZGRADE ON ZGRADE.ZSTUDENT = ZSTUDENT.Z_PK
+      LEFT JOIN ZPERFORMANCE ON ZPERFORMANCE.Z_PK = ZGRADE.ZPERFORMANCE AND ZPERFORMANCE.ZCOURSE = $1
       GROUP BY ZSTUDENT.Z_PK, ZSTUDENT.ZFIRSTNAME, ZSTUDENT.ZLASTNAME;
       `,
     [course.id],
@@ -84,7 +82,7 @@ export async function loadStudentsForCourse(course: Course): Promise<EvaluatedSt
       grades[performanceId] = {
         id: grade.GRADEID,
         value: grade.VALUE,
-        performacneTitle: grade.TITLE,
+        performanceTitle: grade.TITLE,
         performanceType: grade.TYPE,
       };
     });
@@ -149,32 +147,42 @@ export async function loadStudentsForGroup(group: Group): Promise<Student[]> {
 }
 
 export async function createPerformance(performance: Performance, students: Student[]): Promise<void> {
-  const newCourseId: QueryResult = await db.execute(
-    `
-      INSERT INTO ZPERFORMANCE (Z_ENT, Z_OPT, ZEDITABLE, ZSORTORDER, ZTYPE, ZCOURSE, ZDATE, ZWEIGHT, ZTITLE)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      `,
-    [
-      Z_ENT.ZPERFORMANCE,
-      1,
-      performance.editable ? 1 : 0,
-      performance.sortOrder,
-      performance.type,
-      performance.courseId,
-      dateToCoreData(performance.date),
-      performance.weight,
-      performance.title,
-    ],
-  );
-
-  for (const student of students) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    const performanceId = await nextPrimaryKey("Performance");
     await db.execute(
       `
-        INSERT INTO ZGRADE (Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
-        VALUES ($1, $2, $3, $4)
-        `,
-      [Z_ENT.ZGRADE, 1, newCourseId.lastInsertId, student.id],
+      INSERT INTO ZPERFORMANCE (Z_PK, Z_ENT, Z_OPT, ZEDITABLE, ZSORTORDER, ZTYPE, ZCOURSE, ZDATE, ZWEIGHT, ZTITLE)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      `,
+      [
+        performanceId,
+        Z_ENT.ZPERFORMANCE,
+        1,
+        performance.editable ? 1 : 0,
+        performance.sortOrder,
+        performance.type,
+        performance.courseId,
+        dateToCoreData(performance.date),
+        performance.weight,
+        performance.title,
+      ],
     );
+
+    for (const student of students) {
+      const gradeId = await nextPrimaryKey("Grade");
+      await db.execute(
+        `
+        INSERT INTO ZGRADE (Z_PK, Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
+        VALUES ($1, $2, $3, $4, $5)
+        `,
+        [gradeId, Z_ENT.ZGRADE, 1, performanceId, student.id],
+      );
+    }
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
   }
 }
 
@@ -198,4 +206,22 @@ export async function updateGrade(grade: Grade): Promise<void> {
       `,
     [grade.value, grade.id],
   );
+}
+
+export async function deletePerformance(performance: Performance): Promise<void> {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `DELETE FROM ZGRADE WHERE ZPERFORMANCE = $1`,
+      [performance.id],
+    );
+    await db.execute(
+      `DELETE FROM ZPERFORMANCE WHERE Z_PK = $1`,
+      [performance.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }

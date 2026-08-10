@@ -11,10 +11,12 @@ import {
   assignStudentToGroup,
   unassignStudentFromGroup,
 } from "@/components/groups/GroupGateway";
+import { Z_ENT } from "@/store/EntityId";
 
-const { mockedSelect, mockedExecute } = vi.hoisted(() => ({
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
   mockedExecute: vi.fn(),
+  mockedNextPrimaryKey: vi.fn(),
 }));
 
 vi.mock("@/store/Database", () => ({
@@ -22,6 +24,7 @@ vi.mock("@/store/Database", () => ({
     select: mockedSelect,
     execute: mockedExecute,
   },
+  nextPrimaryKey: mockedNextPrimaryKey,
 }));
 
 const schoolYear: SchoolYear = {
@@ -72,37 +75,46 @@ describe("loadStudentsByGroup", () => {
 });
 
 describe("createGroup", () => {
-  it("inserts a group with Z_OPT = 1 and year mapping", async () => {
-    mockedExecute.mockResolvedValueOnce({ lastInsertId: 99 });
-    mockedExecute.mockResolvedValueOnce({});
+  it("inserts a group with nextPrimaryKey and year mapping inside a transaction", async () => {
+    mockedSelect.mockResolvedValueOnce([{ "COUNT(*)": 0 }]);
+    mockedNextPrimaryKey.mockResolvedValueOnce(99);
+    mockedExecute.mockResolvedValue({});
 
     await createGroup(group, schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(2);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      1,
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Group");
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("BEGIN"));
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZGROUP"),
-      [3, 1, "Alpha", 1, "Alpha"],
+      [99, Z_ENT.ZGROUP, 1, "Alpha", 1, "Alpha"],
     );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO Z_3YEARS"),
       [1, 99],
     );
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("COMMIT"));
   });
 
   it("prefixes the sorting name with '0' when group name starts with a digit", async () => {
-    mockedExecute.mockResolvedValueOnce({ lastInsertId: 100 });
-    mockedExecute.mockResolvedValueOnce({});
+    mockedSelect.mockResolvedValueOnce([{ "COUNT(*)": 0 }]);
+    mockedNextPrimaryKey.mockResolvedValueOnce(100);
+    mockedExecute.mockResolvedValue({});
 
     const numericGroup: Group = { ...group, name: "8B", sortingName: "8B" };
     await createGroup(numericGroup, schoolYear);
 
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      1,
+    expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZGROUP"),
-      [3, 1, "8B", 1, "08B"],
+      [100, Z_ENT.ZGROUP, 1, "8B", 1, "08B"],
     );
+  });
+
+  it("throws without inserting when the group name already exists in the school year", async () => {
+    mockedSelect.mockResolvedValueOnce([{ "COUNT(*)": 1 }]);
+
+    await expect(createGroup(group, schoolYear)).rejects.toThrow();
+
+    expect(mockedExecute).not.toHaveBeenCalled();
   });
 });
 
@@ -146,26 +158,30 @@ describe("unassignStudentFromGroup", () => {
 });
 
 describe("deleteGroupInSchoolYear", () => {
-  it("executes all deletion statements in order", async () => {
+  it("deletes all related records inside a transaction", async () => {
     mockedExecute.mockResolvedValue({});
 
     await deleteGroupInSchoolYear(group, schoolYear);
 
-    expect(mockedExecute).toHaveBeenCalledTimes(6);
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      1,
-      expect.stringContaining("DELETE FROM Z_3STUDENTS"),
-      [10],
-    );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      2,
-      expect.stringContaining("DELETE FROM Z_3YEARS"),
-      [10, 1],
-    );
-    expect(mockedExecute).toHaveBeenNthCalledWith(
-      6,
-      expect.stringContaining("DELETE FROM ZGROUP"),
-      [10],
-    );
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(calls.some((s) => s.includes("DELETE FROM Z_3STUDENTS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM Z_3YEARS"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZGRADE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZPERFORMANCE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZCOURSE"))).toBe(true);
+    expect(calls.some((s) => s.includes("DELETE FROM ZGROUP"))).toBe(true);
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedExecute.mockResolvedValueOnce({});
+    mockedExecute.mockRejectedValueOnce(new Error("db error"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(deleteGroupInSchoolYear(group, schoolYear)).rejects.toThrow("db error");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });

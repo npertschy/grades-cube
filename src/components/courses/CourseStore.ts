@@ -60,7 +60,7 @@ async function editCourse(course: Course, schoolYear: SchoolYear, semester: Seme
 }
 
 async function removeCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  await deleteCourseInSchoolYear(course, schoolYear, semester);
+  await deleteCourseInSchoolYear(course);
   await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
 
   cleanup();

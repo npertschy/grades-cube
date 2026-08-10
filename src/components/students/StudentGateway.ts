@@ -1,9 +1,8 @@
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-import { db, type CountResult } from "@/store/Database";
+import { db, nextPrimaryKey, type CountResult } from "@/store/Database";
 import { Z_ENT } from "@/store/EntityId";
-import type { QueryResult } from "@tauri-apps/plugin-sql";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { Group } from "@/components/groups/Group";
 import type { CourseEntity } from "@/components/courses/CourseEntity";
@@ -107,20 +106,28 @@ export async function loadGroupsAndCoursesForStudent(
 }
 
 export async function createStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
-  const studentId: QueryResult = await db.execute(
-    `
-    INSERT INTO ZSTUDENT (Z_ENT, Z_OPT, ZFIRSTNAME, ZLASTNAME)
-    VALUES ($1, $2, $3, $4)
-    `,
-    [Z_ENT.ZSTUDENT, 1, student.firstName, student.lastName],
-  );
-  await db.execute(
-    `
-    INSERT INTO Z_6YEARS (Z_6STUDENTS2, Z_8YEARS1)
-    VALUES ($1, $2)
-    `,
-    [studentId.lastInsertId, schoolYear.id],
-  );
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    const id = await nextPrimaryKey("Student");
+    await db.execute(
+      `
+      INSERT INTO ZSTUDENT (Z_PK, Z_ENT, Z_OPT, ZFIRSTNAME, ZLASTNAME)
+      VALUES ($1, $2, $3, $4, $5)
+      `,
+      [id, Z_ENT.ZSTUDENT, 1, student.firstName, student.lastName],
+    );
+    await db.execute(
+      `
+      INSERT INTO Z_6YEARS (Z_6STUDENTS2, Z_8YEARS1)
+      VALUES ($1, $2)
+      `,
+      [id, schoolYear.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
 
 export async function updateStudent(student: Student) {
@@ -135,29 +142,36 @@ export async function updateStudent(student: Student) {
 }
 
 export async function deleteStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
-  await db.execute(
-    `
-    DELETE FROM Z_6YEARS
-    WHERE Z_6STUDENTS2 = $1
-    AND Z_8YEARS1 = $2
-    `,
-    [student.id, schoolYear.id],
-  );
-  const count: CountResult = await db.select(
-    `
-    SELECT COUNT(*) FROM Z_6YEARS
-    WHERE Z_6STUDENTS2 = $1
-    `,
-    [student.id],
-  );
-  if (count["COUNT(*)"] === 0) {
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
     await db.execute(
       `
-      DELETE FROM ZSTUDENT
-      WHERE Z_PK = $1
+      DELETE FROM Z_6YEARS
+      WHERE Z_6STUDENTS2 = $1
+      AND Z_8YEARS1 = $2
+      `,
+      [student.id, schoolYear.id],
+    );
+    const count: CountResult[] = await db.select(
+      `
+      SELECT COUNT(*) FROM Z_6YEARS
+      WHERE Z_6STUDENTS2 = $1
       `,
       [student.id],
     );
+    if (count[0]["COUNT(*)"] === 0) {
+      await db.execute(
+        `
+        DELETE FROM ZSTUDENT
+        WHERE Z_PK = $1
+        `,
+        [student.id],
+      );
+    }
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
   }
 }
 

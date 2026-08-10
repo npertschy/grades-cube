@@ -3,9 +3,8 @@ import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
-import { db } from "@/store/Database";
+import { db, nextPrimaryKey, type CountResult } from "@/store/Database";
 import { Z_ENT } from "@/store/EntityId";
-import type { QueryResult } from "@tauri-apps/plugin-sql";
 
 export async function loadGroupsBySchoolYearAndSemester(schoolYear: SchoolYear): Promise<Group[]> {
   const groups: GroupEntity[] = await db.select(
@@ -51,78 +50,112 @@ export async function loadStudentsByGroup(group: Group) {
 }
 
 export async function createGroup(group: Group, schoolYear: SchoolYear) {
-  const sortingName = group.name?.match(/^\d/) ? `0${group.name}` : group.name;
-  const groupId: QueryResult = await db.execute(
+  const existingGroups: CountResult[] = await db.select(
     `
-    INSERT INTO ZGROUP (Z_ENT, Z_OPT, ZNAME, ZTYPE, ZSORTINGNAME)
-    VALUES ($1, $2, $3, $4, $5)
+    SELECT COUNT(*) FROM Z_3YEARS
+    INNER JOIN ZGROUP ON Z_3YEARS.Z_3GROUPS1 = ZGROUP.Z_PK AND ZGROUP.ZNAME = $1
+    WHERE Z_3YEARS.Z_8YEARS = $2
     `,
-    [Z_ENT.ZGROUP, 1, group.name, group.type, sortingName],
+    [group.name, schoolYear.id],
   );
 
-  await db.execute(
-    `
-    INSERT INTO Z_3YEARS (Z_8YEARS, Z_3GROUPS1)
-    VALUES ($1, $2)
-    `,
-    [schoolYear.id, groupId.lastInsertId],
-  );
+  if (existingGroups[0]["COUNT(*)"] > 0) {
+    throw new Error(`Group ${group.name} already exists in school year ${schoolYear.id}`);
+  }
+
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    const id = await nextPrimaryKey("Group");
+    const sortingName = group.name?.match(/^\d/) ? `0${group.name}` : group.name;
+    await db.execute(
+      `
+      INSERT INTO ZGROUP (Z_PK, Z_ENT, Z_OPT, ZNAME, ZTYPE, ZSORTINGNAME)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      `,
+      [id, Z_ENT.ZGROUP, 1, group.name, group.type, sortingName],
+    );
+
+    await db.execute(
+      `
+      INSERT INTO Z_3YEARS (Z_8YEARS, Z_3GROUPS1)
+      VALUES ($1, $2)
+      `,
+      [schoolYear.id, id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
 
 export async function deleteGroupInSchoolYear(group: Group, schoolYear: SchoolYear) {
-  await db.execute(
-    `
-    DELETE FROM Z_3STUDENTS
-    WHERE Z_3GROUPS2 = $1
-    `,
-    [group.id],
-  );
-  await db.execute(
-    `
-    DELETE FROM Z_3YEARS
-    WHERE Z_3GROUPS1 = $1 
-    AND Z_8YEARS = $2
-    `,
-    [group.id, schoolYear.id],
-  );
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      DELETE FROM Z_3STUDENTS
+      WHERE Z_3GROUPS2 = $1
+      `,
+      [group.id],
+    );
+    await db.execute(
+      `
+      DELETE FROM Z_3YEARS
+      WHERE Z_3GROUPS1 = $1
+      AND Z_8YEARS = $2
+      `,
+      [group.id, schoolYear.id],
+    );
 
-  await db.execute(
-    `
-    DELETE FROM ZGRADE
-    INNER JOIN ZGRADE.ZPERFORMANCE ON ZPERFORMANCE.Z_PK
-    INNER JOIN ZPERFORMANCE.ZCOURSE ON ZCOURSE.Z_PK
-    WHERE ZCOURSE.ZGROUP = $1 
-    AND ZCOURSE.ZYEAR = $2
-    `,
-    [group.id, schoolYear.id],
-  );
+    await db.execute(
+      `
+      DELETE FROM ZGRADE
+      WHERE Z_PK IN (
+        SELECT ZGRADE.Z_PK FROM ZGRADE
+        INNER JOIN ZPERFORMANCE ON ZPERFORMANCE.Z_PK = ZGRADE.ZPERFORMANCE
+        INNER JOIN ZCOURSE ON ZCOURSE.Z_PK = ZPERFORMANCE.ZCOURSE
+        WHERE ZCOURSE.ZGROUP = $1
+        AND ZCOURSE.ZYEAR = $2
+      )
+      `,
+      [group.id, schoolYear.id],
+    );
 
-  await db.execute(
-    `
-    DELETE FROM ZPERFORMANCE
-    INNER JOIN ZPERFORMANCE.ZCOURSE ON ZCOURSE.Z_PK
-    WHERE ZCOURSE.ZGROUP = $1 
-    AND ZCOURSE.ZYEAR = $2
-    `,
-    [group.id, schoolYear.id],
-  );
+    await db.execute(
+      `
+      DELETE FROM ZPERFORMANCE
+      WHERE Z_PK IN (
+        SELECT ZPERFORMANCE.Z_PK FROM ZPERFORMANCE
+        INNER JOIN ZCOURSE ON ZCOURSE.Z_PK = ZPERFORMANCE.ZCOURSE
+        WHERE ZCOURSE.ZGROUP = $1
+        AND ZCOURSE.ZYEAR = $2
+      )
+      `,
+      [group.id, schoolYear.id],
+    );
 
-  await db.execute(
-    `
-    DELETE FROM ZCOURSE
-    WHERE ZGROUP = $1
-    AND ZYEAR = $2
-    `,
-    [group.id, schoolYear.id],
-  );
+    await db.execute(
+      `
+      DELETE FROM ZCOURSE
+      WHERE ZGROUP = $1
+      AND ZYEAR = $2
+      `,
+      [group.id, schoolYear.id],
+    );
 
-  await db.execute(
-    `
-    DELETE FROM ZGROUP
-    WHERE Z_PK = $1
-    `,
-    [group.id],
-  );
+    await db.execute(
+      `
+      DELETE FROM ZGROUP
+      WHERE Z_PK = $1
+      `,
+      [group.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
 
 export async function updateGroup(group: Group) {
@@ -156,5 +189,4 @@ export async function unassignStudentFromGroup(student: Student, group: Group) {
     `,
     [student.id, group.id],
   );
-  // TODO: should we remove the student from the corresponding courses?
 }
