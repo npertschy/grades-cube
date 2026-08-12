@@ -38,6 +38,26 @@ Courses belonging to the selected groups are migrated to the new school year, ap
 | Courses | New `ZCOURSE` rows for the new year/semester; `Z_1STUDENTS` memberships rebuilt from the adjusted student lists |
 | `ZPERFORMANCE` / `ZGRADE` | **Not copied** — they belong to the old year |
 
+### 2.3 Migration UI
+
+The migration is a **modal stepper** overlaying the School Year Management view.
+
+- The stepper manages its own ephemeral state (selected groups, renames, student adjustments).
+- The user can abort at any time; all in-progress migration state is discarded.
+- On final confirmation, a single atomic transaction writes all links and new rows.
+- No persistence of intermediate migration state — if the user navigates away, the wizard resets.
+
+---
+
+## 3. Group–Course Membership Invariant
+
+Group membership is a prerequisite for course enrollment. A student must belong to the group a course is tied to in order to be enrolled in that course.
+
+**Consequences:**
+- Removing a student from a group cascades to removing them from all courses of that group (including their ZGRADE rows for those courses).
+- Removing a student from a course does NOT affect their group membership.
+- During school year migration, a student deselected from a group is implicitly excluded from all courses migrated for that group.
+
 ---
 
 ## 4. Course Creation Invariant
@@ -60,18 +80,74 @@ This sub-procedure must be extracted into a dedicated reusable function because 
 
 ### 5.1 Default performance set
 
-When a course is created, the following non-editable summary performances are generated automatically:
+When a course is created, the following default performances are generated automatically (the full type map is listed here for reference):
 
-| ZTYPE | Role |
-|---|---|
-| 1 | Oral recommendation (computed from oral grades, type 0) |
-| 4 | Special overall (computed from special grades, type 3) |
-| 6 | AT overall / general-part combined |
-| 7 | Written overall (computed from written/test grades, type 6) |
+| ZTYPE | Role | Value domain | Editable |
+|---|---|---|---|
+| 0 | Oral grade (individual) | Symbolic (`++/+/0/-/--/f`) | Yes |
+| 1 | Oral suggestion (frequency-weighted average of type 0 grades) | Symbolic (`++/+/0/-/--/f`) | No |
+| 2 | Oral overall — teacher's numeric oral grade informed by the suggestion | Numeric (0–15) | **Yes** |
+| 3 | Special grade (individual) | Numeric (0–15) | Yes |
+| 4 | Special overall (computed from type 3 grades) | Numeric (0–15) | No |
+| 5 | AT overall (weighted combination of type 2 and type 4) | Numeric (0–15) | No |
+| 6 | Written/test grade (individual) | Numeric (0–15) | Yes |
+| 7 | Written overall (computed from type 6 grades) | Numeric (0–15) | No |
+| 8 | Final overall (weighted combination of type 5 and type 7) | Numeric (0–15) | No |
 
-These rows have `ZEDITABLE = 0` and are updated automatically by the grade auto-calculation logic.
+Types 0, 2, 3, and 6 are editable (`ZEDITABLE = 1`). All other default performance types have `ZEDITABLE = 0` and are updated automatically by the grade auto-calculation logic.
 
-### 5.2 Initial weight configuration
+### 5.2 Overall grade (type 8)
+
+**AT overall (type 5):**
+```
+AT_overall = floor(type2 × oral_weight + type4 × special_weight) / 100
+```
+Recomputed whenever type 2 or type 4 changes.
+
+**Final overall (type 8):**
+```
+final_overall = floor(type5 × AT_weight + type7 × written_weight) / 100
+```
+Recomputed whenever type 5 or type 7 changes.
+
+**Null propagation — two rules:**
+
+1. **Aggregation summaries (types 1, 4, 7):** Compute from whichever input grades are non-null, renormalizing weights proportionally. Only stay null when ALL inputs are null.
+   - Example: 3 special performances with weights 0.6, 0.3, 0.1. If the 0.6 performance's grade is null, type 4 is computed from the other two with renormalized weights: 0.3/(0.3+0.1) = 0.75 and 0.1/(0.3+0.1) = 0.25.
+2. **Combination summaries (types 5, 8):** Strict — if either input is null, the result is null. No fallback to partial inputs.
+
+**Oral suggestion formula (type 1):** Symbolic grades are mapped to numeric indices: `['++', '+', '0', '-', '--', 'f']` → `[0, 1, 2, 3, 4, 5]`. Grades with value `f` (absent) are excluded from the computation (treated like null). The suggestion is a simple frequency-based average: `sum(indices of non-null/non-f grades) / count(non-null/non-f grades)`, rounded to nearest index and mapped back to the corresponding symbol. Oral performance weights (`ZWEIGHT` on type 0 rows) are not used in this computation — no redistribution is needed when adding or deleting oral performances.
+
+**Absent marker:** The value `f` (absent) is valid for oral grades (type 0). For numeric grades (types 3 and 6), an equivalent absent marker is needed — excluded from weighted-average computation like `f` for oral.
+
+**Individual performance weight constraint:** Within each manually-weighted type (special type 3, written type 6), all individual performance weights must sum to 100. `ZWEIGHT` is stored as a float.
+
+**Rounding:**
+- Symbolic grades (type 1): round to nearest, with 0.5 rounding down/generous (1.5 → 1 = `+`, not 2 = `0`)
+- Numeric computed grades (types 4, 5, 7, 8): `floor` (11.5 → 11)
+
+Types 1, 4, 5, 7, and 8 are non-editable default performances (`ZEDITABLE = 0`) created alongside the other defaults on course creation. Default performances cannot be deleted by the user — they exist for the lifetime of the course.
+
+**Weight storage:** The pair weights are stored on `ZPERFORMANCE.ZWEIGHT` of the summary rows:
+
+| Performance type | ZWEIGHT holds | Pair constraint |
+|---|---|---|
+| Type 2 (oral overall) | Oral weight within AT (e.g. 70) | type 2 + type 4 = 100 |
+| Type 4 (special overall) | Special weight within AT (e.g. 30) | type 2 + type 4 = 100 |
+| Type 5 (AT overall) | AT weight in final (e.g. 70 Sek I / 50 Sek II) | type 5 + type 7 = 100 |
+| Type 7 (written overall) | Written weight in final (e.g. 30 Sek I / 50 Sek II) | type 5 + type 7 = 100 |
+
+The summation invariant is enforced at the UI level (slider forces the complement).
+
+### 5.3 Column sort order
+
+The grade table sorts performance columns by:
+1. **Primary:** `ZTYPE` ascending (all oral columns appear before special, before written, before summaries)
+2. **Secondary:** `ZSORTORDER` ascending within the same type
+
+Default performances are created with `ZSORTORDER = 0`. When the user adds a new manual performance, its sort order is `max(ZSORTORDER for that type in the course) + 1`.
+
+### 5.4 Initial weight configuration
 
 The initial weights depend on the group type (`ZGROUP.ZTYPE`):
 
@@ -88,6 +164,23 @@ The initial weights depend on the group type (`ZGROUP.ZTYPE`):
 
 This invariant applies at course creation and whenever the user adjusts weights in `GradeWeightsView`.
 
-### 5.3 Future configurability
+### 5.5 Future configurability
 
 Default weights per group type should be user-configurable in the Configuration view. Individual courses can always override weights in `GradeWeightsView` regardless of the default.
+
+### 5.6 Deleting a manual performance
+
+When a manual performance is deleted:
+
+1. All `ZGRADE` rows for that performance are deleted.
+2. The corresponding auto-computed summary (type 1 for oral, type 4 for special, type 7 for written) is recomputed from the remaining performances.
+3. For oral performances (type 0): no weight redistribution needed (suggestion uses frequency, not weights).
+4. For special/written performances (types 3/6): the user is prompted to redistribute weights among the remaining performances of that type (must still sum to 100).
+
+The recomputation cascades upward through the chain (e.g. deleting a type 0 → recompute type 1 suggestion; deleting a type 3 → recompute type 4 → recompute type 5 → recompute type 8).
+
+### 5.7 Weights on manual performance creation
+
+When the user manually adds a new performance to a course:
+- **Oral (type 0):** No weight handling needed — the suggestion is frequency-based, not weight-based. Oral performance weights are irrelevant.
+- **Special (type 3) or written (type 6):** The app must prompt for the weight of that performance. It shows the corresponding table from the GradeWeightsView and allows the user to adjust the weights of the other performances of the same type to maintain the summation invariant (all weights must sum to 100). The app suggests a default weight: if all existing performance weights are equal, apply 100 / #performances. If existing weights are unequal, suggest 0 for the new performance and let the user adjust all weights manually.

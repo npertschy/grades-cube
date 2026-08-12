@@ -60,7 +60,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Assign / unassign student to/from group (`Z_3STUDENTS`)
 - ✅ Delete group — cascade: `Z_3STUDENTS`, `Z_3YEARS`, grades, performances, courses for that group in the year, then `ZGROUP`
 - ✅ `GroupGateway.deleteGroupInSchoolYear` invalid SQL fixed (rewrote invalid `DELETE … INNER JOIN` as subquery-based deletes)
-- ❓ **Open question** (`GroupGateway.ts:109` TODO): when a student is unassigned from a group, should they also be removed from all courses that belong to that group? Decide and implement.
+- ⬜ **Cascade unassign** (`GroupGateway.ts:109` TODO): when a student is unassigned from a group, cascade to removing them from all courses of that group (+ their ZGRADE rows). See REQUIREMENTS §3.
 
 ### 2.5 Courses (`CourseGateway`, `CourseStore`, `CourseManagement`)
 
@@ -92,21 +92,28 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Virtual-scrolled editable DataTable
 - ✅ Color-coded columns by performance type (oral = sky, special = green, test = red)
 - ✅ Per-type input validation: oral grades (`++/+/0/-/--/f`), numeric grades (0–15)
+- ⬜ **Absent marker for numeric grades**: add an `f` (or equivalent) value for types 3 and 6 that marks a student as absent; excluded from weighted-average computation like oral `f`
+- ❓ **Absent marker value**: decide what value to store for numeric absent — `f` as string (ZVALUE is already text for oral), `-1`, or another sentinel
 - ✅ Column selection (click header → emits `column-selected`)
 - ✅ Grade-change event propagation
 
 ### 3.3 Add / Edit Performances
 
 - ✅ Dialog to create a new oral / special / written performance (title, type, date)
-- ✅ Weight auto-distribution on creation (equal redistribution among existing performances of the same type)
+- ✅ Weight auto-distribution on creation (for special/written: equal redistribution among existing performances of the same type)
 - ✅ Blank `ZGRADE` rows inserted for every student in the course on performance creation
 - ✅ Edit performance title (via same dialog when a column is selected)
+- ⬜ **Delete performance**: on deletion, recompute the corresponding summary grade. For special/written: prompt to redistribute weights among remaining performances (must sum to 100). Oral needs no weight handling.
 
 ### 3.4 Grade Auto-Calculation
 
-- ✅ **Oral recommendation** (type 1): after each oral-grade entry (type 0), re-compute the frequency-weighted average across all oral grades for that student and update the recommendation performance automatically
+- ✅ **Oral suggestion** (type 1): after each oral-grade entry (type 0), re-compute the frequency-weighted average across all oral grades for that student and update the suggestion performance automatically
 - ✅ **Special overall grade** (type 4): updated from special performance grades (type 3)
 - ✅ **Written overall grade** (type 7): updated from written/test performance grades (type 6)
+- ⬜ **Oral overall column** (type 2): editable numeric (0–15) column; teacher enters a grade informed by the symbolic suggestion (type 1). Must be included in default performance creation.
+- ⬜ **AT overall grade** (type 5): weighted combination of oral overall (type 2) and special overall (type 4) using oral/special weights
+- ⬜ **Final overall grade** (type 8): weighted combination of AT overall (type 5) and written overall (type 7) using AT/written weights
+- 🐞 **Review auto-calc event chain**: verify that editing type 2 triggers type 5 recomputation, and that type 5/type 7 changes trigger type 8 recomputation. Current event-based approach via child component may not bubble correctly through multiple levels.
 
 ### 3.5 Grade Weights (`GradeWeightsView`)
 
@@ -125,7 +132,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Total-points input → builds full German 15-point scale table with per-grade point thresholds
 - ✅ Achieved-points input → highlights matching row and shows grade summary
 - 🐞 Typo `lowetPercent` throughout (should be `lowerPercent`) — cosmetic but inconsistent
-- ⬜ **Rechtschreibung option**: add a toggle to enable a spelling-error deduction. When enabled, show an additional input for Rechtschreibung points (capped at 10% of total points). Deduct from `achievedPoints` before the grade lookup; reflect in the grade summary display.
+- ⬜ **Rechtschreibung option**: checkbox toggle. When unchecked: input total points + achieved points as today. When checked: input total points → 10% is reserved for Rechtschreibung (e.g. 60 total → 6 Rechtschreibung points, 54 content points). User enters Rechtschreibung points (0–6) and content points (0–54) separately. Final grade is based on combined points (Rechtschreibung + content) looked up against the full total-points scale.
 
 ### 3.7 Histogram (`HistogramPanel`)
 
@@ -169,6 +176,6 @@ Currently `ConfigurationView.vue` renders only `<p>Konfigurieren</p>`.
 - ⬜ **Name rendering order**: "Nachname, Vorname" vs "Vorname Nachname"; persist in `KeyValueStore`; apply everywhere students are listed
 - ⬜ **Dark mode setting**: surface the dark mode toggle here (currently only in the toolbar avatar popover)
 - ⬜ **Default grade scale**: option to set the default grading system if other scales are ever added
-- ⬜ **Default weights per group type**: user-configurable Sek I / Sek II weight defaults applied on course creation (see REQUIREMENTS §5.3)
+- ⬜ **Default weights per group type**: user-configurable Sek I / Sek II weight defaults applied on course creation (see REQUIREMENTS §5.5)
 - ⬜ **DB file path / backup**: show the active SQLite file location and allow a manual backup copy
 

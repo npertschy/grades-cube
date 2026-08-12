@@ -7,15 +7,15 @@
 | Desktop shell | Tauri 2 (Rust — thin plugin-registration shell only) |
 | Frontend | Vue 3 + PrimeVue 4 · TypeScript · Vite |
 | Database access | `@tauri-apps/plugin-sql` (SQLite) |
-| State | Pinia stores |
+| State | self written composables |
 | Routing | vue-router |
 
 ---
 
 ## 2. Database
 
-**File:** `{appLocalDataDir}/db/Notenwuerfel.sqlite`  
-**Origin:** Pre-existing Apple Core Data SQLite file. Schema is fixed — no migrations are run by this app.  
+**File:** `{appConfigDir}/db/Notenwuerfel.sqlite`  
+**Origin:** Pre-existing Apple Core Data SQLite file. Schema is fixed for now
 **All SQL** lives in TypeScript gateway files. The Rust backend does not touch the DB.
 
 ### 2.1 Core Data conventions
@@ -52,7 +52,7 @@ Timestamps are Core Data integers: `Unix seconds − 978307200` (epoch offset). 
 
 ## 3. Gateway Layer
 
-Each domain area has a `*Gateway.ts` file that owns all SQL for that entity. Gateways are called by Pinia stores; views never query the DB directly.
+Each domain area has a `*Gateway.ts` file that owns all SQL for that entity. Gateways are called by the composables stores; views never query the DB directly.
 
 ### 3.1 Correctness checklist
 
@@ -67,7 +67,29 @@ Because Core Data originally managed FK integrity, cascade deletes, and PK alloc
 | `CourseGateway` | ✅ | ✅ | ✅ | ✅ | ✅ | `nextPrimaryKey` |
 | `EvaluationGateway` | ✅ | ✅ | ✅ | ✅ | ✅ | `nextPrimaryKey` |
 
-### 3.2 Cascade delete order
+### 3.2 Query libraries & transaction boundaries
+
+Gateways are feature-scoped (one gateway per view/feature) and own the transaction boundary. Reusable SQL lives in **query libraries** — small per-entity modules that export atomic query operations.
+
+| Concept | Scope | Example |
+|---|---|---|
+| Query atom | Smallest reusable unit — a single `db.select()` or `db.execute()` call | `insertCourse(db, params)` |
+| Query sequence | Multiple atoms that always run together (e.g. cascade deletes) — exported as one function | `deleteCourseGrades(db, coursePk)` |
+| Gateway | Feature-scoped; imports atoms/sequences from one or more query libraries, wraps in `BEGIN EXCLUSIVE` / `COMMIT` / `ROLLBACK` | `EvaluationGateway.createPerformanceWithGrades(...)` |
+| Store | Orchestrates one gateway; belongs to a view/feature | `EvaluationStore` |
+
+Atoms are extracted when reused across files. Sequences stay local when only used in one gateway.
+
+### 3.3 Error handling
+
+Two-layer strategy:
+
+1. **Global catch-all** — a top-level handler in `App.vue` catches unhandled exceptions from any store/gateway call and shows a generic error toast. This is the safety net.
+2. **Per-operation handling** — added surgically only where the user can act on the failure (e.g. keeping a create-dialog open on unique-constraint violation, or showing a specific message). Not needed for read operations — a failed load shows an empty list + the global toast.
+
+For a single-user desktop app with a local SQLite database, errors are very rare. The global catch-all alone covers the vast majority of real scenarios.
+
+### 3.4 Cascade delete order
 
 Correct ordering to avoid FK violations (leaf → root):
 
