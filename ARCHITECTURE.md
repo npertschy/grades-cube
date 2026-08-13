@@ -15,7 +15,7 @@
 ## 2. Database
 
 **File:** `{appConfigDir}/db/Notenwuerfel.sqlite`  
-**Origin:** Pre-existing Apple Core Data SQLite file. Schema is fixed for now
+**Origin:** Originally an Apple Core Data SQLite file. The app now **owns** the database — schema evolution happens via forward migrations shipped with the app. Core Data bookkeeping columns/tables (`Z_PK`, `Z_ENT`, `Z_OPT`, `Z_PRIMARYKEY`) are retained for compatibility with existing data, but tables no longer required by any use case may be dropped.
 **All SQL** lives in TypeScript gateway files. The Rust backend does not touch the DB.
 
 ### 2.1 Core Data conventions
@@ -39,7 +39,7 @@ Timestamps are Core Data integers: `Unix seconds − 978307200` (epoch offset). 
 | `ZSTUDENT` | Z_PK, ZFIRSTNAME, ZLASTNAME | M:N ZYEAR (`Z_6YEARS`), M:N ZGROUP (`Z_3STUDENTS`), M:N ZCOURSE (`Z_1STUDENTS`) |
 | `ZGROUP` | Z_PK, ZNAME, ZSORTINGNAME, ZTYPE | M:N ZYEAR (`Z_3YEARS`), M:N ZSTUDENT (`Z_3STUDENTS`) |
 | `ZSUBJECT` | Z_PK, ZNAME | M:N ZYEAR (`Z_7YEARS`) |
-| `ZCOURSE` | Z_PK, ZGROUP→FK, ZSUBJECT→FK, ZYEAR→FK, ZSEMESTER→FK, ZDAYS | has N × ZPERFORMANCE; M:N ZSTUDENT (`Z_1STUDENTS`) |
+| `ZCOURSE` | Z_PK, ZGROUP→FK, ZSUBJECT→FK, ZYEAR→FK, ZSEMESTER→FK, ZDAYS, ZLEVEL, ZORDINAL | has N × ZPERFORMANCE; M:N ZSTUDENT (`Z_1STUDENTS`). `ZLEVEL` (0=n/a, 1=GK, 2=LK) and `ZORDINAL` (parallel-course number) apply to Sek II; the display name is composed from group+subject (Sek I) or level+ordinal+subject (Sek II) |
 | `ZPERFORMANCE` | Z_PK, ZCOURSE→FK, ZTYPE, ZSORTORDER, ZEDITABLE, ZDATE, ZWEIGHT, ZTITLE | has N × ZGRADE |
 | `ZGRADE` | Z_PK, ZPERFORMANCE→FK, ZSTUDENT→FK, ZVALUE | leaf |
 | `Z_6YEARS` | Z_6STUDENTS2→ZSTUDENT, Z_8YEARS1→ZYEAR | students ↔ school years |
@@ -47,7 +47,10 @@ Timestamps are Core Data integers: `Unix seconds − 978307200` (epoch offset). 
 | `Z_3YEARS` | Z_3GROUPS1→ZGROUP, Z_8YEARS→ZYEAR | groups ↔ school years |
 | `Z_3STUDENTS` | Z_6STUDENTS1→ZSTUDENT, Z_3GROUPS2→ZGROUP | students ↔ groups |
 | `Z_1STUDENTS` | Z_6STUDENTS→ZSTUDENT, Z_1COURSES→ZCOURSE | students ↔ courses |
-| `Z_3SEMESTERS` | Z_3GROUPS→ZGROUP, Z_5SEMESTERS→ZSEMESTER | groups ↔ semsters |
+
+### 2.3 Migrations
+
+The app owns schema evolution. Migrations are ordered, forward-only SQL scripts applied on startup, tracked by a `schema_version` (in `KeyValueStore` or a dedicated table). Each migration is idempotent-safe and wrapped in a transaction. Dropping legacy Core Data tables (e.g. `Z_3SEMESTERS`) and adding new columns (e.g. `ZCOURSE.ZLEVEL` / `ZCOURSE.ZORDINAL`) is done here.
 
 ---
 

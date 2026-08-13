@@ -53,6 +53,13 @@ The migration is a **modal stepper** overlaying the School Year Management view.
 
 Group membership is a prerequisite for course enrollment. A student must belong to the group a course is tied to in order to be enrolled in that course.
 
+**Group vs. course usage differs by phase (`ZGROUP.ZTYPE`):**
+
+- **Primary / Sek I (`ZTYPE = 1`):** students are arranged in a class-like group (e.g. `8b`) that fans out 1:N to many shared courses (`8b Englisch`, `8b Sport`). Most students of the group attend most courses.
+- **Sek II (`ZTYPE = 2`):** the group acts as a school-year cohort (e.g. `Jahrgang 11`). Students choose courses individually, so group↔course membership is effectively 1:1 via `Z_1STUDENTS`. Courses carry a level (`ZCOURSE.ZLEVEL`: GK/LK) and a parallel-course number (`ZCOURSE.ZORDINAL`), producing labels like `GK 1 Geschichte` or `LK 2 Chemie`.
+
+Both cases are handled by the existing `Z_3STUDENTS` (students↔groups) and `Z_1STUDENTS` (students↔courses) M:N relationships; no structural change to Group/Course is required.
+
 **Consequences:**
 - Removing a student from a group cascades to removing them from all courses of that group (including their ZGRADE rows for those courses).
 - Removing a student from a course does NOT affect their group membership.
@@ -183,4 +190,9 @@ The recomputation cascades upward through the chain (e.g. deleting a type 0 → 
 
 When the user manually adds a new performance to a course:
 - **Oral (type 0):** No weight handling needed — the suggestion is frequency-based, not weight-based. Oral performance weights are irrelevant.
-- **Special (type 3) or written (type 6):** The app must prompt for the weight of that performance. It shows the corresponding table from the GradeWeightsView and allows the user to adjust the weights of the other performances of the same type to maintain the summation invariant (all weights must sum to 100). The app suggests a default weight: if all existing performance weights are equal, apply 100 / #performances. If existing weights are unequal, suggest 0 for the new performance and let the user adjust all weights manually.
+  - **Special (type 3) or written (type 6):** The app must prompt for the weight of that performance. It shows the corresponding table from the GradeWeightsView and allows the user to adjust the weights of the other performances of the same type to maintain the summation invariant (all weights must sum to 100). The app suggests a default weight: if all existing performance weights are equal, apply 100 / #performances. If existing weights are unequal, suggest 0 for the new performance and let the user adjust all weights manually.
+
+### 5.8 Course level (GK/LK) and weights (future)
+
+Sek II courses carry a level (`ZCOURSE.ZLEVEL`: GK/LK). Default weights (§5.4) will eventually be keyed by `(group type, course level)` rather than group type alone, so GK and LK can define different AT/written splits. Until implemented, GK/LK is organizational only and both use the Sek II defaults. Per-course override in `GradeWeightsView` remains available regardless.
+

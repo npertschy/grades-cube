@@ -17,6 +17,8 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Test coverage: all gateway functions and all management views have tests
 - 🟡 **Reload on school-year / semester change** — management views (Student, Group, Subject, Course) and the Evaluation view do **not** watch the global `selectedSchoolYear` / `selectedSemester` signals; switching the selector does not reload data in any of these views. Every view that depends on the selection must add a `watch` on both values and re-run its load function.
 - 🐞 Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
+- 🐞 **Drop `Z_3SEMESTERS`** — the app now owns the DB (see ARCHITECTURE §2/§2.3). (1) Add the migration runner if not present; (2) grep gateways/query libs for `Z_3SEMESTERS` and remove any reads/writes; (3) `DROP TABLE Z_3SEMESTERS` in a forward migration; (4) update ARCHITECTURE §2.2. Groups remain school-year-scoped via `Z_3YEARS`.
+- ⬜ **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
 - ⬜ No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
 - ⬜ No delete-confirmation dialogs anywhere (destructive actions fire immediately)
 
@@ -74,6 +76,15 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Assign student to course — inserts `Z_1STUDENTS` + blank `ZGRADE` rows for every existing performance, inside a transaction
 - ✅ Unassign student from course — deletes student's `ZGRADE` rows for the course's performances, then removes `Z_1STUDENTS` link, inside a transaction
 - ⬜ **Create default performances on course creation** — after inserting `ZCOURSE`, call the shared sub-procedure to insert default performance rows and empty grades for all enrolled students (see REQUIREMENTS §4 and §5)
+
+### 2.6 Course level (GK/LK) — Sek II
+
+- ❓ **`ZORDINAL` assignment**: free integer the teacher sets vs. auto `max+1` per (year, subject, level). Decision pending.
+- ⬜ **Add `ZCOURSE.ZLEVEL`** (`0=n/a, 1=GK, 2=LK`) and **`ZCOURSE.ZORDINAL`** (parallel-course number) via migration (ARCHITECTURE §2.3).
+- ⬜ Extend `CourseGateway` create/update to read/write `ZLEVEL` + `ZORDINAL`.
+- ⬜ `CourseManagement`: when the selected group's `ZTYPE = 2` (Sek II), show a GK/LK selector + ordinal input; otherwise hide (defaults to `0`/null).
+- ⬜ Course display-name helper: `8b Englisch` (Sek I) vs `GK 1 Geschichte` (Sek II). Reuse everywhere courses are listed (Course/Evaluation/Student views).
+- ⬜ UI soft-uniqueness check on (year, subject, level, ordinal).
 
 ---
 
@@ -176,6 +187,6 @@ Currently `ConfigurationView.vue` renders only `<p>Konfigurieren</p>`.
 - ⬜ **Name rendering order**: "Nachname, Vorname" vs "Vorname Nachname"; persist in `KeyValueStore`; apply everywhere students are listed
 - ⬜ **Dark mode setting**: surface the dark mode toggle here (currently only in the toolbar avatar popover)
 - ⬜ **Default grade scale**: option to set the default grading system if other scales are ever added
-- ⬜ **Default weights per group type**: user-configurable Sek I / Sek II weight defaults applied on course creation (see REQUIREMENTS §5.5)
+- ⬜ **Default weights per group type** *(extend to `(group type, course level)` once `ZCOURSE.ZLEVEL` exists — see REQUIREMENTS §5.8)*: user-configurable Sek I / Sek II (and later GK / LK) weight defaults applied on course creation (see REQUIREMENTS §5.5)
 - ⬜ **DB file path / backup**: show the active SQLite file location and allow a manual backup copy
 
