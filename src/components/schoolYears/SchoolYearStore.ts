@@ -21,10 +21,13 @@ async function loadAllSchoolYears() {
 }
 
 async function addSchoolYear(schoolYearToAdd: SchoolYear, cleanup: () => void) {
-  await createSchoolYear(schoolYearToAdd);
-  await loadAll();
-
-  cleanup();
+  try {
+    await createSchoolYear(schoolYearToAdd);
+    await loadAllSchoolYears();
+    cleanup();
+  } catch (e) {
+    throw new Error("Schuljahr konnte nicht gespeichert werden.", { cause: e });
+  }
 }
 
 function formatSchoolYear(item: SchoolYear) {
@@ -32,15 +35,22 @@ function formatSchoolYear(item: SchoolYear) {
 }
 
 async function removeSchoolYear(schoolYear: SchoolYear) {
-  await deleteSchoolYear(schoolYear);
-  await loadAll();
+  try {
+    await deleteSchoolYear(schoolYear);
+    await loadAllSchoolYears();
+  } catch (e) {
+    throw new Error("Schuljahr konnte nicht gelöscht werden.", { cause: e });
+  }
 }
 
 async function editSchoolYear(schoolYear: SchoolYear, cleanup: () => void) {
-  await updateSchoolYear(schoolYear);
-  await loadAll();
-
-  cleanup();
+  try {
+    await updateSchoolYear(schoolYear);
+    await loadAllSchoolYears();
+    cleanup();
+  } catch (e) {
+    throw new Error("Schuljahr konnte nicht aktualisiert werden.", { cause: e });
+  }
 }
 
 export function useSchoolYears() {

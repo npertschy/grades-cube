@@ -8,6 +8,8 @@ import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSel
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import { useSubjects } from "@/components/subjects/SubjectStore";
 import type { Subject } from "@/components/subjects/Subject";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -20,32 +22,45 @@ const { subjects, loadSubjectsForSchoolYear, addSubject, formatSubject, removeSu
 const selectedSubject = ref<Subject | undefined>();
 
 const { selectedSchoolYear } = useSchoolYearSelection();
+const toast = useToast();
+const confirm = useConfirm();
 
 const allSubjects = ref<Subject[]>([]);
 
-async function handleSave() {
-  if (selectedSubject.value?.id) {
-    const subject: Subject = {
-      id: selectedSubject.value.id,
-      name: name.value,
-    };
-
-    await editSubject(subject, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedSubject.value = undefined;
-    });
-  } else {
-    const subject: Subject = {
-      id: undefined,
-      name: name.value,
-    };
-    await addSubject(subject, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedSubject.value = undefined;
-    });
-  }
-
+onMounted(async () => {
   allSubjects.value = await loadAllSubjects();
+  if (selectedSchoolYear.value) {
+    await loadSubjectsForSchoolYear(selectedSchoolYear.value);
+  }
+});
+
+async function handleSave() {
+  try {
+    if (selectedSubject.value?.id) {
+      const subject: Subject = {
+        id: selectedSubject.value.id,
+        name: name.value,
+      };
+
+      await editSubject(subject, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedSubject.value = undefined;
+      });
+    } else {
+      const subject: Subject = {
+        id: undefined,
+        name: name.value,
+      };
+      await addSubject(subject, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedSubject.value = undefined;
+      });
+    }
+
+    allSubjects.value = await loadAllSubjects();
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+  }
 }
 
 watch(selectedSubject, (current) => loadSubject(current));
@@ -62,12 +77,25 @@ function loadSubject(item: Subject | undefined) {
 }
 
 function handleRemove() {
-  if (selectedSubject.value) {
-    removeSubject(selectedSubject.value, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedSubject.value = undefined;
-    });
-  }
+  if (!selectedSubject.value) return;
+  const subject = selectedSubject.value;
+  confirm.require({
+    message: `Soll "${formatSubject(subject)}" wirklich gelöscht werden?`,
+    header: "Fach löschen",
+    icon: "pi pi-exclamation-triangle",
+    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
+    acceptProps: { label: "Löschen", severity: "danger" },
+    accept: async () => {
+      try {
+        await removeSubject(subject, selectedSchoolYear.value!, () => {
+          resetInputs();
+          selectedSubject.value = undefined;
+        });
+      } catch (e) {
+        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+      }
+    },
+  });
 }
 
 watch(selectedSchoolYear, async (current) => {
@@ -75,13 +103,6 @@ watch(selectedSchoolYear, async (current) => {
     await loadSubjectsForSchoolYear(current);
     selectedSubject.value = undefined;
     resetInputs();
-  }
-});
-
-onMounted(async () => {
-  allSubjects.value = await loadAllSubjects();
-  if (selectedSchoolYear.value) {
-    await loadSubjectsForSchoolYear(selectedSchoolYear.value);
   }
 });
 </script>

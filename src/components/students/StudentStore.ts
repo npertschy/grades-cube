@@ -35,17 +35,23 @@ async function loadGroupsAndCoursesFor(student: Student, schoolYear: SchoolYear,
 }
 
 async function addStudent(studentToAdd: Student, schoolYear: SchoolYear, cleanup: () => void) {
-  await createStudentInSchoolYear(studentToAdd, schoolYear);
-  await loadStudentsForSchoolYear(schoolYear);
-
-  cleanup();
+  try {
+    await createStudentInSchoolYear(studentToAdd, schoolYear);
+    await loadStudentsForSchoolYear(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Schüler konnte nicht gespeichert werden.", { cause: e });
+  }
 }
 
 async function editStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
-  await updateStudent(student);
-  await loadStudentsForSchoolYear(schoolYear);
-
-  cleanup();
+  try {
+    await updateStudent(student);
+    await loadStudentsForSchoolYear(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Schüler konnte nicht aktualisiert werden.", { cause: e });
+  }
 }
 
 function formatStudent(item: Student) {
@@ -53,10 +59,13 @@ function formatStudent(item: Student) {
 }
 
 async function removeStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
-  await deleteStudentInSchoolYear(student, schoolYear);
-  await loadStudentsForSchoolYear(schoolYear);
-
-  cleanup();
+  try {
+    await deleteStudentInSchoolYear(student, schoolYear);
+    await loadStudentsForSchoolYear(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Schüler konnte nicht gelöscht werden.", { cause: e });
+  }
 }
 
 async function loadGroupsForSchoolYear(schoolYear: SchoolYear) {

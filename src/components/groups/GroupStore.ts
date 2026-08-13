@@ -34,32 +34,49 @@ async function loadStudentsForGroup(group: Group): Promise<Student[]> {
 }
 
 async function addGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  await createGroup(group, schoolYear);
-  await loadAllGroupsForSchoolYearAndSemester(schoolYear);
-
-  cleanup();
+  try {
+    await createGroup(group, schoolYear);
+    await loadAllGroupsForSchoolYearAndSemester(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Klasse konnte nicht gespeichert werden.", { cause: e });
+  }
 }
 
 async function editGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  await updateGroup(group);
-  await loadAllGroupsForSchoolYearAndSemester(schoolYear);
-
-  cleanup();
+  try {
+    await updateGroup(group);
+    await loadAllGroupsForSchoolYearAndSemester(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Klasse konnte nicht aktualisiert werden.", { cause: e });
+  }
 }
 
 async function removeGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  await deleteGroupInSchoolYear(group, schoolYear);
-  await loadAllGroupsForSchoolYearAndSemester(schoolYear);
-
-  cleanup();
+  try {
+    await deleteGroupInSchoolYear(group, schoolYear);
+    await loadAllGroupsForSchoolYearAndSemester(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Klasse konnte nicht gelöscht werden.", { cause: e });
+  }
 }
 
 async function addStudentToGroup(student: Student, group: Group) {
-  await assignStudentToGroup(student, group);
+  try {
+    await assignStudentToGroup(student, group);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht zur Klasse hinzugefügt werden.", { cause: e });
+  }
 }
 
 async function removeStudentFromGroup(student: Student, group: Group) {
-  await unassignStudentFromGroup(student, group);
+  try {
+    await unassignStudentFromGroup(student, group);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht aus der Klasse entfernt werden.", { cause: e });
+  }
 }
 
 export function useGroups() {

@@ -44,12 +44,22 @@ const showWeightsManagement = ref(false);
 const showCalculator = ref(false);
 
 onMounted(async () => {
+  await populateTree();
+});
+
+watch([selectedSchoolYear, selectedSemester], async () => {
+  await populateTree();
+});
+
+async function populateTree() {
   await loadTreeItems(selectedSchoolYear.value!, selectedSemester.value!);
 
   treeItems.value.forEach((item) => {
     expandedKeys.value[item.key] = true;
   });
-});
+
+  handleUnselect();
+}
 
 function handleGroupOrCourseSelection(node: TreeNode) {
   selectedNode.value = node;

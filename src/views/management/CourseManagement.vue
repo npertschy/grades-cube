@@ -5,6 +5,7 @@ import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import ObjectAutoCompleteWithLabel from "@/components/layout/ObjectAutoCompleteWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
+import PPanel from "primevue/panel";
 import PInputGroup from "primevue/inputgroup";
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
@@ -14,6 +15,8 @@ import PDataTable from "primevue/datatable";
 import PDataView from "primevue/dataview";
 import PColumn from "primevue/column";
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -40,6 +43,8 @@ const subject = ref<Subject>();
 const studentsOfCourse = ref<Student[]>([]);
 
 const { students, formatStudent } = useStudents();
+const toast = useToast();
+const confirm = useConfirm();
 const studentQuery = shallowRef("");
 const studentList = computed<Student[]>(() => {
   if (studentQuery.value === "") {
@@ -72,34 +77,38 @@ onMounted(async () => {
 });
 
 async function handleSave() {
-  if (selectedCourse.value?.id) {
-    const course: Course = {
-      id: selectedCourse.value.id,
-      group: group.value,
-      subject: subject.value,
-      schoolYear: selectedCourse.value.schoolYear,
-      semester: selectedCourse.value.semester,
-      days: selectedCourse.value.days,
-    };
+  try {
+    if (selectedCourse.value?.id) {
+      const course: Course = {
+        id: selectedCourse.value.id,
+        group: group.value,
+        subject: subject.value,
+        schoolYear: selectedCourse.value.schoolYear,
+        semester: selectedCourse.value.semester,
+        days: selectedCourse.value.days,
+      };
 
-    await editCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
-      resetInputs();
-      selectedCourse.value = undefined;
-    });
-  } else {
-    const course = {
-      id: undefined,
-      group: group.value,
-      subject: subject.value,
-      schoolYear: selectedSchoolYear.value!,
-      semester: selectedSemester.value!,
-      days: [],
-    };
+      await editCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
+        resetInputs();
+        selectedCourse.value = undefined;
+      });
+    } else {
+      const course = {
+        id: undefined,
+        group: group.value,
+        subject: subject.value,
+        schoolYear: selectedSchoolYear.value!,
+        semester: selectedSemester.value!,
+        days: [],
+      };
 
-    await addCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
-      resetInputs();
-      selectedCourse.value = undefined;
-    });
+      await addCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
+        resetInputs();
+        selectedCourse.value = undefined;
+      });
+    }
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
   }
 }
 
@@ -125,26 +134,47 @@ function formatCourse(item: Course) {
   return item.id === 0 ? "Neuen Kurs anlegen" : `${item.group?.name} - ${item.subject?.name}`;
 }
 
-async function handleRemove() {
-  if (selectedCourse.value) {
-    await removeCourse(selectedCourse.value, selectedSchoolYear.value!, selectedSemester.value!, () => {
-      resetInputs();
-      selectedCourse.value = undefined;
-    });
-  }
+function handleRemove() {
+  if (!selectedCourse.value) return;
+  const course = selectedCourse.value;
+  confirm.require({
+    message: `Soll "${formatCourse(course)}" wirklich gelöscht werden? Alle zugehörigen Leistungen und Noten werden ebenfalls gelöscht.`,
+    header: "Kurs löschen",
+    icon: "pi pi-exclamation-triangle",
+    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
+    acceptProps: { label: "Löschen", severity: "danger" },
+    accept: async () => {
+      try {
+        await removeCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
+          resetInputs();
+          selectedCourse.value = undefined;
+        });
+      } catch (e) {
+        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+      }
+    },
+  });
 }
 
 async function handleAddingStudent() {
   if (student.value) {
-    await addStudentToCourse(student.value, selectedCourse.value!);
-    await loadCourse(selectedCourse.value);
+    try {
+      await addStudentToCourse(student.value, selectedCourse.value!);
+      await loadCourse(selectedCourse.value);
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
   }
 }
 
 async function handleRemovingStudent() {
   if (selectedStudent.value) {
-    await removeStudentFromCourse(selectedStudent.value, selectedCourse.value!);
-    await loadCourse(selectedCourse.value);
+    try {
+      await removeStudentFromCourse(selectedStudent.value, selectedCourse.value!);
+      await loadCourse(selectedCourse.value);
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
   }
 }
 

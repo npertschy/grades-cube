@@ -47,6 +47,7 @@ Timestamps are Core Data integers: `Unix seconds − 978307200` (epoch offset). 
 | `Z_3YEARS` | Z_3GROUPS1→ZGROUP, Z_8YEARS→ZYEAR | groups ↔ school years |
 | `Z_3STUDENTS` | Z_6STUDENTS1→ZSTUDENT, Z_3GROUPS2→ZGROUP | students ↔ groups |
 | `Z_1STUDENTS` | Z_6STUDENTS→ZSTUDENT, Z_1COURSES→ZCOURSE | students ↔ courses |
+| `Z_3SEMESTERS` | Z_3GROUPS→ZGROUP, Z_5SEMESTERS→ZSEMESTER | groups ↔ semsters |
 
 ---
 

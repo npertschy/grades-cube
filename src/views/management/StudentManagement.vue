@@ -9,6 +9,8 @@ import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSel
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
+import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -32,6 +34,8 @@ const {
   loadCoursesForSchoolYearAndSemester,
 } = useStudents();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
+const toast = useToast();
+const confirm = useConfirm();
 
 const selectedStudent = ref<Student | undefined>();
 const availableGroups = ref<Group[]>([]);
@@ -50,31 +54,35 @@ onMounted(async () => {
 });
 
 async function handleSave() {
-  if (selectedStudent.value?.id) {
-    const student = {
-      id: selectedStudent.value.id,
-      firstName: firstName.value,
-      lastName: lastName.value,
-      groups: groups.value,
-      courses: courses.value,
-    };
+  try {
+    if (selectedStudent.value?.id) {
+      const student = {
+        id: selectedStudent.value.id,
+        firstName: firstName.value,
+        lastName: lastName.value,
+        groups: groups.value,
+        courses: courses.value,
+      };
 
-    await editStudent(student, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedStudent.value = undefined;
-    });
-  } else {
-    const student: Student = {
-      id: undefined,
-      firstName: firstName.value,
-      lastName: lastName.value,
-      groups: undefined,
-      courses: undefined,
-    };
-    await addStudent(student, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedStudent.value = undefined;
-    });
+      await editStudent(student, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedStudent.value = undefined;
+      });
+    } else {
+      const student: Student = {
+        id: undefined,
+        firstName: firstName.value,
+        lastName: lastName.value,
+        groups: undefined,
+        courses: undefined,
+      };
+      await addStudent(student, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedStudent.value = undefined;
+      });
+    }
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
   }
 }
 
@@ -97,13 +105,26 @@ async function loadStudent(item: Student | undefined) {
   }
 }
 
-async function handleRemove() {
-  if (selectedStudent.value) {
-    await removeStudent(selectedStudent.value, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedStudent.value = undefined;
-    });
-  }
+function handleRemove() {
+  if (!selectedStudent.value) return;
+  const student = selectedStudent.value;
+  confirm.require({
+    message: `Soll "${formatStudent(student)}" wirklich gelöscht werden?`,
+    header: "Schüler löschen",
+    icon: "pi pi-exclamation-triangle",
+    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
+    acceptProps: { label: "Löschen", severity: "danger" },
+    accept: async () => {
+      try {
+        await removeStudent(student, selectedSchoolYear.value!, () => {
+          resetInputs();
+          selectedStudent.value = undefined;
+        });
+      } catch (e) {
+        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+      }
+    },
+  });
 }
 
 watch(selectedSchoolYear, async (current) => {
@@ -118,8 +139,9 @@ watch(selectedSchoolYear, async (current) => {
 
 watch(selectedSemester, async (current) => {
   if (current) {
+    availableCourses.value = await loadCoursesForSchoolYearAndSemester(selectedSchoolYear.value!, current);
+
     const previouslySelection = selectedStudent.value;
-    await loadStudentsForSchoolYear(selectedSchoolYear.value!);
     selectedStudent.value = students.value.find((student) => {
       return student.id === previouslySelection?.id;
     });

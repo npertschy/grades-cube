@@ -10,8 +10,7 @@ export async function loadGroupsBySchoolYearAndSemester(schoolYear: SchoolYear):
   const groups: GroupEntity[] = await db.select(
     `
     SELECT * FROM ZGROUP
-    INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1
-    WHERE Z_3YEARS.Z_8YEARS = $1
+    INNER JOIN Z_3YEARS ON Z_PK = Z_3YEARS.Z_3GROUPS1 AND Z_3YEARS.Z_8YEARS = $1
     ORDER BY ZSORTINGNAME
     `,
     [schoolYear.id],

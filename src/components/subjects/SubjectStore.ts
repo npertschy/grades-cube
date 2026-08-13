@@ -25,17 +25,23 @@ async function loadSubjectsForSchoolYear(schoolYear: SchoolYear) {
 }
 
 async function addSubject(subjectToAdd: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  await createSubjectForSchoolYear(subjectToAdd, schoolYear);
-  await loadSubjectsForSchoolYear(schoolYear);
-
-  cleanup();
+  try {
+    await createSubjectForSchoolYear(subjectToAdd, schoolYear);
+    await loadSubjectsForSchoolYear(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Fach konnte nicht gespeichert werden.", { cause: e });
+  }
 }
 
 async function editSubject(subject: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  await updateSubject(subject);
-  await loadSubjectsForSchoolYear(schoolYear);
-
-  cleanup();
+  try {
+    await updateSubject(subject);
+    await loadSubjectsForSchoolYear(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Fach konnte nicht aktualisiert werden.", { cause: e });
+  }
 }
 
 function formatSubject(item: Subject) {
@@ -43,10 +49,13 @@ function formatSubject(item: Subject) {
 }
 
 async function removeSubject(subject: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  await deleteSubjectFromSchoolYear(subject, schoolYear);
-  await loadSubjectsForSchoolYear(schoolYear);
-
-  cleanup();
+  try {
+    await deleteSubjectFromSchoolYear(subject, schoolYear);
+    await loadSubjectsForSchoolYear(schoolYear);
+    cleanup();
+  } catch (e) {
+    throw new Error("Fach konnte nicht gelöscht werden.", { cause: e });
+  }
 }
 
 async function loadAllSubjects() {

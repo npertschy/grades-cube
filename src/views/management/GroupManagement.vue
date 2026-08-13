@@ -5,6 +5,7 @@ import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
+import PPanel from "primevue/panel";
 import PInputGroup from "primevue/inputgroup";
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
@@ -15,6 +16,8 @@ import PDataTable from "primevue/datatable";
 import PDataView from "primevue/dataview";
 import PColumn from "primevue/column";
 import { computed, onMounted, ref, shallowRef, watch } from "vue";
+import { useToast } from "primevue/usetoast";
+import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import type { Group } from "@/components/groups/Group";
@@ -36,6 +39,8 @@ const student = ref<Student>();
 const groupType = ref<number>();
 
 const { students, formatStudent } = useStudents();
+const toast = useToast();
+const confirm = useConfirm();
 const studentQuery = shallowRef("");
 const studentList = computed<Student[]>(() => {
   if (studentQuery.value === "") {
@@ -54,37 +59,42 @@ const { selectedSchoolYear } = useSchoolYearSelection();
 
 onMounted(async () => {
   if (selectedSchoolYear.value) {
+        // NOTE: db has group <-> semesters but I think it is only valid for courses
     await loadAllGroupsForSchoolYearAndSemester(selectedSchoolYear.value);
   }
 });
 
 async function handleSave() {
-  if (selectedGroup.value?.id) {
-    const group = {
-      id: selectedGroup.value.id,
-      name: name.value,
-      sortingName: selectedGroup.value.sortingName,
-      type: groupType.value,
-      students: [],
-    };
+  try {
+    if (selectedGroup.value?.id) {
+      const group = {
+        id: selectedGroup.value.id,
+        name: name.value,
+        sortingName: selectedGroup.value.sortingName,
+        type: groupType.value,
+        students: [],
+      };
 
-    await editGroup(group, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedGroup.value = undefined;
-    });
-  } else {
-    const group = {
-      id: undefined,
-      name: name.value,
-      sortingName: undefined,
-      type: groupType.value,
-      students: [],
-    };
+      await editGroup(group, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedGroup.value = undefined;
+      });
+    } else {
+      const group = {
+        id: undefined,
+        name: name.value,
+        sortingName: undefined,
+        type: groupType.value,
+        students: [],
+      };
 
-    await addGroup(group, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedGroup.value = undefined;
-    });
+      await addGroup(group, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedGroup.value = undefined;
+      });
+    }
+  } catch (e) {
+    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
   }
 }
 
@@ -108,26 +118,47 @@ function formatGroup(item: Group) {
   return item.id === 0 ? "Neue Klasse anlegen" : item.name!;
 }
 
-async function handleRemove() {
-  if (selectedGroup.value) {
-    await removeGroup(selectedGroup.value, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedGroup.value = undefined;
-    });
-  }
+function handleRemove() {
+  if (!selectedGroup.value) return;
+  const group = selectedGroup.value;
+  confirm.require({
+    message: `Soll "${formatGroup(group)}" wirklich gelöscht werden?`,
+    header: "Klasse löschen",
+    icon: "pi pi-exclamation-triangle",
+    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
+    acceptProps: { label: "Löschen", severity: "danger" },
+    accept: async () => {
+      try {
+        await removeGroup(group, selectedSchoolYear.value!, () => {
+          resetInputs();
+          selectedGroup.value = undefined;
+        });
+      } catch (e) {
+        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+      }
+    },
+  });
 }
 
 async function handleAddingStudent() {
   if (student.value) {
-    await addStudentToGroup(student.value, selectedGroup.value!);
-    await loadGroup(selectedGroup.value);
+    try {
+      await addStudentToGroup(student.value, selectedGroup.value!);
+      await loadGroup(selectedGroup.value);
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
   }
 }
 
 async function handleRemovingStudent() {
   if (selectedStudent.value) {
-    await removeStudentFromGroup(selectedStudent.value, selectedGroup.value!);
-    await loadGroup(selectedGroup.value);
+    try {
+      await removeStudentFromGroup(selectedStudent.value, selectedGroup.value!);
+      await loadGroup(selectedGroup.value);
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
   }
 }
 

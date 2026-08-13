@@ -46,32 +46,49 @@ async function loadAvailableSubjectsForSchoolYear(schoolYear: SchoolYear) {
 }
 
 async function addCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  await createCourse(course, schoolYear, semester);
-  await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
-
-  cleanup();
+  try {
+    await createCourse(course, schoolYear, semester);
+    await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
+    cleanup();
+  } catch (e) {
+    throw new Error("Kurs konnte nicht gespeichert werden.", { cause: e });
+  }
 }
 
 async function editCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  await updateCourse(course);
-  await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
-
-  cleanup();
+  try {
+    await updateCourse(course);
+    await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
+    cleanup();
+  } catch (e) {
+    throw new Error("Kurs konnte nicht aktualisiert werden.", { cause: e });
+  }
 }
 
 async function removeCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  await deleteCourseInSchoolYear(course);
-  await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
-
-  cleanup();
+  try {
+    await deleteCourseInSchoolYear(course);
+    await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
+    cleanup();
+  } catch (e) {
+    throw new Error("Kurs konnte nicht gelöscht werden.", { cause: e });
+  }
 }
 
 async function addStudentToCourse(student: Student, course: Course) {
-  await assignStudentToCourse(student, course);
+  try {
+    await assignStudentToCourse(student, course);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht zum Kurs hinzugefügt werden.", { cause: e });
+  }
 }
 
 async function removeStudentFromCourse(student: Student, course: Course) {
-  await unassignStudentFromCourse(student, course);
+  try {
+    await unassignStudentFromCourse(student, course);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht aus dem Kurs entfernt werden.", { cause: e });
+  }
 }
 
 export function useCourses() {
