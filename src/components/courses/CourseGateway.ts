@@ -1,5 +1,6 @@
 import type { Course } from "@/components/courses/Course";
 import type { FullCourseEntity } from "@/components/courses/CourseEntity";
+import { insertDefaultPerformancesWithGrades } from "@/components/courses/DefaultPerformances";
 import type { Group } from "@/components/groups/Group";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
@@ -118,6 +119,7 @@ export async function createCourse(course: Course, schoolYear: SchoolYear, semes
       `,
       [id, Z_ENT.ZCOURSE, 1, course.group!.id, course.subject!.id, semester.id, schoolYear.id, course.days ?? null],
     );
+    await insertDefaultPerformancesWithGrades(id, course.group?.type, []);
     await db.execute("COMMIT TRANSACTION");
   } catch (error) {
     await db.execute("ROLLBACK TRANSACTION");

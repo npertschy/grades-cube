@@ -2,6 +2,8 @@
 
 **Legend:** ✅ Done · 🟡 Partial / started · ⬜ Missing · 🐞 Bug / tech debt · ❓ Open question / needs decision
 
+**Priority:** `[P1]` Blocking / foundational — do first · `[P2]` Important feature work · `[P3]` Polish / nice-to-have
+
 See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariants. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the stack, schema, and gateway correctness checklist.
 
 ---
@@ -15,12 +17,12 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Core Data date helpers (`coreDataToUnix` / `dateToCoreData`, +978307200 epoch offset)
 - ✅ `nextPrimaryKey()` — reads/increments `Z_PRIMARYKEY` table for Core Data-compatible PK allocation
 - ✅ Test coverage: all gateway functions and all management views have tests
-- 🟡 **Reload on school-year / semester change** — management views (Student, Group, Subject, Course) and the Evaluation view do **not** watch the global `selectedSchoolYear` / `selectedSemester` signals; switching the selector does not reload data in any of these views. Every view that depends on the selection must add a `watch` on both values and re-run its load function.
-- 🐞 Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
-- 🐞 **Drop `Z_3SEMESTERS`** — the app now owns the DB (see ARCHITECTURE §2/§2.3). (1) Add the migration runner if not present; (2) grep gateways/query libs for `Z_3SEMESTERS` and remove any reads/writes; (3) `DROP TABLE Z_3SEMESTERS` in a forward migration; (4) update ARCHITECTURE §2.2. Groups remain school-year-scoped via `Z_3YEARS`.
-- ⬜ **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
-- ⬜ No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
-- ⬜ No delete-confirmation dialogs anywhere (destructive actions fire immediately)
+- ✅ `[P1]` **Reload on school-year / semester change** — management views (Student, Group, Subject, Course) and the Evaluation view do **not** watch the global `selectedSchoolYear` / `selectedSemester` signals; switching the selector does not reload data in any of these views. Every view that depends on the selection must add a `watch` on both values and re-run its load function.
+- 🐞 `[P3]` Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
+- 🐞 `[P2]` **Drop `Z_3SEMESTERS`** — the app now owns the DB (see ARCHITECTURE §2/§2.3). (1) Add the migration runner if not present; (2) grep gateways/query libs for `Z_3SEMESTERS` and remove any reads/writes; (3) `DROP TABLE Z_3SEMESTERS` in a forward migration; (4) update ARCHITECTURE §2.2. Groups remain school-year-scoped via `Z_3YEARS`.
+- ⬜ `[P1]` **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
+- ⬜ `[P2]` No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
+- ⬜ `[P2]` No delete-confirmation dialogs anywhere (destructive actions fire immediately)
 
 ---
 
@@ -50,8 +52,8 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Delete student — removes `Z_6YEARS` link; deletes `ZSTUDENT` only if no other year link remains
 - ✅ Load a student's groups for a given semester
 - ✅ Assign / unassign student to/from a group (via `Z_3STUDENTS`)
-- ⬜ **Course assignment in StudentManagement** — the courses autocomplete is hard-coded to `:items="[]"` (`StudentManagement.vue:176`); `availableCourses` is loaded but never wired to the autocomplete. Fix: bind `:items="availableCourses"` and call the store's assign/unassign functions.
-- ⬜ **Grade summary in student management** — display an overview of a student's current grades across all their courses (see §4.2)
+- ⬜ `[P1]` **Course assignment in StudentManagement** — the courses autocomplete is hard-coded to `:items="[]"` (`StudentManagement.vue:176`); `availableCourses` is loaded but never wired to the autocomplete. Fix: bind `:items="availableCourses"` and call the store's assign/unassign functions.
+- ⬜ `[P3]` **Grade summary in student management** — display an overview of a student's current grades across all their courses (see §4.2)
 
 ### 2.4 Groups / Classes (`GroupGateway`, `GroupStore`, `GroupManagement`)
 
@@ -62,7 +64,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Assign / unassign student to/from group (`Z_3STUDENTS`)
 - ✅ Delete group — cascade: `Z_3STUDENTS`, `Z_3YEARS`, grades, performances, courses for that group in the year, then `ZGROUP`
 - ✅ `GroupGateway.deleteGroupInSchoolYear` invalid SQL fixed (rewrote invalid `DELETE … INNER JOIN` as subquery-based deletes)
-- ⬜ **Cascade unassign** (`GroupGateway.ts:109` TODO): when a student is unassigned from a group, cascade to removing them from all courses of that group (+ their ZGRADE rows). See REQUIREMENTS §3.
+- ⬜ `[P2]` **Cascade unassign** (`GroupGateway.ts:109` TODO): when a student is unassigned from a group, cascade to removing them from all courses of that group (+ their ZGRADE rows). See REQUIREMENTS §3.
 
 ### 2.5 Courses (`CourseGateway`, `CourseStore`, `CourseManagement`)
 
@@ -75,16 +77,16 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Delete course — cascade: ZGRADE (subquery via ZPERFORMANCE) → ZPERFORMANCE → Z_1STUDENTS → ZCOURSE, inside a transaction
 - ✅ Assign student to course — inserts `Z_1STUDENTS` + blank `ZGRADE` rows for every existing performance, inside a transaction
 - ✅ Unassign student from course — deletes student's `ZGRADE` rows for the course's performances, then removes `Z_1STUDENTS` link, inside a transaction
-- ⬜ **Create default performances on course creation** — after inserting `ZCOURSE`, call the shared sub-procedure to insert default performance rows and empty grades for all enrolled students (see REQUIREMENTS §4 and §5)
+- ✅ `[P1]` **Create default performances on course creation** — after inserting `ZCOURSE`, call the shared sub-procedure to insert default performance rows and empty grades for all enrolled students (see REQUIREMENTS §4 and §5)
 
 ### 2.6 Course level (GK/LK) — Sek II
 
-- ❓ **`ZORDINAL` assignment**: free integer the teacher sets vs. auto `max+1` per (year, subject, level). Decision pending.
-- ⬜ **Add `ZCOURSE.ZLEVEL`** (`0=n/a, 1=GK, 2=LK`) and **`ZCOURSE.ZORDINAL`** (parallel-course number) via migration (ARCHITECTURE §2.3).
-- ⬜ Extend `CourseGateway` create/update to read/write `ZLEVEL` + `ZORDINAL`.
-- ⬜ `CourseManagement`: when the selected group's `ZTYPE = 2` (Sek II), show a GK/LK selector + ordinal input; otherwise hide (defaults to `0`/null).
-- ⬜ Course display-name helper: `8b Englisch` (Sek I) vs `GK 1 Geschichte` (Sek II). Reuse everywhere courses are listed (Course/Evaluation/Student views).
-- ⬜ UI soft-uniqueness check on (year, subject, level, ordinal).
+- ❓ `[P3]` **`ZORDINAL` assignment**: free integer the teacher sets vs. auto `max+1` per (year, subject, level). Decision pending.
+- ⬜ `[P2]` **Add `ZCOURSE.ZLEVEL`** (`0=n/a, 1=GK, 2=LK`) and **`ZCOURSE.ZORDINAL`** (parallel-course number) via migration (ARCHITECTURE §2.3).
+- ⬜ `[P2]` Extend `CourseGateway` create/update to read/write `ZLEVEL` + `ZORDINAL`.
+- ⬜ `[P2]` `CourseManagement`: when the selected group's `ZTYPE = 2` (Sek II), show a GK/LK selector + ordinal input; otherwise hide (defaults to `0`/null).
+- ⬜ `[P2]` Course display-name helper: `8b Englisch` (Sek I) vs `GK 1 Geschichte` (Sek II). Reuse everywhere courses are listed (Course/Evaluation/Student views).
+- ⬜ `[P3]` UI soft-uniqueness check on (year, subject, level, ordinal).
 
 ---
 
@@ -96,15 +98,15 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Select group → show all students of that group (read-only, no grade columns)
 - ✅ Select course → load students + performances for that course
 - ✅ Auto-expand all groups on load
-- 🟡 **Reload on school-year / semester change** — `onMounted` loads once; switching the global selector does not reload the tree or clear the current selection. Add a `watch` on `selectedSchoolYear` / `selectedSemester` to call `loadTreeItems` and reset selected node/students/performances.
+- ✅ `[P1]` **Reload on school-year / semester change** — `onMounted` loads once; switching the global selector does not reload the tree or clear the current selection. Add a `watch` on `selectedSchoolYear` / `selectedSemester` to call `loadTreeItems` and reset selected node/students/performances.
 
 ### 3.2 Grade Table (`EvaluationTable`)
 
 - ✅ Virtual-scrolled editable DataTable
 - ✅ Color-coded columns by performance type (oral = sky, special = green, test = red)
 - ✅ Per-type input validation: oral grades (`++/+/0/-/--/f`), numeric grades (0–15)
-- ⬜ **Absent marker for numeric grades**: add an `f` (or equivalent) value for types 3 and 6 that marks a student as absent; excluded from weighted-average computation like oral `f`
-- ❓ **Absent marker value**: decide what value to store for numeric absent — `f` as string (ZVALUE is already text for oral), `-1`, or another sentinel
+- ⬜ `[P2]` **Absent marker for numeric grades**: add an `f` (or equivalent) value for types 3 and 6 that marks a student as absent; excluded from weighted-average computation like oral `f`
+- ❓ `[P2]` **Absent marker value**: decide what value to store for numeric absent — `f` as string (ZVALUE is already text for oral), `-1`, or another sentinel
 - ✅ Column selection (click header → emits `column-selected`)
 - ✅ Grade-change event propagation
 
@@ -114,42 +116,42 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Weight auto-distribution on creation (for special/written: equal redistribution among existing performances of the same type)
 - ✅ Blank `ZGRADE` rows inserted for every student in the course on performance creation
 - ✅ Edit performance title (via same dialog when a column is selected)
-- ⬜ **Delete performance**: on deletion, recompute the corresponding summary grade. For special/written: prompt to redistribute weights among remaining performances (must sum to 100). Oral needs no weight handling.
+- ⬜ `[P2]` **Delete performance**: on deletion, recompute the corresponding summary grade. For special/written: prompt to redistribute weights among remaining performances (must sum to 100). Oral needs no weight handling.
 
 ### 3.4 Grade Auto-Calculation
 
 - ✅ **Oral suggestion** (type 1): after each oral-grade entry (type 0), re-compute the frequency-weighted average across all oral grades for that student and update the suggestion performance automatically
 - ✅ **Special overall grade** (type 4): updated from special performance grades (type 3)
 - ✅ **Written overall grade** (type 7): updated from written/test performance grades (type 6)
-- ⬜ **Oral overall column** (type 2): editable numeric (0–15) column; teacher enters a grade informed by the symbolic suggestion (type 1). Must be included in default performance creation.
-- ⬜ **AT overall grade** (type 5): weighted combination of oral overall (type 2) and special overall (type 4) using oral/special weights
-- ⬜ **Final overall grade** (type 8): weighted combination of AT overall (type 5) and written overall (type 7) using AT/written weights
-- 🐞 **Review auto-calc event chain**: verify that editing type 2 triggers type 5 recomputation, and that type 5/type 7 changes trigger type 8 recomputation. Current event-based approach via child component may not bubble correctly through multiple levels.
+- ⬜ `[P1]` **Oral overall column** (type 2): editable numeric (0–15) column; teacher enters a grade informed by the symbolic suggestion (type 1). Must be included in default performance creation.
+- ⬜ `[P1]` **AT overall grade** (type 5): weighted combination of oral overall (type 2) and special overall (type 4) using oral/special weights
+- ⬜ `[P1]` **Final overall grade** (type 8): weighted combination of AT overall (type 5) and written overall (type 7) using AT/written weights
+- 🐞 `[P1]` **Review auto-calc event chain**: verify that editing type 2 triggers type 5 recomputation, and that type 5/type 7 changes trigger type 8 recomputation. Current event-based approach via child component may not bubble correctly through multiple levels.
 
 ### 3.5 Grade Weights (`GradeWeightsView`)
 
 - ✅ Display special, written, and general-part performances with their current weights
 - ✅ Sliders / number inputs that keep paired weights summing to 1
 - ✅ Emit `update-performance` to parent which persists via `updatePerformance`
-- 🐞 **Save button has no `@click` handler** in the special performances panel (`GradeWeightsView.vue:127–134`) — button is dead
-- 🐞 **Save button has no `@click` handler** in the written performances panel (`GradeWeightsView.vue:172–179`) — button is dead
-- 🐞 **Undo buttons** in both panels likewise have no `@click` handlers
-- 🐞 `update-performances` (bulk) emit is declared in the component's `defineEmits` but never called — either wire it or remove it
-- ⬜ Implement save action: collect all modified weights for the panel's performances and emit `update-performances` (or call `update-performance` for each)
-- ⬜ Implement undo action: revert local weight values to the last-persisted state
+- 🐞 `[P1]` **Save button has no `@click` handler** in the special performances panel (`GradeWeightsView.vue:127–134`) — button is dead
+- 🐞 `[P1]` **Save button has no `@click` handler** in the written performances panel (`GradeWeightsView.vue:172–179`) — button is dead
+- 🐞 `[P2]` **Undo buttons** in both panels likewise have no `@click` handlers
+- 🐞 `[P3]` `update-performances` (bulk) emit is declared in the component's `defineEmits` but never called — either wire it or remove it
+- ⬜ `[P1]` Implement save action: collect all modified weights for the panel's performances and emit `update-performances` (or call `update-performance` for each)
+- ⬜ `[P2]` Implement undo action: revert local weight values to the last-persisted state
 
 ### 3.6 Test Grade Calculator (`TestGradeCalculator`)
 
 - ✅ Total-points input → builds full German 15-point scale table with per-grade point thresholds
 - ✅ Achieved-points input → highlights matching row and shows grade summary
-- 🐞 Typo `lowetPercent` throughout (should be `lowerPercent`) — cosmetic but inconsistent
-- ⬜ **Rechtschreibung option**: checkbox toggle. When unchecked: input total points + achieved points as today. When checked: input total points → 10% is reserved for Rechtschreibung (e.g. 60 total → 6 Rechtschreibung points, 54 content points). User enters Rechtschreibung points (0–6) and content points (0–54) separately. Final grade is based on combined points (Rechtschreibung + content) looked up against the full total-points scale.
+- 🐞 `[P3]` Typo `lowetPercent` throughout (should be `lowerPercent`) — cosmetic but inconsistent
+- ⬜ `[P3]` **Rechtschreibung option**: checkbox toggle. When unchecked: input total points + achieved points as today. When checked: input total points → 10% is reserved for Rechtschreibung (e.g. 60 total → 6 Rechtschreibung points, 54 content points). User enters Rechtschreibung points (0–6) and content points (0–54) separately. Final grade is based on combined points (Rechtschreibung + content) looked up against the full total-points scale.
 
 ### 3.7 Histogram (`HistogramPanel`)
 
 - ✅ Bottom drawer; opens when a performance column is selected and histogram toggle is active
 - ✅ **Oral performances** (type 0): bar chart over `++/+/0/-/--/f` labels; average calculated and shown in dataset label
-- 🟡 **Non-oral performances** (numeric 0–15): bar chart shows distribution and grade-band grouping, but **no average is calculated or displayed**. Add: `const average = grades.reduce((a, b) => a + b, 0) / grades.length` and include in the dataset label.
+- 🟡 `[P2]` **Non-oral performances** (numeric 0–15): bar chart shows distribution and grade-band grouping, but **no average is calculated or displayed**. Add: `const average = grades.reduce((a, b) => a + b, 0) / grades.length` and include in the dataset label.
 
 ---
 
@@ -159,23 +161,23 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 
 See REQUIREMENTS §2 for the full design.
 
-- ⬜ After school year creation, detect whether a previous school year exists
-- ⬜ Prompt the user to migrate base structure from the previous year
-- ⬜ Step 1 UI: group selection with rename inputs and per-group student adjustment
-- ⬜ Step 2 UI: course migration preview applying new group names and adjusted student lists
-- ⬜ Implement `MigrationGateway` (or extend `SchoolYearGateway`) with a transaction that: links groups, rebuilds student memberships, links subjects, and creates new `ZCOURSE` rows — without copying performances or grades
+- ⬜ `[P2]` After school year creation, detect whether a previous school year exists
+- ⬜ `[P2]` Prompt the user to migrate base structure from the previous year
+- ⬜ `[P2]` Step 1 UI: group selection with rename inputs and per-group student adjustment
+- ⬜ `[P2]` Step 2 UI: course migration preview applying new group names and adjusted student lists
+- ⬜ `[P2]` Implement `MigrationGateway` (or extend `SchoolYearGateway`) with a transaction that: links groups, rebuilds student memberships, links subjects, and creates new `ZCOURSE` rows — without copying performances or grades
 
 ### 4.2 Student Grade Summary
 
-- ⬜ Add a grade summary panel to `StudentManagement` (or a separate route) showing all courses for the current semester, with performance titles, entered grade values, and computed overall grades
-- ⬜ Read-only; editing stays in the Evaluation view
+- ⬜ `[P3]` Add a grade summary panel to `StudentManagement` (or a separate route) showing all courses for the current semester, with performance titles, entered grade values, and computed overall grades
+- ⬜ `[P3]` Read-only; editing stays in the Evaluation view
 
 ### 4.3 Timetable View (Course Days)
 
-- ⬜ `ZCOURSE.ZDAYS` stores a serialized schedule; the field is read but never written or displayed
-- ⬜ Define and document the `ZDAYS` serialization format (blob / JSON?)
-- ⬜ Add a UI to set course days in `CourseManagement` (e.g. a weekday multi-select)
-- ⬜ Implement a timetable view (new route `/timetable`) rendering a weekly grid of courses for the selected year + semester
+- ⬜ `[P3]` `ZCOURSE.ZDAYS` stores a serialized schedule; the field is read but never written or displayed
+- ⬜ `[P3]` Define and document the `ZDAYS` serialization format (blob / JSON?)
+- ⬜ `[P3]` Add a UI to set course days in `CourseManagement` (e.g. a weekday multi-select)
+- ⬜ `[P3]` Implement a timetable view (new route `/timetable`) rendering a weekly grid of courses for the selected year + semester
 
 ---
 
@@ -183,10 +185,9 @@ See REQUIREMENTS §2 for the full design.
 
 Currently `ConfigurationView.vue` renders only `<p>Konfigurieren</p>`.
 
-- ⬜ Replace stub with a real settings layout
-- ⬜ **Name rendering order**: "Nachname, Vorname" vs "Vorname Nachname"; persist in `KeyValueStore`; apply everywhere students are listed
-- ⬜ **Dark mode setting**: surface the dark mode toggle here (currently only in the toolbar avatar popover)
-- ⬜ **Default grade scale**: option to set the default grading system if other scales are ever added
-- ⬜ **Default weights per group type** *(extend to `(group type, course level)` once `ZCOURSE.ZLEVEL` exists — see REQUIREMENTS §5.8)*: user-configurable Sek I / Sek II (and later GK / LK) weight defaults applied on course creation (see REQUIREMENTS §5.5)
-- ⬜ **DB file path / backup**: show the active SQLite file location and allow a manual backup copy
-
+- ⬜ `[P2]` Replace stub with a real settings layout
+- ⬜ `[P2]` **Name rendering order**: "Nachname, Vorname" vs "Vorname Nachname"; persist in `KeyValueStore`; apply everywhere students are listed
+- ⬜ `[P2]` **Dark mode setting**: surface the dark mode toggle here (currently only in the toolbar avatar popover)
+- ⬜ `[P3]` **Default grade scale**: option to set the default grading system if other scales are ever added
+- ⬜ `[P2]` **Default weights per group type** *(extend to `(group type, course level)` once `ZCOURSE.ZLEVEL` exists — see REQUIREMENTS §5.8)*: user-configurable Sek I / Sek II (and later GK / LK) weight defaults applied on course creation (see REQUIREMENTS §5.5)
+- ⬜ `[P3]` **DB file path / backup**: show the active SQLite file location and allow a manual backup copy

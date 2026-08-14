@@ -16,10 +16,11 @@ import {
 } from "@/components/courses/CourseGateway";
 import { Z_ENT } from "@/store/EntityId";
 
-const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
+const { mockedSelect, mockedExecute, mockedNextPrimaryKey, mockedInsertDefaultPerformances } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
   mockedExecute: vi.fn(),
   mockedNextPrimaryKey: vi.fn(),
+  mockedInsertDefaultPerformances: vi.fn(),
 }));
 
 vi.mock("@/store/Database", () => ({
@@ -28,6 +29,10 @@ vi.mock("@/store/Database", () => ({
     execute: mockedExecute,
   },
   nextPrimaryKey: mockedNextPrimaryKey,
+}));
+
+vi.mock("@/components/courses/DefaultPerformances", () => ({
+  insertDefaultPerformancesWithGrades: mockedInsertDefaultPerformances,
 }));
 
 const schoolYear: SchoolYear = {
@@ -122,9 +127,10 @@ describe("loadAvailableSubjectsBySchoolYear", () => {
 });
 
 describe("createCourse", () => {
-  it("inserts a course with nextPrimaryKey inside a transaction", async () => {
+  it("inserts a course and calls insertDefaultPerformancesWithGrades inside a transaction", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(99);
     mockedExecute.mockResolvedValue({});
+    mockedInsertDefaultPerformances.mockResolvedValue(undefined);
 
     await createCourse(course, schoolYear, semester);
 
@@ -133,12 +139,24 @@ describe("createCourse", () => {
       expect.stringContaining("INSERT INTO ZCOURSE"),
       [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}],
     );
+    expect(mockedInsertDefaultPerformances).toHaveBeenCalledWith(99, 1, []);
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
     expect(calls[0]).toContain("BEGIN");
     expect(calls.at(-1)).toContain("COMMIT");
   });
 
-  it("rolls back and rethrows on error", async () => {
+  it("rolls back and rethrows when insertDefaultPerformancesWithGrades fails", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(99);
+    mockedExecute.mockResolvedValue({});
+    mockedInsertDefaultPerformances.mockRejectedValueOnce(new Error("constraint"));
+
+    await expect(createCourse(course, schoolYear, semester)).rejects.toThrow("constraint");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
+  });
+
+  it("rolls back and rethrows when ZCOURSE insert fails", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(99);
     mockedExecute.mockResolvedValueOnce({});
     mockedExecute.mockRejectedValueOnce(new Error("constraint"));
