@@ -12,6 +12,12 @@ fn main() {
     let migrations = vec![
         Migration {
             version: 1,
+            description: "create initial tables",
+            sql: include_str!("../sql/initial-schema.sql"),
+            kind: MigrationKind::Up,
+        },
+        Migration {
+            version: 2,
             description: "add unique constraint to ZSUBJECT.ZNAME",
             sql: "CREATE UNIQUE INDEX IF NOT EXISTS idx_zsubject_zname_unique ON ZSUBJECT (ZNAME);",
             kind: MigrationKind::Up,
