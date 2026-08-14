@@ -50,7 +50,7 @@ Timestamps are Core Data integers: `Unix seconds − 978307200` (epoch offset). 
 
 ### 2.3 Migrations
 
-The app owns schema evolution. Migrations are ordered, forward-only SQL scripts applied on startup, tracked by a `schema_version` (in `KeyValueStore` or a dedicated table). Each migration is idempotent-safe and wrapped in a transaction. Dropping legacy Core Data tables (e.g. `Z_3SEMESTERS`) and adding new columns (e.g. `ZCOURSE.ZLEVEL` / `ZCOURSE.ZORDINAL`) is done here.
+The app owns schema evolution via `tauri-plugin-sql`'s built-in migration runner. Migrations are ordered, forward-only `Migration { version, description, sql, kind: MigrationKind::Up }` values registered in `src-tauri/src/main.rs` and applied automatically on startup. `tauri-plugin-sql` tracks applied versions internally in the SQLite file. SQL scripts live in `src-tauri/sql/`. Each migration must be idempotent-safe (`CREATE TABLE IF NOT EXISTS`, `CREATE INDEX IF NOT EXISTS`, etc.). Dropping legacy Core Data tables (e.g. `Z_3SEMESTERS`) and adding new columns (e.g. `ZCOURSE.ZLEVEL` / `ZCOURSE.ZORDINAL`) is done here.
 
 ---
 
@@ -100,3 +100,16 @@ Correct ordering to avoid FK violations (leaf → root):
 - `ZGRADE` → `ZPERFORMANCE` → `Z_1STUDENTS` → `ZCOURSE` → `Z_3YEARS` / `Z_6YEARS` / `Z_7YEARS` → `ZSEMESTER` → `ZYEAR`
 - Use subquery-based deletes — `DELETE … INNER JOIN` is not valid SQLite syntax.
 - All multi-step mutations run inside `BEGIN EXCLUSIVE TRANSACTION` / `COMMIT` / `ROLLBACK`.
+
+---
+
+## 4. Management View Pattern
+
+All management views (`StudentManagement`, `GroupManagement`, `CourseManagement`) follow a consistent two-panel layout:
+
+| Area | Purpose |
+|---|---|
+| Left panel | Entity list (selectable) + create placeholder item (id=0) |
+| Right panel | Entity fields (name, type, etc.) with save/delete buttons; **M:N assignments** are decoupled and atomic |
+
+**Atomic assignment pattern:** Adding or removing a student from a group/course (or vice versa) is an immediate DB operation — not batched on save. The UI uses an InputGroup (AutoComplete + confirm/remove buttons) plus a button list showing current assignments. This keeps all management views consistent and avoids unsaved-state complexity.

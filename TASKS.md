@@ -20,7 +20,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ `[P1]` **Reload on school-year / semester change** — management views (Student, Group, Subject, Course) and the Evaluation view do **not** watch the global `selectedSchoolYear` / `selectedSemester` signals; switching the selector does not reload data in any of these views. Every view that depends on the selection must add a `watch` on both values and re-run its load function.
 - 🐞 `[P3]` Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
 - 🐞 `[P2]` **Drop `Z_3SEMESTERS`** — the app now owns the DB (see ARCHITECTURE §2/§2.3). (1) Add the migration runner if not present; (2) grep gateways/query libs for `Z_3SEMESTERS` and remove any reads/writes; (3) `DROP TABLE Z_3SEMESTERS` in a forward migration; (4) update ARCHITECTURE §2.2. Groups remain school-year-scoped via `Z_3YEARS`.
-- ⬜ `[P1]` **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
+- ✅ `[P1]` **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
 - ⬜ `[P2]` No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
 - ⬜ `[P2]` No delete-confirmation dialogs anywhere (destructive actions fire immediately)
 
@@ -52,7 +52,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Delete student — removes `Z_6YEARS` link; deletes `ZSTUDENT` only if no other year link remains
 - ✅ Load a student's groups for a given semester
 - ✅ Assign / unassign student to/from a group (via `Z_3STUDENTS`)
-- ⬜ `[P1]` **Course assignment in StudentManagement** — the courses autocomplete is hard-coded to `:items="[]"` (`StudentManagement.vue:176`); `availableCourses` is loaded but never wired to the autocomplete. Fix: bind `:items="availableCourses"` and call the store's assign/unassign functions.
+- ✅ `[P1]` **Course assignment in StudentManagement** — atomic assign/unassign via InputGroup + AutoComplete, consistent with GroupManagement pattern
 - ⬜ `[P3]` **Grade summary in student management** — display an overview of a student's current grades across all their courses (see §4.2)
 
 ### 2.4 Groups / Classes (`GroupGateway`, `GroupStore`, `GroupManagement`)

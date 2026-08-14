@@ -3,12 +3,15 @@ import CustomTransition from "@/components/layout/CustomTransition.vue";
 import EntityList from "@/components/layout/EntityList.vue";
 import SaveAndDeleteButtons from "@/components/layout/SaveAndDeleteButtons.vue";
 import InputWithLabel from "@/components/layout/InputWithLabel.vue";
-import AutoCompleteListWithLabel from "@/components/layout/AutoCompleteListWithLabel.vue";
 import ManagementPanel from "@/components/layout/ManagementPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
-import { ref, watch, onMounted } from "vue";
+import PPanel from "primevue/panel";
+import PInputGroup from "primevue/inputgroup";
+import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
+import PButton from "primevue/button";
+import { computed, ref, shallowRef, watch, onMounted } from "vue";
 import { useToast } from "primevue/usetoast";
 import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
@@ -19,8 +22,6 @@ import type { Course } from "@/components/courses/Course";
 
 const firstName = ref<string>();
 const lastName = ref<string>();
-const groups = ref<Group[]>();
-const courses = ref<Course[]>();
 
 const {
   students,
@@ -32,6 +33,10 @@ const {
   removeStudent,
   loadGroupsForSchoolYear,
   loadCoursesForSchoolYearAndSemester,
+  addGroupToStudent,
+  removeGroupFromStudent,
+  addCourseToStudent,
+  removeCourseFromStudent,
 } = useStudents();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 const toast = useToast();
@@ -41,12 +46,34 @@ const selectedStudent = ref<Student | undefined>();
 const availableGroups = ref<Group[]>([]);
 const availableCourses = ref<Course[]>([]);
 
+const selectedGroup = ref<Group>();
+const groupQuery = shallowRef("");
+const groupList = computed<Group[]>(() => {
+  if (groupQuery.value === "") {
+    return [...availableGroups.value];
+  }
+  return availableGroups.value.filter((g) => g.name?.toLowerCase().includes(groupQuery.value.toLowerCase()));
+});
+
+const selectedCourse = ref<Course>();
+const courseQuery = shallowRef("");
+const courseList = computed<Course[]>(() => {
+  if (courseQuery.value === "") {
+    return [...availableCourses.value];
+  }
+  return availableCourses.value.filter(
+    (c) =>
+      c.group?.name?.toLowerCase().includes(courseQuery.value.toLowerCase()) ||
+      c.subject?.name?.toLowerCase().includes(courseQuery.value.toLowerCase()),
+  );
+});
+
 onMounted(async () => {
   if (selectedSchoolYear.value) {
     const [_, groups, courses] = await Promise.all([
-      await loadStudentsForSchoolYear(selectedSchoolYear.value),
-      await loadGroupsForSchoolYear(selectedSchoolYear.value),
-      await loadCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value!),
+      loadStudentsForSchoolYear(selectedSchoolYear.value),
+      loadGroupsForSchoolYear(selectedSchoolYear.value),
+      loadCoursesForSchoolYearAndSemester(selectedSchoolYear.value, selectedSemester.value!),
     ]);
     availableGroups.value = groups;
     availableCourses.value = courses;
@@ -60,8 +87,8 @@ async function handleSave() {
         id: selectedStudent.value.id,
         firstName: firstName.value,
         lastName: lastName.value,
-        groups: groups.value,
-        courses: courses.value,
+        groups: undefined,
+        courses: undefined,
       };
 
       await editStudent(student, selectedSchoolYear.value!, () => {
@@ -95,13 +122,12 @@ function resetInputs() {
 
 async function loadStudent(item: Student | undefined) {
   resetInputs();
-  if (item && selectedSchoolYear.value && selectedSemester.value) {
-    const student = await loadGroupsAndCoursesFor(item!, selectedSchoolYear.value, selectedSemester.value);
-
+  if (item && item.id && item.id > 0 && selectedSchoolYear.value && selectedSemester.value) {
+    const student = await loadGroupsAndCoursesFor(item, selectedSchoolYear.value, selectedSemester.value);
     firstName.value = student?.firstName;
     lastName.value = student?.lastName;
-    groups.value = student?.groups;
-    courses.value = student?.courses;
+    item.groups = student?.groups;
+    item.courses = student?.courses;
   }
 }
 
@@ -125,6 +151,72 @@ function handleRemove() {
       }
     },
   });
+}
+
+function toggleGroupSelection(group: Group) {
+  if (group == selectedGroup.value) {
+    selectedGroup.value = undefined;
+  } else {
+    selectedGroup.value = group;
+  }
+}
+
+async function handleAddGroup() {
+  if (selectedGroup.value && selectedStudent.value) {
+    try {
+      await addGroupToStudent(selectedStudent.value, selectedGroup.value);
+      await loadStudent(selectedStudent.value);
+      selectedGroup.value = undefined;
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
+  }
+}
+
+async function handleRemoveGroup(group: Group) {
+  if (selectedStudent.value) {
+    try {
+      await removeGroupFromStudent(selectedStudent.value, group);
+      await loadStudent(selectedStudent.value);
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
+  }
+}
+
+function toggleCourseSelection(course: Course) {
+  if (course == selectedCourse.value) {
+    selectedCourse.value = undefined;
+  } else {
+    selectedCourse.value = course;
+  }
+}
+
+async function handleAddCourse() {
+  if (selectedCourse.value && selectedStudent.value) {
+    try {
+      await addCourseToStudent(selectedStudent.value, selectedCourse.value);
+      await loadStudent(selectedStudent.value);
+      selectedCourse.value = undefined;
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
+  }
+}
+
+async function handleRemoveCourse(course: Course) {
+  if (selectedStudent.value) {
+    try {
+      await removeCourseFromStudent(selectedStudent.value, course);
+      await loadStudent(selectedStudent.value);
+    } catch (e) {
+      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
+    }
+  }
+}
+
+function formatCourse(course: Course) {
+  return course.group?.name + " " + course.subject?.name;
 }
 
 watch(selectedSchoolYear, async (current) => {
@@ -171,9 +263,12 @@ watch(selectedSemester, async (current) => {
         </p>
         <p-divider />
         <custom-transition>
-          <div v-show="selectedStudent">
-            <content-editing-panel header="Schüler">
-              <div class="label-over-input">
+          <div
+            v-show="selectedStudent"
+            class="edit-area"
+          >
+            <div class="student-area">
+              <content-editing-panel header="Schüler">
                 <input-with-label
                   v-model="firstName"
                   identifier="firstNameField"
@@ -184,27 +279,111 @@ watch(selectedSemester, async (current) => {
                   identifier="lastNameField"
                   label="Nachname"
                 />
-                <auto-complete-list-with-label
-                  v-model="groups"
-                  identifier="groupField"
-                  label="Klassen"
-                  :items="availableGroups"
-                  :option="(group: Group) => group.name!"
+                <save-and-delete-buttons
+                  :show-delete-when-defined="selectedStudent"
+                  :save-action="handleSave"
+                  :delete-action="handleRemove"
+                  :grid-columns="3"
                 />
-                <auto-complete-list-with-label
-                  v-model="courses"
-                  identifier="courseField"
-                  label="Kurse"
-                  :items="[]"
-                  :option="(course: Course) => course.group?.name! + ' ' + course.subject?.name"
-                />
-              </div>
-              <save-and-delete-buttons
-                :show-delete-when-defined="selectedStudent"
-                :save-action="handleSave"
-                :delete-action="handleRemove"
-              />
-            </content-editing-panel>
+              </content-editing-panel>
+            </div>
+            <div
+              v-show="selectedStudent && selectedStudent.id && selectedStudent.id > 0"
+              class="assignments-area"
+            >
+              <p-panel header="Klassen">
+                <div class="assignment-list">
+                  <p-button
+                    v-for="group in selectedStudent?.groups"
+                    :key="group.id"
+                    outlined
+                    severity="secondary"
+                    size="small"
+                    :class="{
+                      'highlight-button': selectedGroup == group,
+                    }"
+                    :label="group.name!"
+                    @click="toggleGroupSelection(group)"
+                  />
+                </div>
+                <div class="mt-2">
+                  <label
+                    for="groupField"
+                    class="font-semibold"
+                    >Klasse hinzufügen</label
+                  >
+                  <p-input-group>
+                    <p-button
+                      icon="pi pi-check"
+                      severity="success"
+                      :disabled="!selectedGroup"
+                      @click="handleAddGroup"
+                    />
+                    <p-auto-complete
+                      v-model="selectedGroup"
+                      input-id="groupField"
+                      :option-label="(g: Group) => g.name!"
+                      :suggestions="groupList"
+                      class="w-full"
+                      force-selection
+                      @complete="(event: AutoCompleteCompleteEvent) => (groupQuery = event.query)"
+                    />
+                    <p-button
+                      icon="pi pi-times"
+                      severity="danger"
+                      :disabled="!selectedGroup"
+                      @click="handleRemoveGroup(selectedGroup!)"
+                    />
+                  </p-input-group>
+                </div>
+              </p-panel>
+              <p-panel header="Kurse">
+                <div class="assignment-list">
+                  <p-button
+                    v-for="course in selectedStudent?.courses"
+                    :key="course.id"
+                    outlined
+                    severity="secondary"
+                    size="small"
+                    :label="formatCourse(course)"
+                    :class="{
+                      'highlight-button': selectedCourse == course,
+                    }"
+                    @click="toggleCourseSelection(course)"
+                  />
+                </div>
+                <div class="mt-2">
+                  <label
+                    for="courseField"
+                    class="font-semibold"
+                    >Kurs hinzufügen</label
+                  >
+                  <p-input-group>
+                    <p-button
+                      icon="pi pi-check"
+                      severity="success"
+                      :disabled="!selectedCourse"
+                      @click="handleAddCourse"
+                    />
+                    <p-auto-complete
+                      v-model="selectedCourse"
+                      input-id="courseField"
+                      :option-label="formatCourse"
+                      :suggestions="courseList"
+                      class="w-full"
+                      force-selection
+                      @complete="(event: AutoCompleteCompleteEvent) => (courseQuery = event.query)"
+                    />
+                    <p-button
+                      icon="pi pi-times"
+                      severity="danger"
+                      :disabled="!selectedCourse"
+                      @click="handleRemoveCourse(selectedCourse!)"
+                    />
+                  </p-input-group>
+                </div>
+              </p-panel>
+            </div>
           </div>
         </custom-transition>
       </template>
@@ -213,10 +392,31 @@ watch(selectedSemester, async (current) => {
 </template>
 
 <style scoped>
-.label-over-input {
+.edit-area {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  column-gap: 0.5rem;
-  row-gap: 1.5rem;
+  grid-template-columns: repeat(12, 1fr);
+  column-gap: 1rem;
+}
+
+.student-area {
+  grid-column: 1 / span 4;
+}
+
+.assignments-area {
+  grid-column: 5 / span 8;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.assignment-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.highlight-button {
+  background-color: var(--p-highlight-focus-background);
+  color: var(--p-highlight-color);
 }
 </style>

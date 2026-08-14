@@ -10,7 +10,11 @@ import {
   loadGroupsBySchoolYear,
   updateStudent,
 } from "@/components/students/StudentGateway";
+import { assignStudentToGroup, unassignStudentFromGroup } from "@/components/groups/GroupGateway";
+import { assignStudentToCourse, unassignStudentFromCourse } from "@/components/courses/CourseGateway";
 import type { Student } from "@/components/students/Student";
+import type { Group } from "@/components/groups/Group";
+import type { Course } from "@/components/courses/Course";
 
 const students = ref<Student[]>([]);
 
@@ -76,6 +80,38 @@ async function loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semes
   return await loadCoursesBySchoolYearAndSemester(schoolYear, semester);
 }
 
+async function addGroupToStudent(student: Student, group: Group) {
+  try {
+    await assignStudentToGroup(student, group);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht zur Klasse hinzugefügt werden.", { cause: e });
+  }
+}
+
+async function removeGroupFromStudent(student: Student, group: Group) {
+  try {
+    await unassignStudentFromGroup(student, group);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht aus der Klasse entfernt werden.", { cause: e });
+  }
+}
+
+async function addCourseToStudent(student: Student, course: Course) {
+  try {
+    await assignStudentToCourse(student, course);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht zum Kurs hinzugefügt werden.", { cause: e });
+  }
+}
+
+async function removeCourseFromStudent(student: Student, course: Course) {
+  try {
+    await unassignStudentFromCourse(student, course);
+  } catch (e) {
+    throw new Error("Schüler konnte nicht aus dem Kurs entfernt werden.", { cause: e });
+  }
+}
+
 export function useStudents() {
   return {
     students,
@@ -87,5 +123,9 @@ export function useStudents() {
     removeStudent,
     loadGroupsForSchoolYear,
     loadCoursesForSchoolYearAndSemester,
+    addGroupToStudent,
+    removeGroupFromStudent,
+    addCourseToStudent,
+    removeCourseFromStudent,
   };
 }
