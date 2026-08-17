@@ -95,7 +95,7 @@ describe("createPerformance", () => {
       type: 6, courseId: 5, date: coreDataToUnix(0), weight: undefined!, title: "KA3",
     };
     const students: EvaluatedStudent[] = [
-      { student: { id: 10, firstName: "A", lastName: "B", groups: [], courses: [] }, grades: {} },
+      { student: { id: 10, firstName: "A", lastName: "B", groups: [], courses: [] }, grades: [] },
     ];
 
     const { createPerformance } = useEvaluations();

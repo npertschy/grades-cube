@@ -67,24 +67,40 @@ describe("loadCoursesForSchoolYearAndSemester", () => {
 });
 
 describe("loadStudentsForCourse", () => {
-  it("parses the JSON GRADES column into a grades record", async () => {
-    const gradesJson = JSON.stringify({
-      "1": { GRADEID: 10, VALUE: 2, TITLE: "Test", TYPE: "written" },
-    });
+  it("groups flat rows into students with a grades array", async () => {
     mockedSelect.mockResolvedValueOnce([
-      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADES: gradesJson },
+      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADEID: 10, GRADEVALUE: "2", PERFORMANCETITLE: "Test", PERFORMANCETYPE: 6 },
+      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADEID: 11, GRADEVALUE: "+", PERFORMANCETITLE: "Oral", PERFORMANCETYPE: 0 },
     ]);
 
     const result = await loadStudentsForCourse(course);
 
     expect(result).toHaveLength(1);
     expect(result[0].student).toMatchObject({ id: 20, firstName: "Max", lastName: "Muster" });
-    expect(result[0].grades["1"]).toMatchObject({
+    expect(result[0].grades).toHaveLength(2);
+    expect(result[0].grades[0]).toMatchObject({
       id: 10,
-      value: 2,
+      value: "2",
       performanceTitle: "Test",
-      performanceType: "written",
+      performanceType: 6,
     });
+    expect(result[0].grades[1]).toMatchObject({
+      id: 11,
+      value: "+",
+      performanceTitle: "Oral",
+      performanceType: 0,
+    });
+  });
+
+  it("handles students with no grades (null GRADEID)", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADEID: null, GRADEVALUE: null, PERFORMANCETITLE: null, PERFORMANCETYPE: null },
+    ]);
+
+    const result = await loadStudentsForCourse(course);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].grades).toHaveLength(0);
   });
 });
 

@@ -46,18 +46,16 @@ function columnStyle(performance: Performance) {
 function handleColumnSelection(id: number) {
   if (selectedColumn.value === id) {
     selectedColumn.value = undefined;
-    // emit deselection
     emit("selected-column", undefined);
   } else {
     selectedColumn.value = id;
-    // emit new selected column id
     emit("selected-column", id);
   }
 }
 
 async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
-  const performanceId = event.field;
-  const grade: Grade = event.newData.grades[performanceId];
+  const colIndex = Number(event.field);
+  const grade: Grade = event.newData.grades[colIndex];
   const studentIndex = event.index;
   emit("grade-changed", { grade, studentIndex });
 }
@@ -81,10 +79,6 @@ const gradeValidation = computed(() =>
     performances.map(p => [p.id, allowedGradesByPerformance(p)])
   )
 )
-
-function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined {
-  return data.grades[field];
-}
 </script>
 
 <template>
@@ -119,9 +113,9 @@ function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined
       </template>
     </p-column>
     <p-column
-      v-for="performance in performances"
+      v-for="(performance, colIndex) in performances"
       :key="performance.id"
-      :field="performance.performanceId"
+      :field="`${colIndex}`"
       :style="columnStyle(performance)"
     >
       <template #header>
@@ -133,17 +127,17 @@ function gradeForField(data: EvaluatedStudent, field: string): Grade | undefined
           {{ performance.title }}
         </span>
       </template>
-      <template #body="{ data, column }">
+      <template #body="{ data }">
         <span :class="selectedColumn === performance.id ? 'bold-text' : ''">
-          {{ gradeForField(data, column.props.field as string)?.value }}
+          {{ (data as EvaluatedStudent).grades[colIndex]?.value }}
         </span>
       </template>
       <template
         v-if="performance.editable"
-        #editor="{ data, column }"
+        #editor="{ data }"
       >
         <p-input-text
-          v-model="gradeForField(data, column.props.field as string)!.value"
+          v-model="(data as EvaluatedStudent).grades[colIndex]!.value"
           v-keyfilter="gradeValidation[performance.id!]"
           style="width: 100%; padding-top: 3px; padding-bottom: 3px"
         />

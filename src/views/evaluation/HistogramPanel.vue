@@ -66,8 +66,9 @@ const options = computed(() => {
 
 function chartDataForOralPerformance(performance: Performance) {
   const labels = ["++", "+", "0", "-", "--", "f"];
+  const colIndex = performances.findIndex((p) => p.id === performance.id);
   const grades = students
-    .map((student) => student.grades[performance.performanceId!]?.value)
+    .map((student) => student.grades[colIndex]?.value)
     .filter((grade) => grade !== undefined)
     .filter((grade) => grade !== null)
     .filter((grade) => grade != "") as string[];
@@ -99,8 +100,9 @@ function chartDataForOralPerformance(performance: Performance) {
 }
 
 function chartDataForNonOralPerformance(performance: Performance) {
+  const colIndex = performances.findIndex((p) => p.id === performance.id);
   const grades = students
-    .map((student) => student.grades[performance.performanceId!]?.value)
+    .map((student) => student.grades[colIndex]?.value)
     .filter((grade) => grade !== undefined)
     .filter((grade) => grade !== null)
     .filter((grade) => grade != "")

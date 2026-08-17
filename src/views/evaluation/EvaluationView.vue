@@ -210,14 +210,14 @@ async function handleGradeChanged(grade: Grade, studentIndex: number) {
 
     const sum = Object.entries(gradesFrequency).reduce((acc, [grade, count]) => {
       const gradeIndex = possibleOralGrades.indexOf(grade);
-      return acc + (gradeIndex + 1) * count; // zero base index
+      return acc + (gradeIndex + 1) * count;
     }, 0);
 
     const indexOfRecommendation = sum / oralGradesOfStudent.length;
 
-    const recommendationPerformance = performances.value.find((performance) => performance.type === 1);
-    if (recommendationPerformance && recommendationPerformance.performanceId) {
-      const recommendationGrade = student.grades[recommendationPerformance.performanceId];
+    const recommendationPerformanceIndex = performances.value.findIndex((performance) => performance.type === 1);
+    if (recommendationPerformanceIndex >= 0) {
+      const recommendationGrade = student.grades[recommendationPerformanceIndex];
       if (recommendationGrade) {
         recommendationGrade.value = possibleOralGrades[Math.round(indexOfRecommendation - 1)];
         await updateGrade(recommendationGrade);
@@ -234,13 +234,13 @@ async function handleGradeChanged(grade: Grade, studentIndex: number) {
   }
 }
 
-function filterGradesByPerformanceType(grades: Record<string, Grade>, performanceType: number) {
-  return Object.values(grades)
-    .filter((value) => value.performanceType === performanceType)
-    .filter((value) => value.value !== undefined)
-    .filter((value) => value.value !== null)
-    .filter((value) => value.value !== "")
-    .map((value) => value.value)
+function filterGradesByPerformanceType(grades: Grade[], performanceType: number) {
+  return grades
+    .filter((grade) => grade.performanceType === performanceType)
+    .filter((grade) => grade.value !== undefined)
+    .filter((grade) => grade.value !== null)
+    .filter((grade) => grade.value !== "")
+    .map((grade) => grade.value)
     .filter((value) => value !== "f");
 }
 
@@ -251,9 +251,9 @@ async function updateOverallGradeByPerformanceType(
 ) {
   const average = calculateAverageGrade(student.grades, performanceType);
 
-  const overallPerformance = performances.value.find((performance) => performance.type === overallPerformanceType);
-  if (overallPerformance && overallPerformance.performanceId) {
-    const overallGrade = student.grades[overallPerformance.performanceId];
+  const overallPerformanceIndex = performances.value.findIndex((performance) => performance.type === overallPerformanceType);
+  if (overallPerformanceIndex >= 0) {
+    const overallGrade = student.grades[overallPerformanceIndex];
     if (overallGrade) {
       overallGrade.value = Math.floor(average).toString();
       await updateGrade(overallGrade);
@@ -261,7 +261,7 @@ async function updateOverallGradeByPerformanceType(
   }
 }
 
-function calculateAverageGrade(grades: Record<string, Grade>, performanceType: number) {
+function calculateAverageGrade(grades: Grade[], performanceType: number) {
   const filteredGrades = filterGradesByPerformanceType(grades, performanceType);
   const sum = filteredGrades.reduce((acc, grade) => acc + parseInt(grade), 0);
   return sum / filteredGrades.length;

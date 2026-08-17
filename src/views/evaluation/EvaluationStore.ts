@@ -69,7 +69,7 @@ async function loadStudentsForGroup(group: Group): Promise<EvaluatedStudent[]> {
   return students.map((student): EvaluatedStudent => {
     return {
       student: student,
-      grades: {},
+      grades: [],
     };
   });
 }

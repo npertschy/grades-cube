@@ -1,7 +1,7 @@
 import type { Course } from "@/components/courses/Course";
 import type { FullCourseEntity } from "@/components/courses/CourseEntity";
 import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
-import type { EvaluatedStudentEntity, GradeEntity } from "@/components/evaluations/EvaluatedStudentEntity";
+import type { EvaluatedStudentEntity } from "@/components/evaluations/EvaluatedStudentEntity";
 import type { Performance } from "@/components/evaluations/Performance";
 import type { PerformanceEntity } from "@/components/evaluations/PerformanceEntity";
 import type { Group } from "@/components/groups/Group";
@@ -50,52 +50,51 @@ export async function loadCoursesForSchoolYearAndSemester(
 }
 
 export async function loadStudentsForCourse(course: Course): Promise<EvaluatedStudent[]> {
-  const students: EvaluatedStudentEntity[] = await db.select(
+  const rows: EvaluatedStudentEntity[] = await db.select(
     `
       SELECT
-       ZSTUDENT.Z_PK,
-       ZSTUDENT.ZFIRSTNAME,
-       ZSTUDENT.ZLASTNAME,
-       json_group_object(
-         ZPERFORMANCE.Z_PK,
-         json_object(
-           'GRADEID', ZGRADE.Z_PK,
-           'VALUE', ZGRADE.ZVALUE,
-           'TITLE', ZPERFORMANCE.ZTITLE,
-            'TYPE', ZPERFORMANCE.ZTYPE
-         )
-      ) AS GRADES
+        ZSTUDENT.Z_PK,
+        ZSTUDENT.ZFIRSTNAME,
+        ZSTUDENT.ZLASTNAME,
+        ZGRADE.Z_PK AS GRADEID,
+        ZGRADE.ZVALUE AS GRADEVALUE,
+        ZPERFORMANCE.ZTITLE AS PERFORMANCETITLE,
+        ZPERFORMANCE.ZTYPE AS PERFORMANCETYPE
       FROM ZSTUDENT
       INNER JOIN Z_1STUDENTS ON ZSTUDENT.Z_PK = Z_1STUDENTS.Z_6STUDENTS AND Z_1STUDENTS.Z_1COURSES = $1
       LEFT JOIN ZPERFORMANCE ON ZPERFORMANCE.ZCOURSE = $1
       LEFT JOIN ZGRADE ON ZGRADE.ZSTUDENT = ZSTUDENT.Z_PK AND ZGRADE.ZPERFORMANCE = ZPERFORMANCE.Z_PK
-      GROUP BY ZSTUDENT.Z_PK, ZSTUDENT.ZFIRSTNAME, ZSTUDENT.ZLASTNAME;
+      ORDER BY ZSTUDENT.ZLASTNAME, ZSTUDENT.ZFIRSTNAME, ZPERFORMANCE.ZTYPE, ZPERFORMANCE.ZSORTORDER
       `,
     [course.id],
   );
 
-  return students.map((student): EvaluatedStudent => {
-    const grades: Record<string, Grade> = {};
-    const studentGrades: { [key: string]: GradeEntity } = JSON.parse(student.GRADES);
-    Object.entries(studentGrades).forEach(([performanceId, gradeOfPerformance]) => {
-      grades[performanceId] = {
-        id: gradeOfPerformance.GRADEID,
-        value: gradeOfPerformance.VALUE,
-        performanceTitle: gradeOfPerformance.TITLE,
-        performanceType: gradeOfPerformance.TYPE,
+  const studentsMap = new Map<number, EvaluatedStudent>();
+  for (const row of rows) {
+    let student = studentsMap.get(row.Z_PK);
+    if (!student) {
+      student = {
+        student: {
+          id: row.Z_PK,
+          firstName: row.ZFIRSTNAME,
+          lastName: row.ZLASTNAME,
+          groups: [],
+          courses: [],
+        },
+        grades: [],
       };
-    });
-    return {
-      student: {
-        id: student.Z_PK,
-        firstName: student.ZFIRSTNAME,
-        lastName: student.ZLASTNAME,
-        groups: [],
-        courses: [],
-      },
-      grades: grades,
-    };
-  });
+      studentsMap.set(row.Z_PK, student);
+    }
+    if (row.GRADEID != null) {
+      student.grades.push({
+        id: row.GRADEID,
+        value: row.GRADEVALUE,
+        performanceTitle: row.PERFORMANCETITLE,
+        performanceType: row.PERFORMANCETYPE,
+      });
+    }
+  }
+  return [...studentsMap.values()];
 }
 
 export async function loadPerformancesForCourse(course: Course): Promise<Performance[]> {
