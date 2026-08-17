@@ -33,6 +33,16 @@ vi.mock("@/components/students/StudentGateway", () => ({
   deleteStudentInSchoolYear: mockedDeleteStudent,
 }));
 
+vi.mock("@/components/courses/CourseGateway", () => ({
+  assignStudentToCourse: vi.fn(),
+  unassignStudentFromCourse: vi.fn(),
+}));
+
+vi.mock("@/components/groups/GroupGateway", () => ({
+  assignStudentToGroup: vi.fn(),
+  unassignStudentFromGroup: vi.fn(),
+}));
+
 const schoolYear = {
   id: 1,
   start: undefined,
