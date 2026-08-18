@@ -31,8 +31,10 @@ function columnStyle(performance: Performance) {
     2: "var(--p-performance-oral-background)",
     3: "var(--p-performance-special-background)",
     4: "var(--p-performance-special-background)",
+    5: "var(--p-performance-special-background)",
     6: "var(--p-performance-test-background)",
     7: "var(--p-performance-test-background)",
+    8: "var(--p-performance-test-background)",
   };
 
   return {
@@ -62,6 +64,7 @@ async function handleGradeChanged(event: DataTableCellEditCompleteEvent) {
 
 const gradePatterns: Record<number, RegExp> = {
   0: /^(?:\+\+|\+|0|-|--|f)$/,
+  2: /^(?:[\d]|1[0-5])$/,
   3: /^(?:[\d]|1[0-5])$/,
   6: /^(?:[\d]|1[0-5])$/,
 };

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import { useEvaluations } from "@/views/evaluation/EvaluationStore";
+import { computeATOverall, computeFinalOverall, computeOralSuggestion, computeWeightedOverall } from "@/components/evaluations/GradeCalculation";
 import { computed, onMounted, ref, watch } from "vue";
 import PTree, { type TreeExpandedKeys, type TreeSelectionKeys } from "primevue/tree";
 import PPanel from "primevue/panel";
@@ -9,7 +10,7 @@ import PDialog from "primevue/dialog";
 import PInputText from "primevue/inputtext";
 import type { TreeNode } from "primevue/treenode";
 import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
-import type { Performance } from "@/components/evaluations/Performance";
+import { PerformanceType, type Performance } from "@/components/evaluations/Performance";
 import EvaluationTable from "./EvaluationTable.vue";
 import GradeWeightsView from "./GradeWeightsView.vue";
 import TestGradeCalculator from "./TestGradeCalculator.vue";
@@ -35,7 +36,7 @@ const selectedNode = ref<TreeNode>();
 
 const selectedColumn = ref<number>();
 
-const typeOfNewPerformance = ref<number>(-1);
+const typeOfNewPerformance = ref<PerformanceType>();
 const openAddPerformanceDialog = ref(false);
 const titleOfPerformance = ref("");
 
@@ -114,11 +115,11 @@ const addPerformanceTitle = computed(() => {
   }
 
   switch (typeOfNewPerformance.value) {
-    case 0:
+    case PerformanceType.ORAL:
       return "Neue mündliche Leistung anlegen";
-    case 3:
+    case PerformanceType.SPECIAL:
       return "Neue spezielle Leistung anlegen";
-    case 6:
+    case PerformanceType.WRITTEN:
       return "Neue schriftliche Leistung anlegen";
     default:
       return "";
@@ -139,7 +140,7 @@ async function handleSavePerformance() {
     );
     const performance: Performance = {
       title: titleOfPerformance.value,
-      type: typeOfNewPerformance.value,
+      type: typeOfNewPerformance.value!,
       editable: true,
       sortOrder: existingPerformances.length,
       date: new Date(),
@@ -152,7 +153,7 @@ async function handleSavePerformance() {
   }
   openAddPerformanceDialog.value = false;
   titleOfPerformance.value = "";
-  typeOfNewPerformance.value = -1;
+  typeOfNewPerformance.value = undefined;
   reloadCourse();
 }
 
@@ -192,79 +193,23 @@ async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) 
   });
 }
 
-const possibleOralGrades = ["++", "+", "0", "-", "--", "f"];
-
 async function handleGradeChanged(grade: Grade, studentIndex: number) {
   await updateGrade(grade);
+  const student = students.value[studentIndex];
 
-  if (grade.performanceType === 0) {
-    const student = students.value[studentIndex];
-    const oralGradesOfStudent = filterGradesByPerformanceType(student.grades, 0);
-    const gradesFrequency = oralGradesOfStudent.reduce(
-      (acc, grade) => {
-        acc[grade] = (acc[grade] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    const sum = Object.entries(gradesFrequency).reduce((acc, [grade, count]) => {
-      const gradeIndex = possibleOralGrades.indexOf(grade);
-      return acc + (gradeIndex + 1) * count;
-    }, 0);
-
-    const indexOfRecommendation = sum / oralGradesOfStudent.length;
-
-    const recommendationPerformanceIndex = performances.value.findIndex((performance) => performance.type === 1);
-    if (recommendationPerformanceIndex >= 0) {
-      const recommendationGrade = student.grades[recommendationPerformanceIndex];
-      if (recommendationGrade) {
-        recommendationGrade.value = possibleOralGrades[Math.round(indexOfRecommendation - 1)];
-        await updateGrade(recommendationGrade);
-      }
-    }
-  } else if (grade.performanceType === 3) {
-    const student = students.value[studentIndex];
-
-    await updateOverallGradeByPerformanceType(student, 3, 4);
-  } else if (grade.performanceType === 6) {
-    const student = students.value[studentIndex];
-
-    await updateOverallGradeByPerformanceType(student, 6, 7);
+  if (grade.performanceType === PerformanceType.ORAL) {
+    await computeOralSuggestion(student, performances.value, updateGrade);
+  } else if (grade.performanceType === PerformanceType.ORAL_OVERALL) {
+    await computeATOverall(student, performances.value, updateGrade);
+    await computeFinalOverall(student, performances.value, updateGrade);
+  } else if (grade.performanceType === PerformanceType.SPECIAL) {
+    await computeWeightedOverall(student, performances.value, PerformanceType.SPECIAL, PerformanceType.SPECIAL_OVERALL, updateGrade);
+    await computeATOverall(student, performances.value, updateGrade);
+    await computeFinalOverall(student, performances.value, updateGrade);
+  } else if (grade.performanceType === PerformanceType.WRITTEN) {
+    await computeWeightedOverall(student, performances.value, PerformanceType.WRITTEN, PerformanceType.WRITTEN_OVERALL, updateGrade);
+    await computeFinalOverall(student, performances.value, updateGrade);
   }
-}
-
-function filterGradesByPerformanceType(grades: Grade[], performanceType: number) {
-  return grades
-    .filter((grade) => grade.performanceType === performanceType)
-    .filter((grade) => grade.value !== undefined)
-    .filter((grade) => grade.value !== null)
-    .filter((grade) => grade.value !== "")
-    .map((grade) => grade.value)
-    .filter((value) => value !== "f");
-}
-
-async function updateOverallGradeByPerformanceType(
-  student: EvaluatedStudent,
-  performanceType: number,
-  overallPerformanceType: number,
-) {
-  const average = calculateAverageGrade(student.grades, performanceType);
-
-  const overallPerformanceIndex = performances.value.findIndex((performance) => performance.type === overallPerformanceType);
-  if (overallPerformanceIndex >= 0) {
-    const overallGrade = student.grades[overallPerformanceIndex];
-    if (overallGrade) {
-      overallGrade.value = Math.floor(average).toString();
-      await updateGrade(overallGrade);
-    }
-  }
-}
-
-function calculateAverageGrade(grades: Grade[], performanceType: number) {
-  const filteredGrades = filterGradesByPerformanceType(grades, performanceType);
-  const sum = filteredGrades.reduce((acc, grade) => acc + parseInt(grade), 0);
-  return sum / filteredGrades.length;
 }
 
 function sidePanelButtonStyle(selected: boolean) {
@@ -308,7 +253,7 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
             class="new-oral-performance"
             style="color: var(--p-performance-oral-text)"
             @click="
-              typeOfNewPerformance = 0;
+              typeOfNewPerformance = PerformanceType.ORAL;
               openAddPerformanceDialog = true;
             "
           >
@@ -320,7 +265,7 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
             class="new-special-performance"
             style="color: var(--p-performance-special-text)"
             @click="
-              typeOfNewPerformance = 3;
+              typeOfNewPerformance = PerformanceType.SPECIAL;
               openAddPerformanceDialog = true;
             "
           >
@@ -332,7 +277,7 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
             class="new-test-performance"
             style="color: var(--p-performance-test-text)"
             @click="
-              typeOfNewPerformance = 6;
+              typeOfNewPerformance = PerformanceType.WRITTEN;
               openAddPerformanceDialog = true;
             "
           >

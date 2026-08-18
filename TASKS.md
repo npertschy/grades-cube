@@ -21,8 +21,8 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - 🐞 `[P3]` Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
 - 🐞 `[P2]` **Drop `Z_3SEMESTERS`** — the app now owns the DB (see ARCHITECTURE §2/§2.3). (1) Add the migration runner if not present; (2) grep gateways/query libs for `Z_3SEMESTERS` and remove any reads/writes; (3) `DROP TABLE Z_3SEMESTERS` in a forward migration; (4) update ARCHITECTURE §2.2. Groups remain school-year-scoped via `Z_3YEARS`.
 - ✅ `[P1]` **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
-- ⬜ `[P2]` No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
-- ⬜ `[P2]` No delete-confirmation dialogs anywhere (destructive actions fire immediately)
+- ✅ `[P2]` No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
+- ✅ `[P2]` No delete-confirmation dialogs anywhere (destructive actions fire immediately)
 
 ---
 
@@ -123,10 +123,10 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ **Oral suggestion** (type 1): after each oral-grade entry (type 0), re-compute the frequency-weighted average across all oral grades for that student and update the suggestion performance automatically
 - ✅ **Special overall grade** (type 4): updated from special performance grades (type 3)
 - ✅ **Written overall grade** (type 7): updated from written/test performance grades (type 6)
-- ⬜ `[P1]` **Oral overall column** (type 2): editable numeric (0–15) column; teacher enters a grade informed by the symbolic suggestion (type 1). Must be included in default performance creation.
-- ⬜ `[P1]` **AT overall grade** (type 5): weighted combination of oral overall (type 2) and special overall (type 4) using oral/special weights
-- ⬜ `[P1]` **Final overall grade** (type 8): weighted combination of AT overall (type 5) and written overall (type 7) using AT/written weights
-- 🐞 `[P1]` **Review auto-calc event chain**: verify that editing type 2 triggers type 5 recomputation, and that type 5/type 7 changes trigger type 8 recomputation. Current event-based approach via child component may not bubble correctly through multiple levels.
+- ✅ `[P1]` **Oral overall column** (type 2): editable numeric (0–15) column; teacher enters a grade informed by the symbolic suggestion (type 1). Must be included in default performance creation.
+- ✅ `[P1]` **AT overall grade** (type 5): weighted combination of oral overall (type 2) and special overall (type 4) using oral/special weights
+- ✅ `[P1]` **Final overall grade** (type 8): weighted combination of AT overall (type 5) and written overall (type 7) using AT/written weights
+- ✅ `[P1]` **Review auto-calc event chain**: verify that editing type 2 triggers type 5 recomputation, and that type 5/type 7 changes trigger type 8 recomputation. Current event-based approach via child component may not bubble correctly through multiple levels.
 
 ### 3.5 Grade Weights (`GradeWeightsView`)
 
