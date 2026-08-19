@@ -1,25 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import PInputText from "primevue/inputtext";
+import PPanel from "primevue/panel";
 import PDataTable from "primevue/datatable";
 import PColumn from "primevue/column";
-import PPanel from "primevue/panel";
+import GradeCalculatorForm from "./GradeCalculatorForm.vue";
+import GradeResultLabel from "./GradeResultLabel.vue";
 
-const totalPoints = ref<string | null>(null);
-const achievedPoints = ref<string | null>(null);
-
-// Standard German 15-point system mapping
-type GradeRow = {
-  index: number;
-  upperPercent: number;
-  lowetPercent: number;
-  upper: number;
-  lower: number;
-  gradePoint: number;
-  grade: string;
-};
-
-const selectedRow = ref<GradeRow | null>(null);
+const totalPoints = ref<number | null>(null);
+const achievedPoints = ref<number | null>(null);
+const grammarPoints = ref<number | null>(null);
+const includeGrammar = ref(false);
 
 const gradeMapping = [
   { upperPercent: 100, lowetPercent: 95, gradePoint: 15, grade: "1+" },
@@ -40,136 +30,88 @@ const gradeMapping = [
   { upperPercent: 24, lowetPercent: 0, gradePoint: 0, grade: "6" },
 ];
 
-const gradeTable = ref<GradeRow[]>([]);
-
-function computeLimits() {
-  if (!totalPoints.value || Number(totalPoints.value) <= 0) {
-    gradeTable.value = [];
-    return;
-  }
-
-  const rows: GradeRow[] = [];
-  const total = Number(totalPoints.value);
-  for (let i = 0; i < gradeMapping.length; i++) {
-    const lower = Math.floor(total * (gradeMapping[i].lowetPercent / 100));
-    const upper = Math.floor(total * (gradeMapping[i].upperPercent / 100));
-    rows.push({
-      index: i,
-      upperPercent: gradeMapping[i].upperPercent,
-      lowetPercent: gradeMapping[i].lowetPercent,
-      upper: upper < 0 ? 0 : upper,
-      lower: lower < 0 ? 0 : lower,
-      gradePoint: gradeMapping[i].gradePoint,
-      grade: gradeMapping[i].grade,
-    });
-  }
-  // Ensure the lowest row lower limit is 0
+const gradeTable = computed(() => {
+  if (!totalPoints.value || totalPoints.value <= 0) return [];
+  const total = totalPoints.value;
+  const rows = gradeMapping.map((m, index) => ({
+    index,
+    upperPercent: m.upperPercent,
+    lowetPercent: m.lowetPercent,
+    upper: Math.max(0, Math.floor(total * (m.upperPercent / 100))),
+    lower: Math.max(0, Math.floor(total * (m.lowetPercent / 100))),
+    gradePoint: m.gradePoint,
+    grade: m.grade,
+  }));
   rows[rows.length - 1].lower = 0;
-  gradeTable.value = rows;
-}
+  return rows;
+});
 
-function onPointsChange() {
-  if (achievedPoints.value !== null && Number(achievedPoints.value) && totalPoints.value && Number(totalPoints.value)) {
-    const points = Number(achievedPoints.value);
-    const matchingRow = gradeTable.value.find((row) => row.upper >= points! && points >= row.lower);
-    if (matchingRow) {
-      selectedRow.value = matchingRow;
-    } else {
-      selectedRow.value = null;
-    }
-  } else {
-    selectedRow.value = null;
-  }
-}
+// Single source of truth: the effective points used for lookup
+const effectivePoints = computed(() => {
+  if (achievedPoints.value === null) return null;
+  const grammarAdjustment = includeGrammar.value ? (grammarPoints.value ?? 0) : 0;
+  return achievedPoints.value + grammarAdjustment;
+});
 
-const achievedPointsSummary = computed(() => {
-  if (selectedRow.value) {
-    return `Notenpunkte: ${selectedRow.value.gradePoint}, Note: ${selectedRow.value.grade}`;
-  }
-
-  return "";
+const matchingRow = computed(() => {
+  if (effectivePoints.value === null) return null;
+  const points = Math.floor(effectivePoints.value!);
+  return gradeTable.value.find((row) => row.upper >= points && points >= row.lower) ?? null;
 });
 </script>
 
 <template>
   <p-panel
     header="Notenrechner"
-    style="max-width: 500px"
-    :pt="{ content: { style: 'padding: 6px' } }"
+    style="width: 100%"
+    :pt="{ content: { style: 'padding: 0.75rem' } }"
   >
-    <div>
-      <div class="number-with-label">
-        <label for="totalPoints">Gesamt:</label>
-        <p-input-text
-          v-model="totalPoints"
-          input-id="totalPoints"
-          inputmode="numeric"
-          :min="0"
-          :max="1000"
-          @update:model-value="computeLimits"
-        />
-      </div>
-      <div class="number-with-label">
-        <label for="achievedPoints">Erreicht:</label>
-        <p-input-text
-          v-model="achievedPoints"
-          input-id="achievedPoints"
-          inputmode="numeric"
-          :min="0"
-          :max="totalPoints ? Number(totalPoints) : 0"
-          @update:model-value="onPointsChange"
-        />
-      </div>
-      <div class="number-with-label">
-        <p>Ergibt:</p>
-        <p style="width: 200px">
-          {{ achievedPointsSummary }}
-        </p>
-      </div>
-      <p-data-table
-        v-model:selection="selectedRow"
-        :value="gradeTable"
-        size="small"
-        show-gridlines
-        row-hover
-        selection-mode="single"
-        data-key="index"
-      >
-        <p-column
-          field="upperPercent"
-          header="Von (%)"
-        />
-        <p-column
-          field="lowetPercent"
-          header="Bis (%)"
-        />
-        <p-column
-          field="upper"
-          header="Von"
-        />
-        <p-column
-          field="lower"
-          header="Bis"
-        />
-        <p-column
-          field="gradePoint"
-          header="Noten-punkte"
-        />
-        <p-column
-          field="grade"
-          header="Note"
-        />
-      </p-data-table>
-    </div>
+    <grade-calculator-form
+      v-model:total-points="totalPoints"
+      v-model:achieved-points="achievedPoints"
+      v-model:grammar-points="grammarPoints"
+      v-model:include-grammar="includeGrammar"
+    />
+
+    <grade-result-label
+      :achieved-points="effectivePoints"
+      :grade-point="matchingRow?.gradePoint ?? null"
+      :grade="matchingRow?.grade ?? null"
+    />
+
+    <p-data-table
+      :value="gradeTable"
+      :selection="matchingRow"
+      size="small"
+      show-gridlines
+      row-hover
+      selection-mode="single"
+      data-key="index"
+    >
+      <p-column
+        field="upperPercent"
+        header="Von (%)"
+      />
+      <p-column
+        field="lowetPercent"
+        header="Bis (%)"
+      />
+      <p-column
+        field="upper"
+        header="Von"
+      />
+      <p-column
+        field="lower"
+        header="Bis"
+      />
+      <p-column
+        field="gradePoint"
+        header="Noten-punkte"
+      />
+      <p-column
+        field="grade"
+        header="Note"
+      />
+    </p-data-table>
   </p-panel>
 </template>
-
-<style scoped>
-.number-with-label {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-</style>

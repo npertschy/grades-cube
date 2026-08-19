@@ -145,8 +145,8 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 
 - ✅ Total-points input → builds full German 15-point scale table with per-grade point thresholds
 - ✅ Achieved-points input → highlights matching row and shows grade summary
-- 🐞 `[P3]` Typo `lowetPercent` throughout (should be `lowerPercent`) — cosmetic but inconsistent
-- ⬜ `[P3]` **Rechtschreibung option**: checkbox toggle. When unchecked: input total points + achieved points as today. When checked: input total points → 10% is reserved for Rechtschreibung (e.g. 60 total → 6 Rechtschreibung points, 54 content points). User enters Rechtschreibung points (0–6) and content points (0–54) separately. Final grade is based on combined points (Rechtschreibung + content) looked up against the full total-points scale.
+- ✅ `[P3]` Typo `lowetPercent` throughout (should be `lowerPercent`) — cosmetic but inconsistent
+- ✅ `[P3]` **Rechtschreibung option**: checkbox toggle. When unchecked: input total points + achieved points as today. When checked: input total points → 10% is reserved for Rechtschreibung (e.g. 60 total → 6 Rechtschreibung points, 54 content points). User enters Rechtschreibung points (0–6) and content points (0–54) separately. Final grade is based on combined points (Rechtschreibung + content) looked up against the full total-points scale.
 
 ### 3.7 Histogram (`HistogramPanel`)
 

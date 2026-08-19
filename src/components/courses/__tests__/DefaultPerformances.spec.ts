@@ -105,10 +105,10 @@ describe("insertDefaultPerformancesWithGrades", () => {
       const p = params as unknown[];
       weightByType[p[5] as number] = p[8] as number;
     }
-    expect(weightByType[2]).toBe(70);  // oral weight in AT
-    expect(weightByType[4]).toBe(30);  // special weight in AT
-    expect(weightByType[5]).toBe(70);  // AT weight in final
-    expect(weightByType[7]).toBe(30);  // written weight in final
+    expect(weightByType[2]).toBe(0.7);  // oral weight in AT
+    expect(weightByType[4]).toBe(0.3);  // special weight in AT
+    expect(weightByType[5]).toBe(0.7);  // AT weight in final
+    expect(weightByType[7]).toBe(0.3);  // written weight in final
   });
 
   it("applies Sek II weights (AT=50, written=50) for groupType 2", async () => {
@@ -122,8 +122,8 @@ describe("insertDefaultPerformancesWithGrades", () => {
       const p = params as unknown[];
       weightByType[p[5] as number] = p[8] as number;
     }
-    expect(weightByType[5]).toBe(50);
-    expect(weightByType[7]).toBe(50);
+    expect(weightByType[5]).toBe(0.5);
+    expect(weightByType[7]).toBe(0.5);
   });
 
   it("links every ZGRADE row to the correct performance and student", async () => {
@@ -178,7 +178,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
       const p = params as unknown[];
       weightByType[p[5] as number] = p[8] as number;
     }
-    expect(weightByType[5]).toBe(70);
-    expect(weightByType[7]).toBe(30);
+    expect(weightByType[5]).toBe(0.7);
+    expect(weightByType[7]).toBe(0.3);
   });
 });
