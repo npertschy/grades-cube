@@ -13,12 +13,12 @@ type DefaultPerformanceDef = {
 const DEFAULT_PERFORMANCE_DEFS: DefaultPerformanceDef[] = [
   { type: 0, title: "Mündliche Note",        editable: 1, weight: () => 0 },
   { type: 1, title: "Tendenz",               editable: 0, weight: () => 0 },
-  { type: 2, title: "Gesamtnote Mündlich",   editable: 1, weight: () => 70 },
-  { type: 3, title: "Sonstige Note",          editable: 1, weight: () => 100 },
-  { type: 4, title: "Gesamtnote Sonstige",   editable: 0, weight: () => 30 },
-  { type: 5, title: "Gesamtnote AT",          editable: 0, weight: (gt) => gt === 2 ? 50 : 70 },
-  { type: 6, title: "Klausurnote",            editable: 1, weight: () => 100 },
-  { type: 7, title: "Gesamtnote Klausuren",  editable: 0, weight: (gt) => gt === 2 ? 50 : 30 },
+  { type: 2, title: "Gesamtnote Mündlich",   editable: 1, weight: () => 0.7 },
+  { type: 3, title: "Sonstige Note",          editable: 1, weight: () => 0 },
+  { type: 4, title: "Gesamtnote Sonstige",   editable: 0, weight: () => 0.3 },
+  { type: 5, title: "Gesamtnote AT",          editable: 0, weight: (gt) => gt === 2 ? 0.5 : 0.7 },
+  { type: 6, title: "Klausurnote",            editable: 1, weight: () => 0 },
+  { type: 7, title: "Gesamtnote Klausuren",  editable: 0, weight: (gt) => gt === 2 ? 0.5 : 0.3 },
   { type: 8, title: "Endnote",               editable: 0, weight: () => 0 },
 ];
 

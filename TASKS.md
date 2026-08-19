@@ -116,7 +116,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Weight auto-distribution on creation (for special/written: equal redistribution among existing performances of the same type)
 - ✅ Blank `ZGRADE` rows inserted for every student in the course on performance creation
 - ✅ Edit performance title (via same dialog when a column is selected)
-- ⬜ `[P2]` **Delete performance**: on deletion, recompute the corresponding summary grade. For special/written: prompt to redistribute weights among remaining performances (must sum to 100). Oral needs no weight handling.
+- ⬜ `[P2]` **Delete performance**: on deletion, recompute the corresponding summary grade. For special/written: prompt to redistribute weights among remaining performances (must sum to 1). Oral needs no weight handling.
 
 ### 3.4 Grade Auto-Calculation
 
@@ -132,13 +132,14 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 
 - ✅ Display special, written, and general-part performances with their current weights
 - ✅ Sliders / number inputs that keep paired weights summing to 1
-- ✅ Emit `update-performance` to parent which persists via `updatePerformance`
-- 🐞 `[P1]` **Save button has no `@click` handler** in the special performances panel (`GradeWeightsView.vue:127–134`) — button is dead
-- 🐞 `[P1]` **Save button has no `@click` handler** in the written performances panel (`GradeWeightsView.vue:172–179`) — button is dead
-- 🐞 `[P2]` **Undo buttons** in both panels likewise have no `@click` handlers
-- 🐞 `[P3]` `update-performances` (bulk) emit is declared in the component's `defineEmits` but never called — either wire it or remove it
-- ⬜ `[P1]` Implement save action: collect all modified weights for the panel's performances and emit `update-performances` (or call `update-performance` for each)
-- ⬜ `[P2]` Implement undo action: revert local weight values to the last-persisted state
+- ✅ Emit `update-performances` to parent which persists via `updatePerformance`
+- ✅ `[P1]` **Save button has no `@click` handler** in the special performances panel (`GradeWeightsView.vue:127–134`) — button is dead
+- ✅ `[P1]` **Save button has no `@click` handler** in the written performances panel (`GradeWeightsView.vue:172–179`) — button is dead
+- ✅ `[P2]` **Undo buttons** in both panels likewise have no `@click` handlers
+- ✅ `[P3]` `update-performances` (bulk) emit is declared in the component's `defineEmits` but never called — either wire it or remove it
+- ✅ `[P1]` Implement save action: collect all modified weights for the panel's performances and emit `update-performances`
+- ✅ `[P2]` Implement undo action: revert local weight values to the last-persisted state
+- ✅ `[P2]` `update-performances` should trigger a recomputation for all students of the corresponding overall grade (type 4 or 7) and propagate to the final overall (type 8). Currently, the parent `EvaluationTable` does not listen for these events and does not recompute the overall grades.
 
 ### 3.6 Test Grade Calculator (`TestGradeCalculator`)
 

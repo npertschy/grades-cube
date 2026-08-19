@@ -150,7 +150,7 @@ Types 1, 4, 5, 7, and 8 are non-editable default performances (`ZEDITABLE = 0`) 
 | Type 5 (AT overall)      | AT weight in final (e.g. 0.7 Sek I / 0.5 Sek II)      | type 5 + type 7 = 1 |
 | Type 7 (written overall) | Written weight in final (e.g. 0.3 Sek I / 0.5 Sek II) | type 5 + type 7 = 1 |
 
-The summation invariant is enforced at the UI level (slider forces the complement). Within the application, the weights are stored as floats in the range [0, 1] on the summary rows. The UI displays them as percentages (0–100).
+The summation invariant is enforced at the UI level (slider forces the complement). Within the application, the weights are stored as floats in the range [0, 1] on the summary rows.
 
 ### 5.3 Column sort order
 

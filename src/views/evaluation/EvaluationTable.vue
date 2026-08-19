@@ -31,10 +31,8 @@ function columnStyle(performance: Performance) {
     2: "var(--p-performance-oral-background)",
     3: "var(--p-performance-special-background)",
     4: "var(--p-performance-special-background)",
-    5: "var(--p-performance-special-background)",
     6: "var(--p-performance-test-background)",
     7: "var(--p-performance-test-background)",
-    8: "var(--p-performance-test-background)",
   };
 
   return {

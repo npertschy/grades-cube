@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import type { Performance } from "@/components/evaluations/Performance";
+import { PerformanceType, type Performance } from "@/components/evaluations/Performance";
+import StepperInput from "@/components/layout/StepperInput.vue";
 import PButton from "primevue/button";
 import PColumn from "primevue/column";
 import PColumnGroup from "primevue/columngroup";
@@ -8,85 +9,161 @@ import PInputNumber from "primevue/inputnumber";
 import PPanel from "primevue/panel";
 import PRow from "primevue/row";
 import PSlider from "primevue/slider";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+
+const SCALE = 100;
 
 const { performances } = defineProps<{
   performances: Performance[];
 }>();
-const emit = defineEmits<{ (e: "update-performance", performance: Performance): void }>();
+const emit = defineEmits<{
+  (e: "update-performances", performances: Performance[]): void;
+}>();
 
-// derived lists (reactive)
-const specialPerformances = computed(() => performances.filter((performance) => performance.type === 3));
+const specialPerformances = computed(() =>
+  performances.filter((performance) => performance.type === PerformanceType.SPECIAL),
+);
+
+const writtenPerformances = computed(() =>
+  performances.filter((performance) => performance.type === PerformanceType.WRITTEN),
+);
+
+const localSpecial = ref<Performance[]>([]);
+const localWritten = ref<Performance[]>([]);
+
+function cleanSetSpecialPerformances() {
+  localSpecial.value = specialPerformances.value.map((performance) => ({ ...performance }));
+}
+
+function cleanSetWrittenPerformances() {
+  localWritten.value = writtenPerformances.value.map((performance) => ({ ...performance }));
+}
+
+watch(
+  () => performances,
+  () => {
+    cleanSetSpecialPerformances();
+    cleanSetWrittenPerformances();
+  },
+  { immediate: true, deep: true },
+);
+
 const specialWeightsTotal = computed(() =>
-  specialPerformances.value.reduce((acc, performance) => acc + (performance.weight ?? 0), 0).toString(),
+  (localSpecial.value.reduce((acc, performance) => acc + (performance.weight ?? 0) * SCALE, 0) / SCALE).toString(),
 );
+const specialWeightsTotalValid = computed(() => specialWeightsTotal.value === "1");
 
-const testPerformances = computed(() => performances.filter((performance) => performance.type === 6));
-const testWeightsTotal = computed(() =>
-  testPerformances.value.reduce((acc, performance) => acc + (performance.weight ?? 0), 0).toString(),
+const writtenWeightsTotal = computed(() =>
+  (localWritten.value.reduce((acc, performance) => acc + (performance.weight ?? 0) * SCALE, 0) / SCALE).toString(),
 );
+const writtenWeightsTotalValid = computed(() => writtenWeightsTotal.value === "1");
 
-function findPerformanceOfType(type: number) {
+function saveSpecialWeights() {
+  emit("update-performances", localSpecial.value);
+}
+
+function saveWrittenWeights() {
+  emit("update-performances", localWritten.value);
+}
+
+function onWeightEditComplete(event: { data: Performance; newValue: unknown; field: string }) {
+  const { data, newValue, field } = event;
+  const parsed = typeof newValue === "number" ? newValue : Number(newValue);
+  if (field === "weight" && Number.isFinite(parsed) && parsed >= 0 && parsed <= 1) {
+    data.weight = parsed;
+  }
+}
+
+function findPerformanceOfType(type: PerformanceType) {
   return performances.find((performance) => performance.type === type);
 }
 
-function updatePerformanceWeight(perf: Performance | undefined, weight: number) {
-  if (!perf) return;
-  const updated: Performance = { ...perf, weight };
-  emit("update-performance", updated);
+const oralOverallWeight = ref(0);
+const specialOverallWeight = ref(0);
+const atOverallWeight = ref(0);
+const writtenOverallWeight = ref(0);
+
+watch(
+  () => performances,
+  () => {
+    oralOverallWeight.value = findPerformanceOfType(PerformanceType.ORAL_OVERALL)?.weight ?? 0;
+    specialOverallWeight.value = findPerformanceOfType(PerformanceType.SPECIAL_OVERALL)?.weight ?? 0;
+    atOverallWeight.value = findPerformanceOfType(PerformanceType.AT_OVERALL)?.weight ?? 0;
+    writtenOverallWeight.value = findPerformanceOfType(PerformanceType.WRITTEN_OVERALL)?.weight ?? 0;
+  },
+  { immediate: true, deep: true },
+);
+
+function handleOralInput(value: number) {
+  oralOverallWeight.value = value;
+  specialOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
 }
 
-// computed getters/setters for two-way bindings
-const oralOverallWeight = computed<number>({
-  get: () => findPerformanceOfType(2)?.weight ?? 0,
-  set: (val: number) => {
-    const oral = findPerformanceOfType(2);
-    const special = findPerformanceOfType(4);
-    updatePerformanceWeight(oral, val);
-    if (special) updatePerformanceWeight(special, 1 - val);
-  },
-});
-
-const specialOverallWeight = computed<number>({
-  get: () => findPerformanceOfType(4)?.weight ?? 0,
-  set: (val: number) => {
-    const special = findPerformanceOfType(4);
-    const oral = findPerformanceOfType(2);
-    updatePerformanceWeight(special, val);
-    if (oral) updatePerformanceWeight(oral, 1 - val);
-  },
-});
-
-const atOverallWeight = computed<number>({
-  get: () => findPerformanceOfType(5)?.weight ?? 0,
-  set: (val: number) => {
-    const at = findPerformanceOfType(5);
-    const test = findPerformanceOfType(7);
-    updatePerformanceWeight(at, val);
-    if (test) updatePerformanceWeight(test, 1 - val);
-  },
-});
-
-const testOverallWeight = computed<number>({
-  get: () => findPerformanceOfType(7)?.weight ?? 0,
-  set: (val: number) => {
-    const test = findPerformanceOfType(7);
-    const at = findPerformanceOfType(5);
-    updatePerformanceWeight(test, val);
-    if (at) updatePerformanceWeight(at, 1 - val);
-  },
-});
-
-function handleUpdateSpecialPerformanceWeight(value: number | number[]) {
-  if (typeof value === "number") {
-    specialOverallWeight.value = 1 - value;
-  }
+function handleSpecialInput(value: number) {
+  specialOverallWeight.value = value;
+  oralOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
 }
 
-function handleUpdateTestPerformanceWeight(value: number | number[]) {
-  if (typeof value === "number") {
-    testOverallWeight.value = 1 - value;
-  }
+function handleAtInput(value: number) {
+  atOverallWeight.value = value;
+  writtenOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
+}
+
+function handleWrittenInput(value: number) {
+  writtenOverallWeight.value = value;
+  atOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
+}
+
+function commitOralSpecialWeights() {
+  const oralPerf = findPerformanceOfType(PerformanceType.ORAL_OVERALL);
+  const specialPerf = findPerformanceOfType(PerformanceType.SPECIAL_OVERALL);
+  if (!oralPerf || !specialPerf) return;
+
+  const toUpdate = [
+    { ...oralPerf, weight: oralOverallWeight.value },
+    { ...specialPerf, weight: specialOverallWeight.value },
+  ];
+  emit("update-performances", toUpdate);
+}
+
+function commitAtWrittenWeights() {
+  const atPerf = findPerformanceOfType(PerformanceType.AT_OVERALL);
+  const writtenPerf = findPerformanceOfType(PerformanceType.WRITTEN_OVERALL);
+  if (!atPerf || !writtenPerf) return;
+
+  const toUpdate = [
+    { ...atPerf, weight: atOverallWeight.value },
+    { ...writtenPerf, weight: writtenOverallWeight.value },
+  ];
+  emit("update-performances", toUpdate);
+}
+
+function handleOralSliderInput(value: number | number[]) {
+  if (typeof value === "number") handleOralInput(value);
+}
+
+function handleAtSliderInput(value: number | number[]) {
+  if (typeof value === "number") handleAtInput(value);
+}
+
+function handleOralInputChange(value: number) {
+  handleOralInput(value);
+  commitOralSpecialWeights();
+}
+
+function handleSpecialInputChange(value: number) {
+  handleSpecialInput(value);
+  commitOralSpecialWeights();
+}
+
+function handleAtInputChange(value: number) {
+  handleAtInput(value);
+  commitAtWrittenWeights();
+}
+
+function handleWrittenInputChange(value: number) {
+  handleWrittenInput(value);
+  commitAtWrittenWeights();
 }
 </script>
 
@@ -98,8 +175,10 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
       class="margin-padding"
     >
       <p-datatable
-        :value="specialPerformances"
+        :value="localSpecial"
         size="small"
+        edit-mode="cell"
+        @cell-edit-complete="onWeightEditComplete"
       >
         <p-column
           field="title"
@@ -109,8 +188,25 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
         <p-column
           field="weight"
           header="Gewichtung"
-          style="background-color: var(--p-performance-special-background)"
-        />
+          style="background-color: var(--p-performance-special-background); width: 8rem"
+        >
+          <template #body="{ data }">
+            {{ data.weight }}
+          </template>
+          <template #editor="{ data }">
+            <p-input-number
+              v-model="data.weight"
+              :min="0"
+              :max="1"
+              :step="0.01"
+              :min-fraction-digits="0"
+              :max-fraction-digits="2"
+              locale="de-DE"
+              :input-style="{ width: '6rem' }"
+              style="width: 100%; padding-top: 3px; padding-bottom: 3px"
+            />
+          </template>
+        </p-column>
         <p-column-group type="footer">
           <p-row>
             <p-column
@@ -127,10 +223,13 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
             <p-button
               icon="pi pi-save"
               severity="secondary"
+              :disabled="!specialWeightsTotalValid"
+              @click="saveSpecialWeights"
             />
             <p-button
               icon="pi pi-undo"
               severity="secondary"
+              @click="cleanSetSpecialPerformances"
             />
           </div>
         </div>
@@ -142,8 +241,10 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
       class="margin-padding"
     >
       <p-datatable
-        :value="testPerformances"
+        :value="localWritten"
         size="small"
+        edit-mode="cell"
+        @cell-edit-complete="onWeightEditComplete"
       >
         <template #header> </template>
         <p-column
@@ -154,15 +255,32 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
         <p-column
           field="weight"
           header="Gewichtung"
-          style="background-color: var(--p-performance-test-background)"
-        />
+          style="background-color: var(--p-performance-test-background); width: 8rem"
+        >
+          <template #body="{ data }">
+            {{ data.weight }}
+          </template>
+          <template #editor="{ data }">
+            <p-input-number
+              v-model="data.weight"
+              :min="0"
+              :max="1"
+              :step="0.01"
+              :min-fraction-digits="0"
+              :max-fraction-digits="2"
+              locale="de-DE"
+              :input-style="{ width: '6rem' }"
+              style="width: 100%; padding-top: 3px; padding-bottom: 3px"
+            />
+          </template>
+        </p-column>
         <p-column-group type="footer">
           <p-row>
             <p-column
               footer="Summe"
               :colspan="1"
             />
-            <p-column :footer="testWeightsTotal" />
+            <p-column :footer="writtenWeightsTotal" />
           </p-row>
         </p-column-group>
       </p-datatable>
@@ -172,10 +290,13 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
             <p-button
               icon="pi pi-save"
               severity="secondary"
+              :disabled="!writtenWeightsTotalValid"
+              @click="saveWrittenWeights"
             />
             <p-button
               icon="pi pi-undo"
               severity="secondary"
+              @click="cleanSetWrittenPerformances"
             />
           </div>
         </div>
@@ -194,26 +315,23 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
           align-items: center;
         "
       >
-        <p-input-number
+        <stepper-input
           v-model="oralOverallWeight"
-          show-buttons
-          button-layout="vertical"
-          :step="0.01"
-          @value-change="(value) => (specialOverallWeight = 1 - value)"
+          icon="pi pi-comment"
+          @at-input-change="handleOralInputChange"
         />
         <p-slider
           v-model="oralOverallWeight"
           :min="0"
           :max="1"
           :step="0.01"
-          @change="handleUpdateSpecialPerformanceWeight"
+          @update:model-value="handleOralSliderInput"
+          @slideend="commitOralSpecialWeights"
         />
-        <p-input-number
+        <stepper-input
           v-model="specialOverallWeight"
-          show-buttons
-          button-layout="vertical"
-          :step="0.01"
-          @value-change="(value) => (oralOverallWeight = 1 - value)"
+          icon="pi pi-star"
+          @at-input-change="handleSpecialInputChange"
         />
       </div>
     </p-panel>
@@ -229,26 +347,23 @@ function handleUpdateTestPerformanceWeight(value: number | number[]) {
           align-items: center;
         "
       >
-        <p-input-number
+        <stepper-input
           v-model="atOverallWeight"
-          show-buttons
-          button-layout="vertical"
-          :step="0.01"
-          @value-change="(value) => (testOverallWeight = 1 - value)"
+          icon="pi pi-box"
+          @at-input-change="handleAtInputChange"
         />
         <p-slider
           v-model="atOverallWeight"
           :min="0"
           :max="1"
           :step="0.01"
-          @change="handleUpdateTestPerformanceWeight"
+          @update:model-value="handleAtSliderInput"
+          @slideend="commitAtWrittenWeights"
         />
-        <p-input-number
-          v-model="testOverallWeight"
-          show-buttons
-          button-layout="vertical"
-          :step="0.01"
-          @value-change="(value) => (atOverallWeight = 1 - value)"
+        <stepper-input
+          v-model="writtenOverallWeight"
+          icon="pi pi-file"
+          @at-input-change="handleWrittenInputChange"
         />
       </div>
     </p-panel>

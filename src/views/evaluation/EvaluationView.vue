@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import { useEvaluations } from "@/views/evaluation/EvaluationStore";
-import { computeATOverall, computeFinalOverall, computeOralSuggestion, computeWeightedOverall } from "@/components/evaluations/GradeCalculation";
+import {
+  computeATOverall,
+  computeFinalOverall,
+  computeOralSuggestion,
+  computeWeightedOverall,
+} from "@/components/evaluations/GradeCalculation";
 import { computed, onMounted, ref, watch } from "vue";
 import PTree, { type TreeExpandedKeys, type TreeSelectionKeys } from "primevue/tree";
 import PPanel from "primevue/panel";
@@ -157,57 +162,49 @@ async function handleSavePerformance() {
   reloadCourse();
 }
 
-/**
- * Handlers for events emitted by GradeWeightsView
- * - handleUpdatePerformance: persists a single updated performance and updates local state
- * - handleBulkUpdatePerformances: persists multiple updates and merges them into local state
- *
- * These functions keep the local `performances` array in sync and delegate persistence to the store.
- */
-async function handleUpdatePerformance(updatedPerformance: Performance) {
-  // Persist the change via the store
-  await updatePerformance(updatedPerformance);
-
-  // Merge the update into local performances array
-  const idx = performances.value.findIndex((p) => p.id === updatedPerformance.id);
-  if (idx >= 0) {
-    performances.value[idx] = { ...performances.value[idx], ...updatedPerformance };
-  } else {
-    // If it's a new item (no id match), append it
-    performances.value.push(updatedPerformance);
-  }
-}
-
-async function handleBulkUpdatePerformances(updatedPerformances: Performance[]) {
-  // Persist all updates in parallel
+async function handleUpdatePerformances(updatedPerformances: Performance[]) {
   await Promise.all(updatedPerformances.map((p) => updatePerformance(p)));
 
-  // Merge updates into local array
-  updatedPerformances.forEach((updated) => {
-    const idx = performances.value.findIndex((p) => p.id === updated.id);
-    if (idx >= 0) {
-      performances.value[idx] = { ...performances.value[idx], ...updated };
-    } else {
-      performances.value.push(updated);
-    }
-  });
+  performances.value = await loadPerformancesForCourse(selectedNode.value?.data);
+
+  const type = updatedPerformances[0].type;
+  await Promise.all(students.value.map((student) => cascadeGradeChanges(student, type)));
 }
 
 async function handleGradeChanged(grade: Grade, studentIndex: number) {
   await updateGrade(grade);
   const student = students.value[studentIndex];
+  const performanceType = grade.performanceType;
 
-  if (grade.performanceType === PerformanceType.ORAL) {
+  await cascadeGradeChanges(student, performanceType);
+}
+
+async function cascadeGradeChanges(student: EvaluatedStudent, performanceType: PerformanceType) {
+  if (performanceType === PerformanceType.ORAL) {
     await computeOralSuggestion(student, performances.value, updateGrade);
-  } else if (grade.performanceType === PerformanceType.ORAL_OVERALL) {
+  } else if (performanceType === PerformanceType.ORAL_OVERALL || performanceType === PerformanceType.SPECIAL_OVERALL) {
     await computeATOverall(student, performances.value, updateGrade);
     await computeFinalOverall(student, performances.value, updateGrade);
-  } else if (grade.performanceType === PerformanceType.SPECIAL) {
-    await computeWeightedOverall(student, performances.value, PerformanceType.SPECIAL, PerformanceType.SPECIAL_OVERALL, updateGrade);
+  } else if (performanceType === PerformanceType.SPECIAL) {
+    await computeWeightedOverall(
+      student,
+      performances.value,
+      PerformanceType.SPECIAL,
+      PerformanceType.SPECIAL_OVERALL,
+      updateGrade,
+    );
     await computeATOverall(student, performances.value, updateGrade);
     await computeFinalOverall(student, performances.value, updateGrade);
-  } else if (grade.performanceType === PerformanceType.WRITTEN) {
-    await computeWeightedOverall(student, performances.value, PerformanceType.WRITTEN, PerformanceType.WRITTEN_OVERALL, updateGrade);
+  } else if (performanceType === PerformanceType.WRITTEN) {
+    await computeWeightedOverall(
+      student,
+      performances.value,
+      PerformanceType.WRITTEN,
+      PerformanceType.WRITTEN_OVERALL,
+      updateGrade,
+    );
+    await computeFinalOverall(student, performances.value, updateGrade);
+  } else if (performanceType === PerformanceType.AT_OVERALL || performanceType === PerformanceType.WRITTEN_OVERALL) {
     await computeFinalOverall(student, performances.value, updateGrade);
   }
 }
@@ -341,8 +338,7 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
         <grade-weights-view
           v-if="showWeightsManagement"
           :performances="performances"
-          @update-performance="handleUpdatePerformance"
-          @update-performances="handleBulkUpdatePerformances"
+          @update-performances="handleUpdatePerformances"
         />
         <test-grade-calculator v-if="showCalculator" />
       </div>

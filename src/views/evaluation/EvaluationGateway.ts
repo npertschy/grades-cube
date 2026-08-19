@@ -2,7 +2,7 @@ import type { Course } from "@/components/courses/Course";
 import type { FullCourseEntity } from "@/components/courses/CourseEntity";
 import type { EvaluatedStudent, Grade } from "@/components/evaluations/EvaluatedStudent";
 import type { EvaluatedStudentEntity } from "@/components/evaluations/EvaluatedStudentEntity";
-import type { Performance } from "@/components/evaluations/Performance";
+import type { Performance, PerformanceType } from "@/components/evaluations/Performance";
 import type { PerformanceEntity } from "@/components/evaluations/PerformanceEntity";
 import type { Group } from "@/components/groups/Group";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
@@ -90,7 +90,7 @@ export async function loadStudentsForCourse(course: Course): Promise<EvaluatedSt
         id: row.GRADEID,
         value: row.GRADEVALUE,
         performanceTitle: row.PERFORMANCETITLE,
-        performanceType: row.PERFORMANCETYPE,
+        performanceType: row.PERFORMANCETYPE as PerformanceType,
       });
     }
   }
@@ -113,7 +113,7 @@ export async function loadPerformancesForCourse(course: Course): Promise<Perform
       performanceId: `${performance.Z_PK}`,
       editable: performance.ZEDITABLE === 1,
       sortOrder: performance.ZSORTORDER,
-      type: performance.ZTYPE,
+      type: performance.ZTYPE as PerformanceType,
       courseId: performance.ZCOURSE,
       date: coreDataToUnix(performance.ZDATE),
       weight: performance.ZWEIGHT,
