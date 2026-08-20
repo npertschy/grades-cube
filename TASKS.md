@@ -152,7 +152,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 
 - ✅ Bottom drawer; opens when a performance column is selected and histogram toggle is active
 - ✅ **Oral performances** (type 0): bar chart over `++/+/0/-/--/f` labels; average calculated and shown in dataset label
-- 🟡 `[P2]` **Non-oral performances** (numeric 0–15): bar chart shows distribution and grade-band grouping, but **no average is calculated or displayed**. Add: `const average = grades.reduce((a, b) => a + b, 0) / grades.length` and include in the dataset label.
+- ✅ `[P2]` **Non-oral performances** (numeric 0–15): bar chart shows distribution and grade-band grouping, but **no average is calculated or displayed**. Add: `const average = grades.reduce((a, b) => a + b, 0) / grades.length` and include in the dataset label.
 
 ---
 
