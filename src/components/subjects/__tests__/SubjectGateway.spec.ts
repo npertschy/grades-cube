@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Subject } from "@/components/subjects/Subject";
 import {
+  loadSubjectsBySchoolYear,
   createSubjectForSchoolYear,
   updateSubject,
   deleteSubjectFromSchoolYear,
+  loadAll,
 } from "@/components/subjects/SubjectGateway";
 
 const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
@@ -31,6 +33,23 @@ const schoolYear: SchoolYear = {
 
 beforeEach(() => {
   vi.resetAllMocks();
+});
+
+describe("loadSubjectsBySchoolYear", () => {
+  it("returns mapped subjects for a school year", async () => {
+    mockedSelect.mockResolvedValueOnce([{ Z_PK: 7, ZNAME: "Deutsch" }]);
+
+    const result = await loadSubjectsBySchoolYear(schoolYear);
+
+    expect(mockedSelect).toHaveBeenCalledOnce();
+    expect(result).toEqual([{ id: 7, name: "Deutsch" }]);
+  });
+
+  it("returns empty array when no subjects exist", async () => {
+    mockedSelect.mockResolvedValueOnce([]);
+    const result = await loadSubjectsBySchoolYear(schoolYear);
+    expect(result).toEqual([]);
+  });
 });
 
 describe("createSubjectForSchoolYear", () => {
@@ -155,5 +174,28 @@ describe("deleteSubjectFromSchoolYear", () => {
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
     expect(calls[0]).toContain("BEGIN");
     expect(calls.at(-1)).toContain("COMMIT");
+  });
+});
+
+describe("loadAll", () => {
+  it("returns all mapped subjects", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 7, ZNAME: "Deutsch" },
+      { Z_PK: 8, ZNAME: "Mathematik" },
+    ]);
+
+    const result = await loadAll();
+
+    expect(mockedSelect).toHaveBeenCalledWith(expect.stringContaining("SELECT * FROM ZSUBJECT"));
+    expect(result).toEqual([
+      { id: 7, name: "Deutsch" },
+      { id: 8, name: "Mathematik" },
+    ]);
+  });
+
+  it("returns empty array when no subjects exist", async () => {
+    mockedSelect.mockResolvedValueOnce([]);
+    const result = await loadAll();
+    expect(result).toEqual([]);
   });
 });

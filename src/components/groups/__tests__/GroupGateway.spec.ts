@@ -132,28 +132,98 @@ describe("updateGroup", () => {
 });
 
 describe("assignStudentToGroup", () => {
-  it("inserts the student-group mapping", async () => {
-    mockedExecute.mockResolvedValueOnce({});
+  it("inserts the student-group mapping when the group has no courses", async () => {
+    mockedExecute.mockResolvedValue({});
+    mockedSelect.mockResolvedValueOnce([]); // no courses for the group
 
     await assignStudentToGroup(student, group);
 
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO Z_3STUDENTS"),
       [20, 10],
     );
+    expect(mockedExecute).not.toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO Z_1STUDENTS"),
+      expect.anything(),
+    );
+    expect(mockedExecute).not.toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      expect.anything(),
+    );
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("cascades to enroll the student in every course of the group and creates blank grades", async () => {
+    mockedExecute.mockResolvedValue({});
+    mockedSelect.mockResolvedValueOnce([{ Z_PK: 100 }, { Z_PK: 101 }]); // courses of the group
+    mockedSelect.mockResolvedValueOnce([{ Z_PK: 200 }]); // performances of course 100
+    mockedSelect.mockResolvedValueOnce([]); // performances of course 101
+    mockedNextPrimaryKey.mockResolvedValueOnce(500);
+
+    await assignStudentToGroup(student, group);
+
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO Z_1STUDENTS"),
+      [100, 20],
+    );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO Z_1STUDENTS"),
+      [101, 20],
+    );
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Grade");
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZGRADE"),
+      [500, Z_ENT.ZGRADE, 1, 200, 20],
+    );
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedExecute.mockResolvedValueOnce({}); // BEGIN
+    mockedExecute.mockResolvedValueOnce({}); // INSERT Z_3STUDENTS
+    mockedSelect.mockRejectedValueOnce(new Error("db error"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(assignStudentToGroup(student, group)).rejects.toThrow("db error");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });
 
 describe("unassignStudentFromGroup", () => {
-  it("deletes the student-group mapping", async () => {
-    mockedExecute.mockResolvedValueOnce({});
+  it("deletes the student's grades, course enrollments, and the group mapping", async () => {
+    mockedExecute.mockResolvedValue({});
 
     await unassignStudentFromGroup(student, group);
 
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls[0]).toContain("BEGIN");
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM ZGRADE"),
+      [20, 10],
+    );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("DELETE FROM Z_1STUDENTS"),
+      [20, 10],
+    );
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("DELETE FROM Z_3STUDENTS"),
       [20, 10],
     );
+    expect(calls.at(-1)).toContain("COMMIT");
+  });
+
+  it("rolls back and rethrows on error", async () => {
+    mockedExecute.mockResolvedValueOnce({}); // BEGIN
+    mockedExecute.mockRejectedValueOnce(new Error("db error"));
+    mockedExecute.mockResolvedValue({});
+
+    await expect(unassignStudentFromGroup(student, group)).rejects.toThrow("db error");
+
+    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
+    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });
 

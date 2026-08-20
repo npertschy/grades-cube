@@ -62,8 +62,9 @@ Both cases are handled by the existing `Z_3STUDENTS` (students↔groups) and `Z_
 
 **Consequences:**
 
+- Assigning a student to a group cascades to assigning them to all courses of that group (including creating blank ZGRADE rows for each course's existing performances).
 - Removing a student from a group cascades to removing them from all courses of that group (including their ZGRADE rows for those courses).
-- Removing a student from a course does NOT affect their group membership.
+- Assigning/removing a student to/from a course does NOT affect their group membership.
 - During school year migration, a student deselected from a group is implicitly excluded from all courses migrated for that group.
 
 ---

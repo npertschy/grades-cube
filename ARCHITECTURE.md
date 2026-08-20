@@ -100,6 +100,7 @@ Correct ordering to avoid FK violations (leaf → root):
 - `ZGRADE` → `ZPERFORMANCE` → `Z_1STUDENTS` → `ZCOURSE` → `Z_3YEARS` / `Z_6YEARS` / `Z_7YEARS` → `ZSEMESTER` → `ZYEAR`
 - Use subquery-based deletes — `DELETE … INNER JOIN` is not valid SQLite syntax.
 - All multi-step mutations run inside `BEGIN EXCLUSIVE TRANSACTION` / `COMMIT` / `ROLLBACK`.
+- Group↔student membership fans out to course↔student membership: `GroupGateway.assignStudentToGroup` / `unassignStudentFromGroup` cascade to `Z_1STUDENTS` (and `ZGRADE`) for every course of that group, symmetric to `CourseGateway.assignStudentToCourse` / `unassignStudentFromCourse`.
 
 ---
 

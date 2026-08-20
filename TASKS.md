@@ -61,10 +61,9 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Create group — insert `ZGROUP` (computes zero-padded `ZSORTINGNAME`) + `Z_3YEARS` link
 - ✅ Edit group name and type (Sek I / Sek II)
 - ✅ Load students belonging to a group
-- ✅ Assign / unassign student to/from group (`Z_3STUDENTS`)
+- ✅ Assign / unassign student to/from group (`Z_3STUDENTS`) — cascades to all courses of the group: `assignStudentToGroup` enrolls the student in every course of the group (+ blank `ZGRADE` rows per existing performance); `unassignStudentFromGroup` removes the student from those courses (`Z_1STUDENTS`) and deletes their `ZGRADE` rows, all inside one transaction. See REQUIREMENTS §3.
 - ✅ Delete group — cascade: `Z_3STUDENTS`, `Z_3YEARS`, grades, performances, courses for that group in the year, then `ZGROUP`
 - ✅ `GroupGateway.deleteGroupInSchoolYear` invalid SQL fixed (rewrote invalid `DELETE … INNER JOIN` as subquery-based deletes)
-- ⬜ `[P2]` **Cascade unassign** (`GroupGateway.ts:109` TODO): when a student is unassigned from a group, cascade to removing them from all courses of that group (+ their ZGRADE rows). See REQUIREMENTS §3.
 
 ### 2.5 Courses (`CourseGateway`, `CourseStore`, `CourseManagement`)
 

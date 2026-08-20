@@ -8,6 +8,8 @@ import {
   createStudentInSchoolYear,
   updateStudent,
   deleteStudentInSchoolYear,
+  loadGroupsBySchoolYear,
+  loadCoursesBySchoolYearAndSemester,
 } from "@/components/students/StudentGateway";
 
 const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
@@ -141,5 +143,52 @@ describe("deleteStudentInSchoolYear", () => {
       expect.stringContaining("DELETE FROM ZSTUDENT"),
       [10],
     );
+  });
+});
+
+describe("loadGroupsBySchoolYear", () => {
+  it("returns mapped groups for a school year", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 5, ZNAME: "5A", ZSORTINGNAME: "5A", ZTYPE: 1 },
+    ]);
+
+    const result = await loadGroupsBySchoolYear(schoolYear);
+
+    expect(mockedSelect).toHaveBeenCalledOnce();
+    expect(result).toEqual([{ id: 5, name: "5A", sortingName: "5A", students: [], type: 1 }]);
+  });
+
+  it("returns empty array when no groups exist", async () => {
+    mockedSelect.mockResolvedValueOnce([]);
+    const result = await loadGroupsBySchoolYear(schoolYear);
+    expect(result).toEqual([]);
+  });
+});
+
+describe("loadCoursesBySchoolYearAndSemester", () => {
+  it("returns mapped courses for a school year and semester", async () => {
+    mockedSelect.mockResolvedValueOnce([
+      { Z_PK: 7, ZSUBJECT: 3, ZGROUP: 5, GROUPNAME: "5A", SUBJECTNAME: "Deutsch" },
+    ]);
+
+    const result = await loadCoursesBySchoolYearAndSemester(schoolYear, semester);
+
+    expect(mockedSelect).toHaveBeenCalledWith(expect.any(String), [1, 2]);
+    expect(result).toEqual([
+      {
+        id: 7,
+        group: { id: 5, name: "5A", sortingName: undefined, students: undefined, type: undefined },
+        semester: semester,
+        subject: { id: 3, name: "Deutsch" },
+        schoolYear: schoolYear,
+        days: undefined,
+      },
+    ]);
+  });
+
+  it("returns empty array when no courses exist", async () => {
+    mockedSelect.mockResolvedValueOnce([]);
+    const result = await loadCoursesBySchoolYearAndSemester(schoolYear, semester);
+    expect(result).toEqual([]);
   });
 });

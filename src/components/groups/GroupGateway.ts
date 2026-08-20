@@ -170,22 +170,90 @@ export async function updateGroup(group: Group) {
 }
 
 export async function assignStudentToGroup(student: Student, group: Group) {
-  await db.execute(
-    `
-    INSERT INTO Z_3STUDENTS (Z_6STUDENTS1, Z_3GROUPS2)
-    VALUES ($1, $2)
-    `,
-    [student.id, group.id],
-  );
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      INSERT INTO Z_3STUDENTS (Z_6STUDENTS1, Z_3GROUPS2)
+      VALUES ($1, $2)
+      `,
+      [student.id, group.id],
+    );
+
+    type CourseRow = { Z_PK: number };
+    const courses: CourseRow[] = await db.select(`SELECT Z_PK FROM ZCOURSE WHERE ZGROUP = $1`, [group.id]);
+
+    for (const course of courses) {
+      await db.execute(
+        `
+        INSERT INTO Z_1STUDENTS (Z_1COURSES, Z_6STUDENTS)
+        VALUES ($1, $2)
+        `,
+        [course.Z_PK, student.id],
+      );
+
+      type PerformanceRow = { Z_PK: number };
+      const performances: PerformanceRow[] = await db.select(
+        `SELECT Z_PK FROM ZPERFORMANCE WHERE ZCOURSE = $1`,
+        [course.Z_PK],
+      );
+      for (const performance of performances) {
+        const gradeId = await nextPrimaryKey("Grade");
+        await db.execute(
+          `
+          INSERT INTO ZGRADE (Z_PK, Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
+          VALUES ($1, $2, $3, $4, $5)
+          `,
+          [gradeId, Z_ENT.ZGRADE, 1, performance.Z_PK, student.id],
+        );
+      }
+    }
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
 
 export async function unassignStudentFromGroup(student: Student, group: Group) {
-  await db.execute(
-    `
-    DELETE FROM Z_3STUDENTS
-    WHERE Z_6STUDENTS1 = $1
-    AND Z_3GROUPS2 = $2
-    `,
-    [student.id, group.id],
-  );
+  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
+  try {
+    await db.execute(
+      `
+      DELETE FROM ZGRADE
+      WHERE ZSTUDENT = $1
+      AND ZPERFORMANCE IN (
+        SELECT Z_PK FROM ZPERFORMANCE
+        WHERE ZCOURSE IN (
+          SELECT Z_PK FROM ZCOURSE WHERE ZGROUP = $2
+        )
+      )
+      `,
+      [student.id, group.id],
+    );
+
+    await db.execute(
+      `
+      DELETE FROM Z_1STUDENTS
+      WHERE Z_6STUDENTS = $1
+      AND Z_1COURSES IN (
+        SELECT Z_PK FROM ZCOURSE WHERE ZGROUP = $2
+      )
+      `,
+      [student.id, group.id],
+    );
+
+    await db.execute(
+      `
+      DELETE FROM Z_3STUDENTS
+      WHERE Z_6STUDENTS1 = $1
+      AND Z_3GROUPS2 = $2
+      `,
+      [student.id, group.id],
+    );
+    await db.execute("COMMIT TRANSACTION");
+  } catch (error) {
+    await db.execute("ROLLBACK TRANSACTION");
+    throw error;
+  }
 }
