@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { computeATOverall, computeFinalOverall, computeOralSuggestion, computeWeightedOverall } from "../GradeCalculation";
+import { useGradeCalculation } from "../GradeCalculation";
 import type { Grade } from "../EvaluatedStudent";
 import { PerformanceType, type Performance } from "../Performance";
+
+const { computeOralSuggestion, computeWeightedOverall, computeATOverall, computeFinalOverall } = useGradeCalculation();
 
 const defaultStudent = {
   id: 1,

@@ -3,7 +3,7 @@ import { PerformanceType, type Performance } from "./Performance";
 
 const possibleOralGrades = ["++", "+", "0", "-", "--", "f"];
 
-export async function computeOralSuggestion(
+async function computeOralSuggestion(
   student: EvaluatedStudent,
   performances: Performance[],
   updateGrade: (grade: Grade) => Promise<void>,
@@ -41,7 +41,7 @@ function parseGradeValue(value: string | null | undefined): number | null {
   return Number.isNaN(num) ? null : num;
 }
 
-export async function computeWeightedOverall(
+async function computeWeightedOverall(
   student: EvaluatedStudent,
   performances: Performance[],
   inputType: PerformanceType,
@@ -75,7 +75,11 @@ export async function computeWeightedOverall(
   await updateGrade(overallGrade);
 }
 
-export async function computeATOverall(student: EvaluatedStudent, performances: Performance[], updateGrade: (grade: Grade) => Promise<void>) {
+async function computeATOverall(
+  student: EvaluatedStudent,
+  performances: Performance[],
+  updateGrade: (grade: Grade) => Promise<void>,
+) {
   const oralOverallIndex = performances.findIndex((p) => p.type === PerformanceType.ORAL_OVERALL);
   const specialOverallIndex = performances.findIndex((p) => p.type === PerformanceType.SPECIAL_OVERALL);
   const atOverallIndex = performances.findIndex((p) => p.type === PerformanceType.AT_OVERALL);
@@ -97,7 +101,11 @@ export async function computeATOverall(student: EvaluatedStudent, performances: 
   await updateGrade(atOverallGrade);
 }
 
-export async function computeFinalOverall(student: EvaluatedStudent, performances: Performance[], updateGrade: (grade: Grade) => Promise<void>) {
+async function computeFinalOverall(
+  student: EvaluatedStudent,
+  performances: Performance[],
+  updateGrade: (grade: Grade) => Promise<void>,
+) {
   const atOverallIndex = performances.findIndex((p) => p.type === PerformanceType.AT_OVERALL);
   const writtenOverallIndex = performances.findIndex((p) => p.type === PerformanceType.WRITTEN_OVERALL);
   const overallIndex = performances.findIndex((p) => p.type === PerformanceType.OVERALL);
@@ -117,4 +125,13 @@ export async function computeFinalOverall(student: EvaluatedStudent, performance
     overallGrade.value = Math.floor(atOverallGrade * atWeight + writtenOverallGrade * writtenWeight).toString();
   }
   await updateGrade(overallGrade);
+}
+
+export function useGradeCalculation() {
+  return {
+    computeOralSuggestion,
+    computeWeightedOverall,
+    computeATOverall,
+    computeFinalOverall,
+  };
 }

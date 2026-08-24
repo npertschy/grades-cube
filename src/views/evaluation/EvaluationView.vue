@@ -1,12 +1,7 @@
 <script setup lang="ts">
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import { useEvaluations } from "@/views/evaluation/EvaluationStore";
-import {
-  computeATOverall,
-  computeFinalOverall,
-  computeOralSuggestion,
-  computeWeightedOverall,
-} from "@/components/evaluations/GradeCalculation";
+import { useGradeCalculation } from "@/components/evaluations/GradeCalculation";
 import { computed, onMounted, ref, watch } from "vue";
 import PTree, { type TreeExpandedKeys, type TreeSelectionKeys } from "primevue/tree";
 import PPanel from "primevue/panel";
@@ -32,6 +27,8 @@ const {
   updatePerformance,
   updateGrade,
 } = useEvaluations();
+
+const { computeOralSuggestion, computeWeightedOverall, computeATOverall, computeFinalOverall } = useGradeCalculation();
 
 const expandedKeys: TreeExpandedKeys = ref({});
 const selectedItem: TreeSelectionKeys = ref();
