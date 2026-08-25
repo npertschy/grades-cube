@@ -8,11 +8,10 @@ import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSel
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { ref, watch, onMounted } from "vue";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
 import { useSubjects } from "@/components/subjects/SubjectStore";
 import type { Subject } from "@/components/subjects/Subject";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
+import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
 
 const name = ref<string>();
 
@@ -22,8 +21,8 @@ const { subjects, loadSubjectsForSchoolYear, addSubject, formatSubject, removeSu
 const selectedSubject = ref<Subject | undefined>();
 
 const { selectedSchoolYear } = useSchoolYearSelection();
-const toast = useToast();
-const confirm = useConfirm();
+
+const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
 const allSubjects = ref<Subject[]>([]);
 
@@ -35,7 +34,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
-  try {
+  await runSafeWithToast(async () => {
     if (selectedSubject.value?.id) {
       const subject: Subject = {
         id: selectedSubject.value.id,
@@ -58,9 +57,7 @@ async function handleSave() {
     }
 
     allSubjects.value = await loadAllSubjects();
-  } catch (e) {
-    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-  }
+  });
 }
 
 watch(selectedSubject, (current) => loadSubject(current));
@@ -79,22 +76,11 @@ function loadSubject(item: Subject | undefined) {
 function handleRemove() {
   if (!selectedSubject.value) return;
   const subject = selectedSubject.value;
-  confirm.require({
-    message: `Soll "${formatSubject(subject)}" wirklich gelöscht werden?`,
-    header: "Fach löschen",
-    icon: "pi pi-exclamation-triangle",
-    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
-    acceptProps: { label: "Löschen", severity: "danger" },
-    accept: async () => {
-      try {
-        await removeSubject(subject, selectedSchoolYear.value!, () => {
-          resetInputs();
-          selectedSubject.value = undefined;
-        });
-      } catch (e) {
-        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-      }
-    },
+  confirmAction("Fach löschen", `Soll "${formatSubject(subject)}" wirklich gelöscht werden?`, async () => {
+    await removeSubject(subject, selectedSchoolYear.value!, () => {
+      selectedSubject.value = undefined;
+      resetInputs();
+    });
   });
 }
 

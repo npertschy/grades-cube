@@ -7,12 +7,11 @@ import DatePickerWithLabel from "@/components/layout/DatePickerWithLabel.vue";
 import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import PDivider from "primevue/divider";
 import { computed, onMounted, ref, watch } from "vue";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useRoute } from "vue-router";
 import { useSchoolYearValidation } from "@/components/schoolYears/SchoolYearValidation";
+import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
 
 const route = useRoute();
 
@@ -30,8 +29,6 @@ const { firstStartError, firstEndError, secondStartError, secondEndError, hasErr
 
 const { schoolYears, loadAllSchoolYears, addSchoolYear, editSchoolYear, formatSchoolYear, removeSchoolYear } =
   useSchoolYears();
-const toast = useToast();
-const confirm = useConfirm();
 
 onMounted(async () => {
   await loadAllSchoolYears();
@@ -42,8 +39,10 @@ if (route.query["index"]) {
   selectedSchoolYear.value = schoolYears.value[+route.query["index"]];
 }
 
+const { runSafeWithToast, confirmAction } = useUiErrorHandling();
+
 async function handleSave() {
-  try {
+  await runSafeWithToast(async () => {
     if (selectedSchoolYear.value?.id) {
       const schoolYear: SchoolYear = {
         id: selectedSchoolYear.value.id,
@@ -91,9 +90,7 @@ async function handleSave() {
         selectedSchoolYear.value = undefined;
       });
     }
-  } catch (e) {
-    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-  }
+  });
 }
 
 watch(selectedSchoolYear, (current) => loadSchoolYear(current));
@@ -118,22 +115,15 @@ function loadSchoolYear(item: SchoolYear | undefined) {
 function handleRemove() {
   if (!selectedSchoolYear.value) return;
   const schoolYear = selectedSchoolYear.value;
-  confirm.require({
-    message: `Soll "${formatSchoolYear(schoolYear)}" wirklich gelöscht werden? Alle zugehörigen Kurse, Leistungen und Noten werden ebenfalls gelöscht.`,
-    header: "Schuljahr löschen",
-    icon: "pi pi-exclamation-triangle",
-    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
-    acceptProps: { label: "Löschen", severity: "danger" },
-    accept: async () => {
-      try {
-        await removeSchoolYear(schoolYear);
-        resetDates();
-        selectedSchoolYear.value = undefined;
-      } catch (e) {
-        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-      }
+  confirmAction(
+    "Schuljahr löschen",
+    `Soll "${formatSchoolYear(schoolYear)}" wirklich gelöscht werden? Alle zugehörigen Kurse, Leistungen und Noten werden ebenfalls gelöscht.`,
+    async () => {
+      await removeSchoolYear(schoolYear);
+      resetDates();
+      selectedSchoolYear.value = undefined;
     },
-  });
+  );
 }
 
 const disableSave = computed(() => {

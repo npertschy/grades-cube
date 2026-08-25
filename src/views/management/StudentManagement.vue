@@ -12,13 +12,12 @@ import PInputGroup from "primevue/inputgroup";
 import PAutoComplete, { type AutoCompleteCompleteEvent } from "primevue/autocomplete";
 import PButton from "primevue/button";
 import { computed, ref, shallowRef, watch, onMounted } from "vue";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
 import { useStudents } from "@/components/students/StudentStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import type { Group } from "@/components/groups/Group";
 import type { Course } from "@/components/courses/Course";
+import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
 
 const firstName = ref<string>();
 const lastName = ref<string>();
@@ -39,8 +38,8 @@ const {
   removeCourseFromStudent,
 } = useStudents();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
-const toast = useToast();
-const confirm = useConfirm();
+
+const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
 const selectedStudent = ref<Student | undefined>();
 const availableGroups = ref<Group[]>([]);
@@ -81,7 +80,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
-  try {
+  await runSafeWithToast(async () => {
     if (selectedStudent.value?.id) {
       const student = {
         id: selectedStudent.value.id,
@@ -108,9 +107,7 @@ async function handleSave() {
         selectedStudent.value = undefined;
       });
     }
-  } catch (e) {
-    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-  }
+  });
 }
 
 watch(selectedStudent, (current) => loadStudent(current));
@@ -134,22 +131,11 @@ async function loadStudent(item: Student | undefined) {
 function handleRemove() {
   if (!selectedStudent.value) return;
   const student = selectedStudent.value;
-  confirm.require({
-    message: `Soll "${formatStudent(student)}" wirklich gelöscht werden?`,
-    header: "Schüler löschen",
-    icon: "pi pi-exclamation-triangle",
-    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
-    acceptProps: { label: "Löschen", severity: "danger" },
-    accept: async () => {
-      try {
-        await removeStudent(student, selectedSchoolYear.value!, () => {
-          resetInputs();
-          selectedStudent.value = undefined;
-        });
-      } catch (e) {
-        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-      }
-    },
+  confirmAction("Schüler löschen", `Soll "${formatStudent(student)}" wirklich gelöscht werden?`, async () => {
+    await removeStudent(student, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedStudent.value = undefined;
+    });
   });
 }
 
@@ -162,26 +148,22 @@ function toggleGroupSelection(group: Group) {
 }
 
 async function handleAddGroup() {
-  if (selectedGroup.value && selectedStudent.value) {
-    try {
-      await addGroupToStudent(selectedStudent.value, selectedGroup.value);
-      await loadStudent(selectedStudent.value);
-      selectedGroup.value = undefined;
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+  if (!selectedGroup.value || !selectedStudent.value) return;
+
+  await runSafeWithToast(async () => {
+    await addGroupToStudent(selectedStudent.value!, selectedGroup.value!);
+    await loadStudent(selectedStudent.value);
+    selectedGroup.value = undefined;
+  });
 }
 
 async function handleRemoveGroup(group: Group) {
-  if (selectedStudent.value) {
-    try {
-      await removeGroupFromStudent(selectedStudent.value, group);
-      await loadStudent(selectedStudent.value);
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+  if (!selectedStudent.value) return;
+
+  await runSafeWithToast(async () => {
+    await removeGroupFromStudent(selectedStudent.value!, group);
+    await loadStudent(selectedStudent.value);
+  });
 }
 
 function toggleCourseSelection(course: Course) {
@@ -193,26 +175,22 @@ function toggleCourseSelection(course: Course) {
 }
 
 async function handleAddCourse() {
-  if (selectedCourse.value && selectedStudent.value) {
-    try {
-      await addCourseToStudent(selectedStudent.value, selectedCourse.value);
-      await loadStudent(selectedStudent.value);
-      selectedCourse.value = undefined;
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+  if (!selectedCourse.value || !selectedStudent.value) return;
+
+  await runSafeWithToast(async () => {
+    await addCourseToStudent(selectedStudent.value!, selectedCourse.value!);
+    await loadStudent(selectedStudent.value);
+    selectedCourse.value = undefined;
+  });
 }
 
 async function handleRemoveCourse(course: Course) {
-  if (selectedStudent.value) {
-    try {
-      await removeCourseFromStudent(selectedStudent.value, course);
-      await loadStudent(selectedStudent.value);
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+  if (!selectedStudent.value) return;
+
+  await runSafeWithToast(async () => {
+    await removeCourseFromStudent(selectedStudent.value!, course);
+    await loadStudent(selectedStudent.value);
+  });
 }
 
 function formatCourse(course: Course) {
@@ -278,6 +256,7 @@ watch(selectedSemester, async (current) => {
                   v-model="lastName"
                   identifier="lastNameField"
                   label="Nachname"
+                  class="mt-2"
                 />
                 <save-and-delete-buttons
                   :show-delete-when-defined="selectedStudent"
@@ -310,9 +289,10 @@ watch(selectedSemester, async (current) => {
                   <label
                     for="groupField"
                     class="font-semibold"
-                    >Klasse hinzufügen</label
                   >
-                  <p-input-group>
+                    Klasse hinzufügen
+                  </label>
+                  <p-input-group class="mt-2">
                     <p-button
                       icon="pi pi-check"
                       severity="success"
@@ -356,9 +336,10 @@ watch(selectedSemester, async (current) => {
                   <label
                     for="courseField"
                     class="font-semibold"
-                    >Kurs hinzufügen</label
                   >
-                  <p-input-group>
+                    Kurs hinzufügen
+                  </label>
+                  <p-input-group class="mt-2">
                     <p-button
                       icon="pi pi-check"
                       severity="success"

@@ -15,6 +15,7 @@ import EvaluationTable from "./EvaluationTable.vue";
 import GradeWeightsView from "./GradeWeightsView.vue";
 import TestGradeCalculator from "./TestGradeCalculator.vue";
 import HistogramPanel from "./HistogramPanel.vue";
+import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
 
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 const {
@@ -128,50 +129,59 @@ const addPerformanceTitle = computed(() => {
   }
 });
 
+const { runSafeWithToast, confirmAction } = useUiErrorHandling();
+
 async function handleSavePerformance() {
-  if (selectedColumn.value) {
-    const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
-    if (performance) {
-      performance.title = titleOfPerformance.value;
-      await updatePerformance(performance);
+  await runSafeWithToast(async () => {
+    if (selectedColumn.value) {
+      const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
+      if (performance) {
+        performance.title = titleOfPerformance.value;
+        await updatePerformance(performance);
+      }
+      selectedColumn.value = undefined;
+    } else {
+      const existingPerformances: Performance[] = performances.value.filter(
+        (performance) => performance.type === typeOfNewPerformance.value,
+      );
+      const performance: Performance = {
+        title: titleOfPerformance.value,
+        type: typeOfNewPerformance.value!,
+        editable: true,
+        sortOrder: existingPerformances.length,
+        date: new Date(),
+        courseId: selectedNode.value?.data.id,
+        id: undefined,
+        performanceId: undefined,
+        weight: 0,
+      };
+      await createPerformance(performance, existingPerformances, students.value);
     }
-    selectedColumn.value = undefined;
-  } else {
-    const existingPerformances: Performance[] = performances.value.filter(
-      (performance) => performance.type === typeOfNewPerformance.value,
-    );
-    const performance: Performance = {
-      title: titleOfPerformance.value,
-      type: typeOfNewPerformance.value!,
-      editable: true,
-      sortOrder: existingPerformances.length,
-      date: new Date(),
-      courseId: selectedNode.value?.data.id,
-      id: undefined,
-      performanceId: undefined,
-      weight: 0,
-    };
-    await createPerformance(performance, existingPerformances, students.value);
-  }
-  openAddPerformanceDialog.value = false;
-  titleOfPerformance.value = "";
-  typeOfNewPerformance.value = undefined;
-  reloadCourse();
+    openAddPerformanceDialog.value = false;
+    titleOfPerformance.value = "";
+    typeOfNewPerformance.value = undefined;
+    reloadCourse();
+  });
+}
+
 }
 
 async function handleUpdatePerformances(updatedPerformances: Performance[]) {
-  await Promise.all(updatedPerformances.map((p) => updatePerformance(p)));
+  await runSafeWithToast(async () => {
+    await Promise.all(updatedPerformances.map((p) => updatePerformance(p)));
 
-  performances.value = await loadPerformancesForCourse(selectedNode.value?.data);
+    performances.value = await loadPerformancesForCourse(selectedNode.value?.data);
 
-  const type = updatedPerformances[0].type;
-  await Promise.all(students.value.map((student) => cascadeGradeChanges(student, type)));
+    const type = updatedPerformances[0].type;
+    await Promise.all(students.value.map((student) => cascadeGradeChanges(student, type)));
+  });
 }
 
 async function handleGradeChanged(grade: Grade, studentIndex: number) {
-  await updateGrade(grade);
-  const student = students.value[studentIndex];
-  const performanceType = grade.performanceType;
+  await runSafeWithToast(async () => {
+    await updateGrade(grade);
+    const student = students.value[studentIndex];
+    const performanceType = grade.performanceType;
 
   await cascadeGradeChanges(student, performanceType);
 }

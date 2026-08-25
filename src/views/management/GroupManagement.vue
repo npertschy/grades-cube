@@ -10,12 +10,11 @@ import AssignedStudentList from "@/components/layout/AssignedStudentList.vue";
 import PRadioButton from "primevue/radiobutton";
 import PDivider from "primevue/divider";
 import { onMounted, ref, watch } from "vue";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
 import type { Group } from "@/components/groups/Group";
 import { useGroups } from "@/components/groups/GroupStore";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
+import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
 
 const {
   groups,
@@ -30,8 +29,7 @@ const {
 const name = ref<string>();
 const groupType = ref<number>();
 
-const toast = useToast();
-const confirm = useConfirm();
+const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
 const selectedGroup = ref<Group | undefined>();
 
@@ -45,7 +43,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
-  try {
+  await runSafeWithToast(async () => {
     if (selectedGroup.value?.id) {
       const group = {
         id: selectedGroup.value.id,
@@ -73,9 +71,7 @@ async function handleSave() {
         selectedGroup.value = undefined;
       });
     }
-  } catch (e) {
-    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-  }
+  });
 }
 
 watch(selectedGroup, (current) => loadGroup(current));
@@ -101,45 +97,30 @@ function formatGroup(item: Group) {
 function handleRemove() {
   if (!selectedGroup.value) return;
   const group = selectedGroup.value;
-  confirm.require({
-    message: `Soll "${formatGroup(group)}" wirklich gelöscht werden?`,
-    header: "Klasse löschen",
-    icon: "pi pi-exclamation-triangle",
-    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
-    acceptProps: { label: "Löschen", severity: "danger" },
-    accept: async () => {
-      try {
-        await removeGroup(group, selectedSchoolYear.value!, () => {
-          resetInputs();
-          selectedGroup.value = undefined;
-        });
-      } catch (e) {
-        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-      }
-    },
+  confirmAction("Klasse löschen", `Soll "${formatGroup(group)}" wirklich gelöscht werden?`, async () => {
+    await removeGroup(group, selectedSchoolYear.value!, () => {
+      resetInputs();
+      selectedGroup.value = undefined;
+    });
   });
 }
 
-async function handleAddingStudent() {
-  if (student.value) {
-    try {
-      await addStudentToGroup(student.value, selectedGroup.value!);
-      await loadGroup(selectedGroup.value);
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+async function handleAddingStudent(student: Student) {
+  await runSafeWithToast(async () => {
+    await addStudentToGroup(student, selectedGroup.value!);
+    await loadGroup(selectedGroup.value);
+  });
 }
 
-async function handleRemovingStudent() {
-  if (selectedStudent.value) {
-    try {
-      await removeStudentFromGroup(selectedStudent.value, selectedGroup.value!);
+async function handleRemovingStudent(student: Student) {
+  confirmAction(
+    "Schüler aus Klasse entfernen",
+    `Soll "${student.firstName} ${student.lastName}" wirklich aus der Klasse entfernt werden?`,
+    async () => {
+      await removeStudentFromGroup(student, selectedGroup.value!);
       await loadGroup(selectedGroup.value);
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+    },
+  );
 }
 
 watch(selectedSchoolYear, async (current) => {

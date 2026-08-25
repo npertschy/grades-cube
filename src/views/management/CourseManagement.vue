@@ -9,14 +9,13 @@ import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSel
 import AssignedStudentList from "@/components/layout/AssignedStudentList.vue";
 import PDivider from "primevue/divider";
 import { onMounted, ref, watch } from "vue";
-import { useToast } from "primevue/usetoast";
-import { useConfirm } from "primevue/useconfirm";
 import type { Student } from "@/components/students/Student";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
 import { useCourses } from "@/components/courses/CourseStore";
 import type { Course } from "@/components/courses/Course";
 import type { Group } from "@/components/groups/Group";
 import type { Subject } from "@/components/subjects/Subject";
+import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
 
 const {
   courses,
@@ -34,8 +33,7 @@ const group = ref<Group>();
 const subject = ref<Subject>();
 const studentsOfCourse = ref<Student[]>([]);
 
-const toast = useToast();
-const confirm = useConfirm();
+const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
 const availableGroups = ref<Group[]>([]);
 const availableSubjects = ref<Subject[]>([]);
@@ -57,7 +55,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
-  try {
+  await runSafeWithToast(async () => {
     if (selectedCourse.value?.id) {
       const course: Course = {
         id: selectedCourse.value.id,
@@ -87,9 +85,7 @@ async function handleSave() {
         selectedCourse.value = undefined;
       });
     }
-  } catch (e) {
-    toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-  }
+  });
 }
 
 watch(selectedCourse, (current) => loadCourse(current));
@@ -117,45 +113,34 @@ function formatCourse(item: Course) {
 function handleRemove() {
   if (!selectedCourse.value) return;
   const course = selectedCourse.value;
-  confirm.require({
-    message: `Soll "${formatCourse(course)}" wirklich gelöscht werden? Alle zugehörigen Leistungen und Noten werden ebenfalls gelöscht.`,
-    header: "Kurs löschen",
-    icon: "pi pi-exclamation-triangle",
-    rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
-    acceptProps: { label: "Löschen", severity: "danger" },
-    accept: async () => {
-      try {
-        await removeCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
-          resetInputs();
-          selectedCourse.value = undefined;
-        });
-      } catch (e) {
-        toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-      }
+  confirmAction(
+    "Kurs löschen",
+    `Soll "${formatCourse(course)}" wirklich gelöscht werden? Alle zugehörigen Leistungen und Noten werden ebenfalls gelöscht.`,
+    async () => {
+      await removeCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
+        resetInputs();
+        selectedCourse.value = undefined;
+      });
     },
+  );
+}
+
+async function handleAddingStudent(student: Student) {
+  await runSafeWithToast(async () => {
+    await addStudentToCourse(student, selectedCourse.value!);
+    await loadCourse(selectedCourse.value);
   });
 }
 
-async function handleAddingStudent() {
-  if (student.value) {
-    try {
-      await addStudentToCourse(student.value, selectedCourse.value!);
+async function handleRemovingStudent(student: Student) {
+  confirmAction(
+    "Schüler aus Kurs entfernen",
+    `Soll "${student.firstName} ${student.lastName}" wirklich aus dem Kurs "${formatCourse(selectedCourse.value!)}" entfernt werden?`,
+    async () => {
+      await removeStudentFromCourse(student, selectedCourse.value!);
       await loadCourse(selectedCourse.value);
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
-}
-
-async function handleRemovingStudent() {
-  if (selectedStudent.value) {
-    try {
-      await removeStudentFromCourse(selectedStudent.value, selectedCourse.value!);
-      await loadCourse(selectedCourse.value);
-    } catch (e) {
-      toast.add({ severity: "error", summary: "Fehler", detail: (e as Error).message, life: 5000 });
-    }
-  }
+    },
+  );
 }
 
 watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, currentSemester]) => {
@@ -243,15 +228,5 @@ watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, current
 
 .students-area {
   grid-column: 5 / span 8;
-}
-
-.label-over-input {
-  display: grid;
-  grid-template-columns: auto;
-}
-
-.highlight-button {
-  background-color: var(--p-highlight-focus-background);
-  color: var(--p-highlight-color);
 }
 </style>
