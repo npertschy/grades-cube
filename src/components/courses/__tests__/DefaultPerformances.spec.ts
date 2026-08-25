@@ -29,13 +29,13 @@ const students: Student[] = [
 beforeEach(() => {
   vi.resetAllMocks();
   mockedExecute.mockResolvedValue({});
-  // 9 performances + 2 students × 9 grades = 27 nextPrimaryKey calls
+  // 6 performances + 2 students × 6 grades = 18 nextPrimaryKey calls
   let pk = 100;
   mockedNextPrimaryKey.mockImplementation(() => Promise.resolve(pk++));
 });
 
 describe("insertDefaultPerformancesWithGrades", () => {
-  it("inserts exactly 9 ZPERFORMANCE rows", async () => {
+  it("inserts exactly 6 ZPERFORMANCE rows", async () => {
     await insertDefaultPerformancesWithGrades(COURSE_ID, 1, []);
 
     const performanceCalls = mockedExecute.mock.calls.filter(
@@ -44,7 +44,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
     expect(performanceCalls).toHaveLength(6);
   });
 
-  it("inserts one ZGRADE row per student per performance (2 students × 9 = 18)", async () => {
+  it("inserts one ZGRADE row per student per performance (2 students × 6 = 12)", async () => {
     await insertDefaultPerformancesWithGrades(COURSE_ID, 1, students);
 
     const gradeCalls = mockedExecute.mock.calls.filter(
@@ -62,7 +62,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
     expect(gradeCalls).toHaveLength(0);
   });
 
-  it("inserts all 9 performance types in order (0–8)", async () => {
+  it("inserts all 6 performance types in order (0–8)", async () => {
     await insertDefaultPerformancesWithGrades(COURSE_ID, 1, []);
 
     const performanceCalls = mockedExecute.mock.calls.filter(
