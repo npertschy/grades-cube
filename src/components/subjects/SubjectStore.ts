@@ -8,6 +8,9 @@ import {
   updateSubject,
 } from "@/components/subjects/SubjectGateway";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
+import { useStoreErrorHandling } from "../errors/ErrorHandling";
+
+const { runSafeWithThrow } = useStoreErrorHandling();
 
 const subjects = ref<Subject[]>([]);
 
@@ -25,23 +28,19 @@ async function loadSubjectsForSchoolYear(schoolYear: SchoolYear) {
 }
 
 async function addSubject(subjectToAdd: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await createSubjectForSchoolYear(subjectToAdd, schoolYear);
     await loadSubjectsForSchoolYear(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Fach konnte nicht gespeichert werden.", { cause: e });
-  }
+  }, "Fach konnte nicht gespeichert werden.");
 }
 
 async function editSubject(subject: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await updateSubject(subject);
     await loadSubjectsForSchoolYear(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Fach konnte nicht aktualisiert werden.", { cause: e });
-  }
+  }, "Fach konnte nicht aktualisiert werden.");
 }
 
 function formatSubject(item: Subject) {
@@ -49,13 +48,11 @@ function formatSubject(item: Subject) {
 }
 
 async function removeSubject(subject: Subject, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await deleteSubjectFromSchoolYear(subject, schoolYear);
     await loadSubjectsForSchoolYear(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Fach konnte nicht gelöscht werden.", { cause: e });
-  }
+  }, "Fach konnte nicht gelöscht werden.");
 }
 
 async function loadAllSubjects() {

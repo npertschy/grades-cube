@@ -35,3 +35,16 @@ export function useUiErrorHandling() {
   };
 }
 
+async function runSafeWithThrow(action: () => void | Promise<void>, errorMessage: string) {
+  try {
+    await action();
+  } catch (e) {
+    throw new Error(errorMessage, { cause: e });
+  }
+}
+
+export function useStoreErrorHandling() {
+  return {
+    runSafeWithThrow,
+  };
+}

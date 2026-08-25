@@ -14,6 +14,9 @@ import {
 } from "@/components/courses/CourseGateway";
 import { ref } from "vue";
 import type { Student } from "@/components/students/Student";
+import { useStoreErrorHandling } from "../errors/ErrorHandling";
+
+const { runSafeWithThrow } = useStoreErrorHandling();
 
 const courses = ref<Course[]>([]);
 
@@ -46,49 +49,39 @@ async function loadAvailableSubjectsForSchoolYear(schoolYear: SchoolYear) {
 }
 
 async function addCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await createCourse(course, schoolYear, semester);
     await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
     cleanup();
-  } catch (e) {
-    throw new Error("Kurs konnte nicht gespeichert werden.", { cause: e });
-  }
+  }, "Kurs konnte nicht gespeichert werden.");
 }
 
 async function editCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await updateCourse(course);
     await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
     cleanup();
-  } catch (e) {
-    throw new Error("Kurs konnte nicht aktualisiert werden.", { cause: e });
-  }
+  }, "Kurs konnte nicht aktualisiert werden.");
 }
 
 async function removeCourse(course: Course, schoolYear: SchoolYear, semester: Semester, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await deleteCourseInSchoolYear(course);
     await loadAllCoursesForSchoolYearAndSemester(schoolYear, semester);
     cleanup();
-  } catch (e) {
-    throw new Error("Kurs konnte nicht gelöscht werden.", { cause: e });
-  }
+  }, "Kurs konnte nicht gelöscht werden.");
 }
 
 async function addStudentToCourse(student: Student, course: Course) {
-  try {
+  await runSafeWithThrow(async () => {
     await assignStudentToCourse(student, course);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht zum Kurs hinzugefügt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht zum Kurs hinzugefügt werden.");
 }
 
 async function removeStudentFromCourse(student: Student, course: Course) {
-  try {
+  await runSafeWithThrow(async () => {
     await unassignStudentFromCourse(student, course);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht aus dem Kurs entfernt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht aus dem Kurs entfernt werden.");
 }
 
 export function useCourses() {

@@ -15,6 +15,9 @@ import { assignStudentToCourse, unassignStudentFromCourse } from "@/components/c
 import type { Student } from "@/components/students/Student";
 import type { Group } from "@/components/groups/Group";
 import type { Course } from "@/components/courses/Course";
+import { useStoreErrorHandling } from "../errors/ErrorHandling";
+
+const { runSafeWithThrow } = useStoreErrorHandling();
 
 const students = ref<Student[]>([]);
 
@@ -39,23 +42,19 @@ async function loadGroupsAndCoursesFor(student: Student, schoolYear: SchoolYear,
 }
 
 async function addStudent(studentToAdd: Student, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await createStudentInSchoolYear(studentToAdd, schoolYear);
     await loadStudentsForSchoolYear(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Schüler konnte nicht gespeichert werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht gespeichert werden.");
 }
 
 async function editStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await updateStudent(student);
     await loadStudentsForSchoolYear(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Schüler konnte nicht aktualisiert werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht aktualisiert werden.");
 }
 
 function formatStudent(item: Student) {
@@ -63,13 +62,11 @@ function formatStudent(item: Student) {
 }
 
 async function removeStudent(student: Student, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await deleteStudentInSchoolYear(student, schoolYear);
     await loadStudentsForSchoolYear(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Schüler konnte nicht gelöscht werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht gelöscht werden.");
 }
 
 async function loadGroupsForSchoolYear(schoolYear: SchoolYear) {
@@ -81,35 +78,27 @@ async function loadCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, semes
 }
 
 async function addGroupToStudent(student: Student, group: Group) {
-  try {
+  await runSafeWithThrow(async () => {
     await assignStudentToGroup(student, group);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht zur Klasse hinzugefügt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht zur Klasse hinzugefügt werden.");
 }
 
 async function removeGroupFromStudent(student: Student, group: Group) {
-  try {
+  await runSafeWithThrow(async () => {
     await unassignStudentFromGroup(student, group);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht aus der Klasse entfernt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht aus der Klasse entfernt werden.");
 }
 
 async function addCourseToStudent(student: Student, course: Course) {
-  try {
+  await runSafeWithThrow(async () => {
     await assignStudentToCourse(student, course);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht zum Kurs hinzugefügt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht zum Kurs hinzugefügt werden.");
 }
 
 async function removeCourseFromStudent(student: Student, course: Course) {
-  try {
+  await runSafeWithThrow(async () => {
     await unassignStudentFromCourse(student, course);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht aus dem Kurs entfernt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht aus dem Kurs entfernt werden.");
 }
 
 export function useStudents() {

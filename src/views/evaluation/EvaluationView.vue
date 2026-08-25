@@ -27,6 +27,7 @@ const {
   createPerformance,
   updatePerformance,
   updateGrade,
+  deletePerformance,
 } = useEvaluations();
 
 const { computeOralSuggestion, computeWeightedOverall, computeATOverall, computeFinalOverall } = useGradeCalculation();
@@ -112,6 +113,19 @@ const tableTitle = computed(() => {
   }
 });
 
+watch([selectedColumn, typeOfNewPerformance], () => {
+  if (!selectedColumn.value && typeOfNewPerformance.value == PerformanceType.ORAL) {
+    const formattedDate = new Date().toLocaleDateString("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+    });
+
+    titleOfPerformance.value = formattedDate;
+  } else {
+    titleOfPerformance.value = "";
+  }
+});
+
 const addPerformanceTitle = computed(() => {
   if (selectedColumn.value) {
     return "Leistung bearbeiten";
@@ -164,6 +178,18 @@ async function handleSavePerformance() {
   });
 }
 
+async function handleDeletePerformance() {
+  if (!selectedColumn.value) return;
+  const performance = performances.value.at(selectedColumn.value);
+  if (!performance) return;
+  confirmAction(
+    "Leistung löschen",
+    `Soll die Leistung ${performance?.title} wirklich gelöscht werden? Alle zugehörigen Noten werden ebenfalls gelöscht.`,
+    async () => {
+      await deletePerformance(performance);
+      selectedColumn.value = undefined;
+    },
+  );
 }
 
 async function handleUpdatePerformances(updatedPerformances: Performance[]) {
@@ -183,7 +209,8 @@ async function handleGradeChanged(grade: Grade, studentIndex: number) {
     const student = students.value[studentIndex];
     const performanceType = grade.performanceType;
 
-  await cascadeGradeChanges(student, performanceType);
+    await cascadeGradeChanges(student, performanceType);
+  });
 }
 
 async function cascadeGradeChanges(student: EvaluatedStudent, performanceType: PerformanceType) {
@@ -297,6 +324,12 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
             titleOfPerformance = performances.find((performance) => performance.id === selectedColumn)?.title!;
             openAddPerformanceDialog = true;
           "
+        />
+        <p-button
+          icon="pi pi-trash"
+          severity="secondary"
+          :disabled="selectedColumn === undefined"
+          @click="handleDeletePerformance"
         />
       </template>
       <template #icons>

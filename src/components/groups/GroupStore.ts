@@ -11,6 +11,9 @@ import {
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Student } from "@/components/students/Student";
 import { ref } from "vue";
+import { useStoreErrorHandling } from "../errors/ErrorHandling";
+
+const { runSafeWithThrow } = useStoreErrorHandling();
 
 const groups = ref<Group[]>([]);
 
@@ -34,49 +37,39 @@ async function loadStudentsForGroup(group: Group): Promise<Student[]> {
 }
 
 async function addGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await createGroup(group, schoolYear);
     await loadAllGroupsForSchoolYearAndSemester(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Klasse konnte nicht gespeichert werden.", { cause: e });
-  }
+  }, "Klasse konnte nicht gespeichert werden.");
 }
 
 async function editGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await updateGroup(group);
     await loadAllGroupsForSchoolYearAndSemester(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Klasse konnte nicht aktualisiert werden.", { cause: e });
-  }
+  }, "Klasse konnte nicht aktualisiert werden.");
 }
 
 async function removeGroup(group: Group, schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await deleteGroupInSchoolYear(group, schoolYear);
     await loadAllGroupsForSchoolYearAndSemester(schoolYear);
     cleanup();
-  } catch (e) {
-    throw new Error("Klasse konnte nicht gelöscht werden.", { cause: e });
-  }
+  }, "Klasse konnte nicht gelöscht werden.");
 }
 
 async function addStudentToGroup(student: Student, group: Group) {
-  try {
+  await runSafeWithThrow(async () => {
     await assignStudentToGroup(student, group);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht zur Klasse hinzugefügt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht zur Klasse hinzugefügt werden.");
 }
 
 async function removeStudentFromGroup(student: Student, group: Group) {
-  try {
+  await runSafeWithThrow(async () => {
     await unassignStudentFromGroup(student, group);
-  } catch (e) {
-    throw new Error("Schüler konnte nicht aus der Klasse entfernt werden.", { cause: e });
-  }
+  }, "Schüler konnte nicht aus der Klasse entfernt werden.");
 }
 
 export function useGroups() {

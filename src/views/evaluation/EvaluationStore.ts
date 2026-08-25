@@ -11,10 +11,14 @@ import {
   createPerformance as gatewayCreatePerformance,
   updatePerformance as gatewayUpdatePerformance,
   updateGrade as gatewayUpdateGrade,
+  deletePerformance as gatewayDeletePerformance,
 } from "@/views/evaluation/EvaluationGateway";
 import type { Performance } from "@/components/evaluations/Performance";
 import type { TreeNode } from "primevue/treenode";
 import { ref } from "vue";
+import { useStoreErrorHandling } from "@/components/errors/ErrorHandling";
+
+const { runSafeWithThrow } = useStoreErrorHandling();
 
 const treeItems = ref<TreeNode[]>([]);
 
@@ -83,25 +87,37 @@ async function createPerformance(
   existingPerformances: Performance[],
   students: EvaluatedStudent[],
 ) {
-  const newWeight = 1 / (existingPerformances.length + 1);
-  newPerformance.weight = newWeight;
-  await gatewayCreatePerformance(
-    newPerformance,
-    students.map((student) => student.student),
-  );
+  await runSafeWithThrow(async () => {
+    const newWeight = 1 / (existingPerformances.length + 1);
+    newPerformance.weight = newWeight;
+    await gatewayCreatePerformance(
+      newPerformance,
+      students.map((student) => student.student),
+    );
 
-  for (const performance of existingPerformances) {
-    performance.weight = newWeight;
-    await gatewayUpdatePerformance(performance);
-  }
+    for (const performance of existingPerformances) {
+      performance.weight = newWeight;
+      await gatewayUpdatePerformance(performance);
+    }
+  }, "Leistung konnte nicht angelegt werden.");
 }
 
 async function updatePerformance(performance: Performance) {
-  await gatewayUpdatePerformance(performance);
+  await runSafeWithThrow(async () => {
+    await gatewayUpdatePerformance(performance);
+  }, "Leistung konnte nicht aktualisiert werden.");
+}
+
+async function deletePerformance(performance: Performance) {
+  await runSafeWithThrow(async () => {
+    await gatewayDeletePerformance(performance);
+  }, "Leistung konnte nicht gelöscht werden.");
 }
 
 async function updateGrade(grade: Grade) {
-  await gatewayUpdateGrade(grade);
+  await runSafeWithThrow(async () => {
+    await gatewayUpdateGrade(grade);
+  }, "Note konnte nicht aktualisiert werden.");
 }
 
 export function useEvaluations() {
@@ -114,5 +130,6 @@ export function useEvaluations() {
     createPerformance,
     updatePerformance,
     updateGrade,
+    deletePerformance,
   };
 }

@@ -1,6 +1,9 @@
 import { ref } from "vue";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { loadAll, createSchoolYear, deleteSchoolYear, updateSchoolYear } from "./SchoolYearGateway";
+import { useStoreErrorHandling } from "../errors/ErrorHandling";
+
+const { runSafeWithThrow } = useStoreErrorHandling();
 
 const schoolYears = ref<SchoolYear[]>([]);
 
@@ -21,13 +24,11 @@ async function loadAllSchoolYears() {
 }
 
 async function addSchoolYear(schoolYearToAdd: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await createSchoolYear(schoolYearToAdd);
     await loadAllSchoolYears();
     cleanup();
-  } catch (e) {
-    throw new Error("Schuljahr konnte nicht gespeichert werden.", { cause: e });
-  }
+  }, "Schuljahr konnte nicht gespeichert werden.");
 }
 
 function formatSchoolYear(item: SchoolYear) {
@@ -35,22 +36,18 @@ function formatSchoolYear(item: SchoolYear) {
 }
 
 async function removeSchoolYear(schoolYear: SchoolYear) {
-  try {
+  await runSafeWithThrow(async () => {
     await deleteSchoolYear(schoolYear);
     await loadAllSchoolYears();
-  } catch (e) {
-    throw new Error("Schuljahr konnte nicht gelöscht werden.", { cause: e });
-  }
+  }, "Schuljahr konnte nicht gelöscht werden.");
 }
 
 async function editSchoolYear(schoolYear: SchoolYear, cleanup: () => void) {
-  try {
+  await runSafeWithThrow(async () => {
     await updateSchoolYear(schoolYear);
     await loadAllSchoolYears();
     cleanup();
-  } catch (e) {
-    throw new Error("Schuljahr konnte nicht aktualisiert werden.", { cause: e });
-  }
+  }, "Schuljahr konnte nicht aktualisiert werden.");
 }
 
 export function useSchoolYears() {
