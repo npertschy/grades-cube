@@ -20,7 +20,7 @@ const value = defineModel<string>();
     <p-input-text
       v-model="value"
       :id="identifier"
-      class="mt-1"
+      class="mt-2"
       fluid
     />
   </div>

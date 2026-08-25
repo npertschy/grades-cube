@@ -33,7 +33,7 @@ const suggestions = computed<T[]>(() => {
       :input-id="identifier"
       :suggestions="suggestions"
       :option-label="option"
-      class="w-full mt-1"
+      class="w-full mt-2"
       input-class="w-full"
       @complete="(event: AutoCompleteCompleteEvent) => query = event.query"
     />
