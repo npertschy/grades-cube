@@ -41,7 +41,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
     const performanceCalls = mockedExecute.mock.calls.filter(
       ([sql]) => (sql as string).includes("INSERT INTO ZPERFORMANCE"),
     );
-    expect(performanceCalls).toHaveLength(9);
+    expect(performanceCalls).toHaveLength(6);
   });
 
   it("inserts one ZGRADE row per student per performance (2 students × 9 = 18)", async () => {
@@ -50,7 +50,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
     const gradeCalls = mockedExecute.mock.calls.filter(
       ([sql]) => (sql as string).includes("INSERT INTO ZGRADE"),
     );
-    expect(gradeCalls).toHaveLength(18);
+    expect(gradeCalls).toHaveLength(12);
   });
 
   it("inserts no ZGRADE rows when there are no students", async () => {
@@ -69,10 +69,10 @@ describe("insertDefaultPerformancesWithGrades", () => {
       ([sql]) => (sql as string).includes("INSERT INTO ZPERFORMANCE"),
     );
     const insertedTypes = performanceCalls.map(([, params]) => (params as unknown[])[5]);
-    expect(insertedTypes).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(insertedTypes).toEqual([ 1, 2, 4, 5, 7, 8]);
   });
 
-  it("sets ZEDITABLE = 1 for types 0, 2, 3, 6 and 0 for all others", async () => {
+  it("sets ZEDITABLE = 1 for type 2 and 0 for all others", async () => {
     await insertDefaultPerformancesWithGrades(COURSE_ID, 1, []);
 
     const performanceCalls = mockedExecute.mock.calls.filter(
@@ -83,10 +83,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
       const p = params as unknown[];
       editableByType[p[5] as number] = p[3] as number;
     }
-    expect(editableByType[0]).toBe(1);
     expect(editableByType[2]).toBe(1);
-    expect(editableByType[3]).toBe(1);
-    expect(editableByType[6]).toBe(1);
     expect(editableByType[1]).toBe(0);
     expect(editableByType[4]).toBe(0);
     expect(editableByType[5]).toBe(0);
@@ -138,7 +135,7 @@ describe("insertDefaultPerformancesWithGrades", () => {
 
     // Each performance PK is the 2nd arg of nextPrimaryKey; reconstruct from execute calls
     // Grades come in pairs (student 10, student 11) per performance in insertion order
-    expect(gradeCalls).toHaveLength(18);
+    expect(gradeCalls).toHaveLength(12);
 
     // Verify Z_ENT and Z_OPT for grades
     for (const [, params] of gradeCalls) {
