@@ -12,6 +12,7 @@ import { useConfirm } from "primevue/useconfirm";
 import { type SchoolYear } from "@/components/schoolYears/SchoolYear";
 import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useRoute } from "vue-router";
+import { useSchoolYearValidation } from "@/components/schoolYears/SchoolYearValidation";
 
 const route = useRoute();
 
@@ -20,18 +21,12 @@ const firstEndDate = ref<Date>();
 const secondStartDate = ref<Date>();
 const secondEndDate = ref<Date>();
 
-const firstStartDateValidationErrorMessage = ref<string | undefined>(
-  "Geben Sie bitte ein Startdatum für das erste Halbjahr an.",
-);
-const firstEndDateValidationErrorMessage = ref<string | undefined>(
-  "Geben Sie bitte ein Enddatum für das erste Halbjahr an.",
-);
-const secondStartDateValidationErrorMessage = ref<string | undefined>(
-  "Geben Sie bitte ein Startdatum für das zweite Halbjahr an.",
-);
-const secondEndDateValidationErrorMessage = ref<string | undefined>(
-  "Geben Sie bitte ein Enddatum für das zweite Halbjahr an.",
-);
+const { firstStartError, firstEndError, secondStartError, secondEndError, hasErrors } = useSchoolYearValidation({
+  firstStartDate: firstStartDate,
+  firstEndDate: firstEndDate,
+  secondStartDate: secondStartDate,
+  secondEndDate: secondEndDate,
+});
 
 const { schoolYears, loadAllSchoolYears, addSchoolYear, editSchoolYear, formatSchoolYear, removeSchoolYear } =
   useSchoolYears();
@@ -108,11 +103,6 @@ function resetDates() {
   firstEndDate.value = undefined;
   secondStartDate.value = undefined;
   secondEndDate.value = undefined;
-
-  firstStartDateValidationErrorMessage.value = "Geben Sie bitte ein Startdatum für das erste Halbjahr an.";
-  firstEndDateValidationErrorMessage.value = "Geben Sie bitte ein Enddatum für das erste Halbjahr an.";
-  secondStartDateValidationErrorMessage.value = "Geben Sie bitte ein Startdatum für das zweite Halbjahr an.";
-  secondEndDateValidationErrorMessage.value = "Geben Sie bitte ein Enddatum für das zweite Halbjahr an.";
 }
 
 function loadSchoolYear(item: SchoolYear | undefined) {
@@ -147,33 +137,12 @@ function handleRemove() {
 }
 
 const disableSave = computed(() => {
-  const result =
-    !allDatesSet.value ||
-    firstStartDateValidationErrorMessage.value != undefined ||
-    firstEndDateValidationErrorMessage.value != undefined ||
-    secondStartDateValidationErrorMessage.value != undefined ||
-    secondEndDateValidationErrorMessage.value != undefined;
+  const result = !allDatesSet.value || hasErrors.value;
   if (selectedSchoolYear.value && selectedSchoolYear.value.id) {
     return result || disableSaveForExistingSchoolYear.value;
   }
   return result;
 });
-
-function relatedDatesInvalid(date1: Date, date2: Date): boolean {
-  if (date1.getFullYear() > date2.getFullYear()) {
-    return true;
-  }
-
-  if (date1.getFullYear() === date2.getFullYear() && date1.getMonth() > date2.getMonth()) {
-    return true;
-  }
-
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() > date2.getDate()
-  );
-}
 
 const disableSaveForExistingSchoolYear = computed(() => {
   return (
@@ -191,52 +160,6 @@ const allDatesSet = computed(() => {
     secondStartDate.value != undefined &&
     secondEndDate.value != undefined
   );
-});
-
-watch([firstStartDate, firstEndDate], ([newFirstStartDate, newFirstEndDate]) => {
-  if (!newFirstStartDate) {
-    firstStartDateValidationErrorMessage.value = "Geben Sie bitte ein Startdatum für das erste Halbjahr an.";
-  } else if (newFirstEndDate && relatedDatesInvalid(newFirstStartDate, newFirstEndDate)) {
-    firstStartDateValidationErrorMessage.value = "Das Startdatum des ersten Halbjahres muss vor dem Enddatum liegen.";
-  } else {
-    firstStartDateValidationErrorMessage.value = undefined;
-  }
-});
-
-watch([firstEndDate, firstStartDate, secondStartDate], ([newFirstEndDate, newFirstStartDate, newSecondStartDate]) => {
-  if (!newFirstEndDate) {
-    firstEndDateValidationErrorMessage.value = "Geben Sie bitte ein Enddatum für das erste Halbjahr an.";
-  } else if (newSecondStartDate && relatedDatesInvalid(newFirstEndDate, newSecondStartDate)) {
-    firstEndDateValidationErrorMessage.value =
-      "Das Enddatum des ersten Halbjahres muss vor dem Startdatum des zweiten Halbjahres liegen.";
-  } else if (newFirstStartDate && relatedDatesInvalid(newFirstStartDate, newFirstEndDate)) {
-    firstEndDateValidationErrorMessage.value = "Das Enddatum des ersten Halbjahres muss nach dem Startdatum liegen.";
-  } else {
-    firstEndDateValidationErrorMessage.value = undefined;
-  }
-});
-
-watch([secondStartDate, firstEndDate, secondEndDate], ([newSecondStartDate, newFirstEndDate, newSecondEndDate]) => {
-  if (!newSecondStartDate) {
-    secondStartDateValidationErrorMessage.value = "Geben Sie bitte ein Startdatum für das zweite Halbjahr an.";
-  } else if (newSecondEndDate && relatedDatesInvalid(newSecondStartDate, newSecondEndDate)) {
-    secondStartDateValidationErrorMessage.value = "Das Enddatum des zweiten Halbjahres muss vor dem Startdatum liegen.";
-  } else if (newFirstEndDate && relatedDatesInvalid(newFirstEndDate, newSecondStartDate)) {
-    secondStartDateValidationErrorMessage.value =
-      "Das Startdatum des zweiten Halbjahres muss nach dem Enddatum des ersten Halbjahres liegen.";
-  } else {
-    secondStartDateValidationErrorMessage.value = undefined;
-  }
-});
-
-watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate]) => {
-  if (!newSecondEndDate) {
-    secondEndDateValidationErrorMessage.value = "Geben Sie bitte ein Enddatum für das zweite Halbjahr an.";
-  } else if (newSecondStartDate && relatedDatesInvalid(newSecondStartDate, newSecondEndDate)) {
-    secondEndDateValidationErrorMessage.value = "Das Enddatum des zweiten Halbjahres muss vor dem Startdatum liegen.";
-  } else {
-    secondEndDateValidationErrorMessage.value = undefined;
-  }
 });
 </script>
 
@@ -264,22 +187,22 @@ watch([secondEndDate, secondStartDate], ([newSecondEndDate, newSecondStartDate])
               <date-picker-with-label
                 v-model="firstStartDate"
                 label="Start erstes Halbjahr"
-                :validation-error-message="firstStartDateValidationErrorMessage"
+                :validation-error-message="firstStartError"
               />
               <date-picker-with-label
                 v-model="firstEndDate"
                 label="Ende erstes Halbjahr"
-                :validation-error-message="firstEndDateValidationErrorMessage"
+                :validation-error-message="firstEndError"
               />
               <date-picker-with-label
                 v-model="secondStartDate"
                 label="Start zweites Halbjahr"
-                :validation-error-message="secondStartDateValidationErrorMessage"
+                :validation-error-message="secondStartError"
               />
               <date-picker-with-label
                 v-model="secondEndDate"
                 label="Ende zweites Halbjahr"
-                :validation-error-message="secondEndDateValidationErrorMessage"
+                :validation-error-message="secondEndError"
               />
             </div>
             <save-and-delete-buttons
