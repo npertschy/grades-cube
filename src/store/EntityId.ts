@@ -8,3 +8,7 @@ export const Z_ENT = {
   ZSUBJECT: 7,
   ZYEAR: 8,
 } as const;
+
+export type ZEntName = keyof typeof Z_ENT;
+
+export type ZEntId = (typeof Z_ENT)[ZEntName];

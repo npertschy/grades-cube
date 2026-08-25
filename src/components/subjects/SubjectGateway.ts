@@ -1,7 +1,7 @@
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Subject } from "@/components/subjects/Subject";
 import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
-import { db, nextPrimaryKey, type CountResult } from "@/store/Database";
+import { db, nextPrimaryKey, withTransaction, type CountResult } from "@/store/Database";
 import { Z_ENT } from "@/store/EntityId";
 
 export async function loadSubjectsBySchoolYear(schoolYear: SchoolYear): Promise<Subject[]> {
@@ -23,9 +23,8 @@ export async function loadSubjectsBySchoolYear(schoolYear: SchoolYear): Promise<
 }
 
 export async function createSubjectForSchoolYear(subject: Subject, schoolYear: SchoolYear): Promise<void> {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
-    const id = await nextPrimaryKey("Subject");
+  await withTransaction(async () => {
+    const id = await nextPrimaryKey(Z_ENT.ZSUBJECT);
     const result = await db.execute(
       `
       INSERT OR IGNORE INTO ZSUBJECT (Z_PK, Z_ENT, Z_OPT, ZNAME)
@@ -38,10 +37,7 @@ export async function createSubjectForSchoolYear(subject: Subject, schoolYear: S
     if (result.rowsAffected > 0) {
       subjectId = id;
     } else {
-      const existing: SubjectEntity[] = await db.select(
-        `SELECT Z_PK FROM ZSUBJECT WHERE ZNAME = $1`,
-        [subject.name],
-      );
+      const existing: SubjectEntity[] = await db.select(`SELECT Z_PK FROM ZSUBJECT WHERE ZNAME = $1`, [subject.name]);
       subjectId = existing[0].Z_PK;
     }
 
@@ -58,16 +54,11 @@ export async function createSubjectForSchoolYear(subject: Subject, schoolYear: S
         [subjectId, schoolYear.id],
       );
     }
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function deleteSubjectFromSchoolYear(subject: Subject, schoolYear: SchoolYear): Promise<void> {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM Z_7YEARS
@@ -76,21 +67,11 @@ export async function deleteSubjectFromSchoolYear(subject: Subject, schoolYear: 
       `,
       [subject.id, schoolYear.id],
     );
-    const count: CountResult[] = await db.select(
-      `SELECT COUNT(*) FROM Z_7YEARS WHERE Z_7SUBJECTS = $1`,
-      [subject.id],
-    );
+    const count: CountResult[] = await db.select(`SELECT COUNT(*) FROM Z_7YEARS WHERE Z_7SUBJECTS = $1`, [subject.id]);
     if (count[0]["COUNT(*)"] === 0) {
-      await db.execute(
-        `DELETE FROM ZSUBJECT WHERE Z_PK = $1`,
-        [subject.id],
-      );
+      await db.execute(`DELETE FROM ZSUBJECT WHERE Z_PK = $1`, [subject.id]);
     }
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function updateSubject(subject: Subject): Promise<void> {

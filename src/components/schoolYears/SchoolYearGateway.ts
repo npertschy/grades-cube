@@ -2,7 +2,7 @@ import type { SchoolYear } from "./SchoolYear";
 import type { Semester } from "./Semester";
 import type { SchoolYearEntity } from "./SchoolYearEntity";
 import type { SemesterEntity } from "./SemesterEntity";
-import { db, nextPrimaryKey } from "@/store/Database";
+import { db, nextPrimaryKey, withTransaction } from "@/store/Database";
 import { coreDataToUnix, dateToCoreData } from "@/store/DateConversion";
 import { Z_ENT } from "@/store/EntityId";
 
@@ -42,11 +42,10 @@ export async function loadAll(): Promise<SchoolYear[]> {
 }
 
 export async function createSchoolYear(schoolYear: SchoolYear) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     const schoolYearStart = dateToCoreData(schoolYear.start!);
     const schoolYearEnd = dateToCoreData(schoolYear.end!);
-    const yearId = await nextPrimaryKey("Year");
+    const yearId = await nextPrimaryKey(Z_ENT.ZYEAR);
     await db.execute(
       `
       INSERT INTO ZYEAR (Z_PK, Z_ENT, Z_OPT, ZEND, ZSTART)
@@ -57,17 +56,13 @@ export async function createSchoolYear(schoolYear: SchoolYear) {
 
     await createSemester(schoolYear.firstSemester!, yearId);
     await createSemester(schoolYear.secondSemester!, yearId);
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 async function createSemester(semester: Semester, schoolYearId: number) {
   const semesterStart = dateToCoreData(semester.start!);
   const semesterEnd = dateToCoreData(semester.end!);
-  const semesterId = await nextPrimaryKey("Semester");
+  const semesterId = await nextPrimaryKey(Z_ENT.ZSEMESTER);
   await db.execute(
     `
     INSERT INTO ZSEMESTER (Z_PK, Z_ENT, Z_OPT, ZTYPEID, ZYEAR, ZEND, ZSTART)
@@ -78,8 +73,7 @@ async function createSemester(semester: Semester, schoolYearId: number) {
 }
 
 export async function updateSchoolYear(schoolYear: SchoolYear) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     const schoolYearStart = dateToCoreData(schoolYear.start!);
     const schoolYearEnd = dateToCoreData(schoolYear.end!);
     await db.execute(
@@ -93,11 +87,7 @@ export async function updateSchoolYear(schoolYear: SchoolYear) {
 
     await updateSemester(schoolYear.firstSemester!);
     await updateSemester(schoolYear.secondSemester!);
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 async function updateSemester(semester: Semester) {
@@ -114,8 +104,7 @@ async function updateSemester(semester: Semester) {
 }
 
 export async function deleteSchoolYear(schoolYear: SchoolYear) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM ZGRADE
@@ -148,33 +137,11 @@ export async function deleteSchoolYear(schoolYear: SchoolYear) {
       `,
       [schoolYear.id],
     );
-    await db.execute(
-      `DELETE FROM ZCOURSE WHERE ZYEAR = $1`,
-      [schoolYear.id],
-    );
-    await db.execute(
-      `DELETE FROM Z_3YEARS WHERE Z_8YEARS = $1`,
-      [schoolYear.id],
-    );
-    await db.execute(
-      `DELETE FROM Z_6YEARS WHERE Z_8YEARS1 = $1`,
-      [schoolYear.id],
-    );
-    await db.execute(
-      `DELETE FROM Z_7YEARS WHERE Z_8YEARS2 = $1`,
-      [schoolYear.id],
-    );
-    await db.execute(
-      `DELETE FROM ZSEMESTER WHERE ZYEAR = $1`,
-      [schoolYear.id],
-    );
-    await db.execute(
-      `DELETE FROM ZYEAR WHERE Z_PK = $1`,
-      [schoolYear.id],
-    );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+    await db.execute(`DELETE FROM ZCOURSE WHERE ZYEAR = $1`, [schoolYear.id]);
+    await db.execute(`DELETE FROM Z_3YEARS WHERE Z_8YEARS = $1`, [schoolYear.id]);
+    await db.execute(`DELETE FROM Z_6YEARS WHERE Z_8YEARS1 = $1`, [schoolYear.id]);
+    await db.execute(`DELETE FROM Z_7YEARS WHERE Z_8YEARS2 = $1`, [schoolYear.id]);
+    await db.execute(`DELETE FROM ZSEMESTER WHERE ZYEAR = $1`, [schoolYear.id]);
+    await db.execute(`DELETE FROM ZYEAR WHERE Z_PK = $1`, [schoolYear.id]);
+  });
 }

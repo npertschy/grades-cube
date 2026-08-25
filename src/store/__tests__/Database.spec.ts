@@ -14,14 +14,12 @@ vi.mock("@/store/Database", () => {
     return ids.map((_: unknown, index: number) => `${column} = $${index + offset}`).join(" OR ");
   }
 
-  async function nextPrimaryKey(name: string): Promise<number> {
+  async function nextPrimaryKey(entityId: number): Promise<number> {
     const result: { Z_MAX: number }[] = await mockedSelect(
-      "SELECT Z_MAX FROM Z_PRIMARYKEY WHERE Z_NAME = $1",
-      [name],
+      "UPDATE Z_PRIMARYKEY SET Z_MAX = Z_MAX + 1 WHERE Z_ENT = $1 RETURNING Z_MAX",
+      [entityId],
     );
-    const nextId = result[0].Z_MAX + 1;
-    await mockedExecute("UPDATE Z_PRIMARYKEY SET Z_MAX = $1 WHERE Z_NAME = $2", [nextId, name]);
-    return nextId;
+    return result[0].Z_MAX;
   }
 
   return {
@@ -56,24 +54,22 @@ describe("nextPrimaryKey", () => {
     vi.resetAllMocks();
   });
 
-  it("returns Z_MAX + 1 from the primary key table", async () => {
-    mockedSelect.mockResolvedValueOnce([{ Z_MAX: 41 }]);
-    mockedExecute.mockResolvedValueOnce({});
+  it("returns the incremented Z_MAX from the primary key table", async () => {
+    mockedSelect.mockResolvedValueOnce([{ Z_MAX: 42 }]);
 
-    const result = await nextPrimaryKey("Subject");
+    const result = await nextPrimaryKey(7);
 
     expect(result).toBe(42);
   });
 
-  it("updates Z_MAX in the primary key table with the new value", async () => {
-    mockedSelect.mockResolvedValueOnce([{ Z_MAX: 9 }]);
-    mockedExecute.mockResolvedValueOnce({});
+  it("atomically increments Z_MAX for the given entity", async () => {
+    mockedSelect.mockResolvedValueOnce([{ Z_MAX: 10 }]);
 
-    await nextPrimaryKey("Course");
+    await nextPrimaryKey(1);
 
-    expect(mockedExecute).toHaveBeenCalledWith(
-      "UPDATE Z_PRIMARYKEY SET Z_MAX = $1 WHERE Z_NAME = $2",
-      [10, "Course"],
+    expect(mockedSelect).toHaveBeenCalledWith(
+      "UPDATE Z_PRIMARYKEY SET Z_MAX = Z_MAX + 1 WHERE Z_ENT = $1 RETURNING Z_MAX",
+      [1],
     );
   });
 });

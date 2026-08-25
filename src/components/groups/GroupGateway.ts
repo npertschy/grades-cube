@@ -3,7 +3,7 @@ import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
-import { db, nextPrimaryKey, type CountResult } from "@/store/Database";
+import { db, nextPrimaryKey, withTransaction, type CountResult } from "@/store/Database";
 import { Z_ENT } from "@/store/EntityId";
 
 export async function loadGroupsBySchoolYearAndSemester(schoolYear: SchoolYear): Promise<Group[]> {
@@ -62,9 +62,8 @@ export async function createGroup(group: Group, schoolYear: SchoolYear) {
     throw new Error(`Group ${group.name} already exists in school year ${schoolYear.id}`);
   }
 
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
-    const id = await nextPrimaryKey("Group");
+  await withTransaction(async () => {
+    const id = await nextPrimaryKey(Z_ENT.ZGROUP);
     const sortingName = group.name?.match(/^\d/) ? `0${group.name}` : group.name;
     await db.execute(
       `
@@ -81,16 +80,11 @@ export async function createGroup(group: Group, schoolYear: SchoolYear) {
       `,
       [schoolYear.id, id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function deleteGroupInSchoolYear(group: Group, schoolYear: SchoolYear) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM Z_3STUDENTS
@@ -150,11 +144,7 @@ export async function deleteGroupInSchoolYear(group: Group, schoolYear: SchoolYe
       `,
       [group.id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function updateGroup(group: Group) {
@@ -170,11 +160,10 @@ export async function updateGroup(group: Group) {
 }
 
 export async function assignStudentToGroup(student: Student, group: Group) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
-      INSERT INTO Z_3STUDENTS (Z_6STUDENTS1, Z_3GROUPS2)
+      INSERT OR IGNORE INTO Z_3STUDENTS (Z_6STUDENTS1, Z_3GROUPS2)
       VALUES ($1, $2)
       `,
       [student.id, group.id],
@@ -186,7 +175,7 @@ export async function assignStudentToGroup(student: Student, group: Group) {
     for (const course of courses) {
       await db.execute(
         `
-        INSERT INTO Z_1STUDENTS (Z_1COURSES, Z_6STUDENTS)
+        INSERT OR IGNORE INTO Z_1STUDENTS (Z_1COURSES, Z_6STUDENTS)
         VALUES ($1, $2)
         `,
         [course.Z_PK, student.id],
@@ -194,11 +183,15 @@ export async function assignStudentToGroup(student: Student, group: Group) {
 
       type PerformanceRow = { Z_PK: number };
       const performances: PerformanceRow[] = await db.select(
-        `SELECT Z_PK FROM ZPERFORMANCE WHERE ZCOURSE = $1`,
-        [course.Z_PK],
+        `
+        SELECT Z_PK FROM ZPERFORMANCE
+        WHERE ZCOURSE = $1
+        AND Z_PK NOT IN (SELECT ZPERFORMANCE FROM ZGRADE WHERE ZSTUDENT = $2)
+        `,
+        [course.Z_PK, student.id],
       );
       for (const performance of performances) {
-        const gradeId = await nextPrimaryKey("Grade");
+        const gradeId = await nextPrimaryKey(Z_ENT.ZGRADE);
         await db.execute(
           `
           INSERT INTO ZGRADE (Z_PK, Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
@@ -208,16 +201,11 @@ export async function assignStudentToGroup(student: Student, group: Group) {
         );
       }
     }
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function unassignStudentFromGroup(student: Student, group: Group) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM ZGRADE
@@ -251,9 +239,5 @@ export async function unassignStudentFromGroup(student: Student, group: Group) {
       `,
       [student.id, group.id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }

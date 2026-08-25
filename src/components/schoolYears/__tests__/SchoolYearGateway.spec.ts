@@ -16,6 +16,7 @@ vi.mock("@/store/Database", () => ({
     execute: mockedExecute,
   },
   nextPrimaryKey: mockedNextPrimaryKey,
+  withTransaction: async (fn: () => Promise<unknown>) => fn(),
 }));
 
 const COREDATA_ZERO = 0;
@@ -69,8 +70,8 @@ describe("createSchoolYear", () => {
 
     await createSchoolYear(schoolYear);
 
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Year");
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Semester");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZYEAR);
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZSEMESTER);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZYEAR"),
       [1, Z_ENT.ZYEAR, 1, expect.any(Number), expect.any(Number)],
@@ -83,21 +84,14 @@ describe("createSchoolYear", () => {
       expect.stringContaining("INSERT INTO ZSEMESTER"),
       [11, Z_ENT.ZSEMESTER, 1, 2, 1, expect.any(Number), expect.any(Number)],
     );
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
-    expect(calls.at(-1)).toContain("COMMIT");
   });
 
-  it("rolls back and rethrows on error", async () => {
+  it("rethrows on error", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(1);
-    mockedExecute.mockResolvedValueOnce({});
     mockedExecute.mockRejectedValueOnce(new Error("db error"));
     mockedExecute.mockResolvedValue({});
 
     await expect(createSchoolYear(schoolYear)).rejects.toThrow("db error");
-
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });
 
@@ -119,9 +113,6 @@ describe("updateSchoolYear", () => {
       expect.stringContaining("UPDATE ZSEMESTER"),
       [expect.any(Number), expect.any(Number), 11],
     );
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
-    expect(calls.at(-1)).toContain("COMMIT");
   });
 });
 
@@ -132,7 +123,6 @@ describe("deleteSchoolYear", () => {
     await deleteSchoolYear(schoolYear);
 
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
     expect(calls.some((s) => s.includes("DELETE FROM ZGRADE"))).toBe(true);
     expect(calls.some((s) => s.includes("DELETE FROM ZPERFORMANCE"))).toBe(true);
     expect(calls.some((s) => s.includes("DELETE FROM Z_1STUDENTS"))).toBe(true);
@@ -142,7 +132,6 @@ describe("deleteSchoolYear", () => {
     expect(calls.some((s) => s.includes("DELETE FROM Z_7YEARS"))).toBe(true);
     expect(calls.some((s) => s.includes("DELETE FROM ZSEMESTER"))).toBe(true);
     expect(calls.some((s) => s.includes("DELETE FROM ZYEAR"))).toBe(true);
-    expect(calls.at(-1)).toContain("COMMIT");
 
     const gradeIdx = calls.findIndex((s) => s.includes("DELETE FROM ZGRADE"));
     const perfIdx = calls.findIndex((s) => s.includes("DELETE FROM ZPERFORMANCE"));
@@ -153,14 +142,11 @@ describe("deleteSchoolYear", () => {
     expect(courseIdx).toBeLessThan(yearIdx);
   });
 
-  it("rolls back and rethrows on error", async () => {
+  it("rethrows on error", async () => {
     mockedExecute.mockResolvedValueOnce({});
     mockedExecute.mockRejectedValueOnce(new Error("db error"));
     mockedExecute.mockResolvedValue({});
 
     await expect(deleteSchoolYear(schoolYear)).rejects.toThrow("db error");
-
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });

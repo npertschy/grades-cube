@@ -8,6 +8,7 @@ import {
   deleteSubjectFromSchoolYear,
   loadAll,
 } from "@/components/subjects/SubjectGateway";
+import { Z_ENT } from "@/store/EntityId";
 
 const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock("@/store/Database", () => ({
     execute: mockedExecute,
   },
   nextPrimaryKey: mockedNextPrimaryKey,
+  withTransaction: async (fn: () => Promise<unknown>) => fn(),
 }));
 
 const schoolYear: SchoolYear = {
@@ -55,7 +57,6 @@ describe("loadSubjectsBySchoolYear", () => {
 describe("createSubjectForSchoolYear", () => {
   it("inserts a new subject and creates the year link when the name is globally unique", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(42);
-    mockedExecute.mockResolvedValueOnce({});  // BEGIN
     mockedExecute.mockResolvedValueOnce({ rowsAffected: 1 });  // INSERT OR IGNORE
     // link check: no existing link
     mockedSelect.mockResolvedValueOnce([{ "COUNT(*)": 0 }]);
@@ -64,7 +65,7 @@ describe("createSubjectForSchoolYear", () => {
     const subject: Subject = { id: undefined, name: "Deutsch" };
     await createSubjectForSchoolYear(subject, schoolYear);
 
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Subject");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZSUBJECT);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT OR IGNORE INTO ZSUBJECT"),
       [42, 7, 1, "Deutsch"],
@@ -77,7 +78,6 @@ describe("createSubjectForSchoolYear", () => {
 
   it("uses the existing subject's Z_PK and creates the year link when the name already exists globally", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(99);
-    mockedExecute.mockResolvedValueOnce({});  // BEGIN
     mockedExecute.mockResolvedValueOnce({ rowsAffected: 0 });  // INSERT OR IGNORE — ignored
     // SELECT existing subject
     mockedSelect.mockResolvedValueOnce([{ Z_PK: 7 }]);
@@ -88,7 +88,7 @@ describe("createSubjectForSchoolYear", () => {
     const subject: Subject = { id: undefined, name: "Deutsch" };
     await createSubjectForSchoolYear(subject, schoolYear);
 
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Subject");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZSUBJECT);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO Z_7YEARS"),
       [7, 1],
@@ -97,7 +97,6 @@ describe("createSubjectForSchoolYear", () => {
 
   it("skips creating the year link when the subject is already linked to this school year", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(99);
-    mockedExecute.mockResolvedValueOnce({});  // BEGIN
     mockedExecute.mockResolvedValueOnce({ rowsAffected: 0 });  // INSERT OR IGNORE — ignored
     // SELECT existing subject
     mockedSelect.mockResolvedValueOnce([{ Z_PK: 7 }]);
@@ -114,17 +113,13 @@ describe("createSubjectForSchoolYear", () => {
     );
   });
 
-  it("rolls back and rethrows on error", async () => {
+  it("rethrows on error", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(42);
-    mockedExecute.mockResolvedValueOnce({});  // BEGIN
     mockedExecute.mockRejectedValueOnce(new Error("constraint violation"));
     mockedExecute.mockResolvedValue({});
 
     const subject: Subject = { id: undefined, name: "Deutsch" };
     await expect(createSubjectForSchoolYear(subject, schoolYear)).rejects.toThrow("constraint violation");
-
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls.some((s) => s.includes("ROLLBACK"))).toBe(true);
   });
 });
 
@@ -171,9 +166,6 @@ describe("deleteSubjectFromSchoolYear", () => {
       expect.stringContaining("DELETE FROM ZSUBJECT"),
       [7],
     );
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
-    expect(calls.at(-1)).toContain("COMMIT");
   });
 });
 

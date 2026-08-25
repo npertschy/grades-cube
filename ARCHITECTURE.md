@@ -24,7 +24,7 @@ All business tables carry three Core Data bookkeeping columns:
 
 | Column | Rule |
 |---|---|
-| `Z_PK` | Primary key. Always allocated via `nextPrimaryKey()`, which reads/increments `Z_PRIMARYKEY`. |
+| `Z_PK` | Primary key. Always allocated via `nextPrimaryKey()`, which atomically increments `Z_PRIMARYKEY` in a single `UPDATE … RETURNING` statement. |
 | `Z_ENT` | Entity type ID. Must be set to the correct constant from `Z_ENT` map on every `INSERT`. |
 | `Z_OPT` | Optimistic-lock counter. Must be incremented (`Z_OPT + 1`) on every `UPDATE`. |
 
@@ -73,13 +73,13 @@ Because Core Data originally managed FK integrity, cascade deletes, and PK alloc
 
 ### 3.2 Query libraries & transaction boundaries
 
-Gateways are feature-scoped (one gateway per view/feature) and own the transaction boundary. Reusable SQL lives in **query libraries** — small per-entity modules that export atomic query operations.
+Gateways are feature-scoped (one gateway per view/feature) and own the operation boundary. Reusable SQL lives in **query libraries** — small per-entity modules that export atomic query operations.
 
 | Concept | Scope | Example |
 |---|---|---|
 | Query atom | Smallest reusable unit — a single `db.select()` or `db.execute()` call | `insertCourse(db, params)` |
 | Query sequence | Multiple atoms that always run together (e.g. cascade deletes) — exported as one function | `deleteCourseGrades(db, coursePk)` |
-| Gateway | Feature-scoped; imports atoms/sequences from one or more query libraries, wraps in `BEGIN EXCLUSIVE` / `COMMIT` / `ROLLBACK` | `EvaluationGateway.createPerformanceWithGrades(...)` |
+| Gateway | Feature-scoped; imports atoms/sequences from one or more query libraries, wraps related writes in `withTransaction(...)` | `EvaluationGateway.createPerformanceWithGrades(...)` |
 | Store | Orchestrates one gateway; belongs to a view/feature | `EvaluationStore` |
 
 Atoms are extracted when reused across files. Sequences stay local when only used in one gateway.
@@ -99,8 +99,11 @@ Correct ordering to avoid FK violations (leaf → root):
 
 - `ZGRADE` → `ZPERFORMANCE` → `Z_1STUDENTS` → `ZCOURSE` → `Z_3YEARS` / `Z_6YEARS` / `Z_7YEARS` → `ZSEMESTER` → `ZYEAR`
 - Use subquery-based deletes — `DELETE … INNER JOIN` is not valid SQLite syntax.
-- All multi-step mutations run inside `BEGIN EXCLUSIVE TRANSACTION` / `COMMIT` / `ROLLBACK`.
-- Group↔student membership fans out to course↔student membership: `GroupGateway.assignStudentToGroup` / `unassignStudentFromGroup` cascade to `Z_1STUDENTS` (and `ZGRADE`) for every course of that group, symmetric to `CourseGateway.assignStudentToCourse` / `unassignStudentFromCourse`.
+- All multi-step mutations are wrapped in `withTransaction(...)`. **Note:** `tauri-plugin-sql` runs on an SQLx connection pool (up to 10 connections), and each `db.execute` / `db.select` call acquires an arbitrary pooled connection. A SQL `BEGIN`/`COMMIT` issued across separate calls would therefore land on different physical connections — leaving a dangling transaction ("transaction within a transaction") and an unreleased lock ("database is locked"). Because the plugin exposes no way to pin a connection, `withTransaction` does **not** open a SQL transaction; it serializes related writes through a global queue. Atomic single-statement writes (WAL mode, `INSERT OR IGNORE`, `UPDATE … RETURNING`, subquery deletes) provide correctness. WAL is enabled once via migration; SQLx applies `foreign_keys = ON` and a 5 s `busy_timeout` per connection by default.
+- Student membership can be managed from either side, and both paths are idempotent (safe to combine/repeat):
+  - **Group → courses:** `GroupGateway.assignStudentToGroup` adds the `Z_3STUDENTS` group link and enrolls the student in **every existing course** of the group (`Z_1STUDENTS` + blank `ZGRADE` rows).
+  - **Course → group:** `CourseGateway.assignStudentToCourse` enrolls the student in **that one course** (`Z_1STUDENTS` + grades) and adds the `Z_3STUDENTS` group link for the course's group. It does **not** enroll them in the group's other courses (granular by design; note that `createCourse` likewise does not auto-enroll existing group members).
+  - Idempotency: membership tables (`Z_1STUDENTS`, `Z_3STUDENTS`) already have composite PKs and are written with `INSERT OR IGNORE`; grades are guarded by a unique index on `ZGRADE(ZPERFORMANCE, ZSTUDENT)` and only created for performances the student does not already have.
 
 ---
 

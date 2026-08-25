@@ -9,7 +9,7 @@ import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
 import type { Semester } from "@/components/schoolYears/Semester";
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
-import { db, nextPrimaryKey } from "@/store/Database";
+import { db, nextPrimaryKey, withTransaction } from "@/store/Database";
 import { dateToCoreData, coreDataToUnix } from "@/store/DateConversion";
 import { Z_ENT } from "@/store/EntityId";
 
@@ -145,9 +145,8 @@ export async function loadStudentsForGroup(group: Group): Promise<Student[]> {
 }
 
 export async function createPerformance(performance: Performance, students: Student[]): Promise<void> {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
-    const performanceId = await nextPrimaryKey("Performance");
+  await withTransaction(async () => {
+    const performanceId = await nextPrimaryKey(Z_ENT.ZPERFORMANCE);
     await db.execute(
       `
       INSERT INTO ZPERFORMANCE (Z_PK, Z_ENT, Z_OPT, ZEDITABLE, ZSORTORDER, ZTYPE, ZCOURSE, ZDATE, ZWEIGHT, ZTITLE)
@@ -168,7 +167,7 @@ export async function createPerformance(performance: Performance, students: Stud
     );
 
     for (const student of students) {
-      const gradeId = await nextPrimaryKey("Grade");
+      const gradeId = await nextPrimaryKey(Z_ENT.ZGRADE);
       await db.execute(
         `
         INSERT INTO ZGRADE (Z_PK, Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
@@ -177,11 +176,7 @@ export async function createPerformance(performance: Performance, students: Stud
         [gradeId, Z_ENT.ZGRADE, 1, performanceId, student.id],
       );
     }
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function updatePerformance(performance: Performance): Promise<void> {
@@ -207,8 +202,7 @@ export async function updateGrade(grade: Grade): Promise<void> {
 }
 
 export async function deletePerformance(performance: Performance): Promise<void> {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `DELETE FROM ZGRADE WHERE ZPERFORMANCE = $1`,
       [performance.id],
@@ -217,9 +211,5 @@ export async function deletePerformance(performance: Performance): Promise<void>
       `DELETE FROM ZPERFORMANCE WHERE Z_PK = $1`,
       [performance.id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }

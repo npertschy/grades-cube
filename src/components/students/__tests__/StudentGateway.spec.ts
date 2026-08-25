@@ -11,6 +11,7 @@ import {
   loadGroupsBySchoolYear,
   loadCoursesBySchoolYearAndSemester,
 } from "@/components/students/StudentGateway";
+import { Z_ENT } from "@/store/EntityId";
 
 const { mockedSelect, mockedExecute, mockedNextPrimaryKey } = vi.hoisted(() => ({
   mockedSelect: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("@/store/Database", () => ({
     execute: mockedExecute,
   },
   nextPrimaryKey: mockedNextPrimaryKey,
+  withTransaction: async (fn: () => Promise<unknown>) => fn(),
 }));
 
 const schoolYear: SchoolYear = {
@@ -88,7 +90,7 @@ describe("createStudentInSchoolYear", () => {
 
     await createStudentInSchoolYear(student, schoolYear);
 
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Student");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZSTUDENT);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZSTUDENT"),
       [42, 6, 1, "Max", "Muster"],
@@ -97,9 +99,6 @@ describe("createStudentInSchoolYear", () => {
       expect.stringContaining("INSERT INTO Z_6YEARS"),
       [42, 1],
     );
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
-    expect(calls[calls.length - 1]).toContain("COMMIT");
   });
 });
 

@@ -1,7 +1,7 @@
 import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { SchoolYear } from "@/components/schoolYears/SchoolYear";
-import { db, nextPrimaryKey, type CountResult } from "@/store/Database";
+import { db, nextPrimaryKey, withTransaction, type CountResult } from "@/store/Database";
 import { Z_ENT } from "@/store/EntityId";
 import type { GroupEntity } from "@/components/groups/GroupEntity";
 import type { Group } from "@/components/groups/Group";
@@ -106,9 +106,8 @@ export async function loadGroupsAndCoursesForStudent(
 }
 
 export async function createStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
-    const id = await nextPrimaryKey("Student");
+  await withTransaction(async () => {
+    const id = await nextPrimaryKey(Z_ENT.ZSTUDENT);
     await db.execute(
       `
       INSERT INTO ZSTUDENT (Z_PK, Z_ENT, Z_OPT, ZFIRSTNAME, ZLASTNAME)
@@ -123,11 +122,7 @@ export async function createStudentInSchoolYear(student: Student, schoolYear: Sc
       `,
       [id, schoolYear.id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function updateStudent(student: Student) {
@@ -142,8 +137,7 @@ export async function updateStudent(student: Student) {
 }
 
 export async function deleteStudentInSchoolYear(student: Student, schoolYear: SchoolYear) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM Z_6YEARS
@@ -168,11 +162,7 @@ export async function deleteStudentInSchoolYear(student: Student, schoolYear: Sc
         [student.id],
       );
     }
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function loadGroupsBySchoolYear(schoolYear: SchoolYear): Promise<Group[]> {

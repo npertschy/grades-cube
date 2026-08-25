@@ -15,10 +15,11 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Dark mode toggle (toolbar avatar popover), persisted via `KeyValueStore`
 - ✅ Global school-year + semester selector (`SchoolYearSelector`), persisted to `KeyValueStore`
 - ✅ Core Data date helpers (`coreDataToUnix` / `dateToCoreData`, +978307200 epoch offset)
-- ✅ `nextPrimaryKey()` — reads/increments `Z_PRIMARYKEY` table for Core Data-compatible PK allocation
+- ✅ `nextPrimaryKey()` — atomically increments `Z_PRIMARYKEY` via a single `UPDATE … RETURNING` for Core Data-compatible PK allocation (was a race-prone SELECT-then-UPDATE)
+- ✅ `[P1]` **DB locking / transaction bug fixed** — `tauri-plugin-sql` runs on an SQLx connection pool, so multi-call `BEGIN EXCLUSIVE`/`COMMIT` landed on different pooled connections, causing "transaction within a transaction" and "database is locked" self-deadlocks. `withTransaction` no longer opens a SQL transaction; it serializes related writes through a global queue. Removed the invalid `busy_timeout` URL param (SQLx rejects unknown params; default is already 5 s) from both `Database.ts` and `main.rs`; WAL enabled once via migration v3
 - ✅ Test coverage: all gateway functions and all management views have tests
 - ✅ `[P1]` **Reload on school-year / semester change** — management views (Student, Group, Subject, Course) and the Evaluation view do **not** watch the global `selectedSchoolYear` / `selectedSemester` signals; switching the selector does not reload data in any of these views. Every view that depends on the selection must add a `watch` on both values and re-run its load function.
-- 🐞 `[P3]` Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
+- ✅ `[P3]` Dead scaffold Rust command `greet()` in `src-tauri/src/main.rs` — can be removed
 - 🐞 `[P2]` **Drop `Z_3SEMESTERS`** — the app now owns the DB (see ARCHITECTURE §2/§2.3). (1) Add the migration runner if not present; (2) grep gateways/query libs for `Z_3SEMESTERS` and remove any reads/writes; (3) `DROP TABLE Z_3SEMESTERS` in a forward migration; (4) update ARCHITECTURE §2.2. Groups remain school-year-scoped via `Z_3YEARS`.
 - ✅ `[P1]` **Migration runner** — ordered, forward-only SQL scripts applied on startup, tracked by `schema_version` (see ARCHITECTURE §2.3); prerequisite for the `Z_3SEMESTERS` drop and `ZCOURSE.ZLEVEL`/`ZORDINAL` additions.
 - ✅ `[P2]` No user-facing error handling: DB failures are silently swallowed; no toast/dialog on error
@@ -62,6 +63,7 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Edit group name and type (Sek I / Sek II)
 - ✅ Load students belonging to a group
 - ✅ Assign / unassign student to/from group (`Z_3STUDENTS`) — cascades to all courses of the group: `assignStudentToGroup` enrolls the student in every course of the group (+ blank `ZGRADE` rows per existing performance); `unassignStudentFromGroup` removes the student from those courses (`Z_1STUDENTS`) and deletes their `ZGRADE` rows, all inside one transaction. See REQUIREMENTS §3.
+- ✅ `[P2]` **Idempotent group assignment** — `assignStudentToGroup` now uses `INSERT OR IGNORE` for `Z_3STUDENTS` / `Z_1STUDENTS` and only creates grades for performances the student doesn't already have, so it is safe to combine/repeat with course-side assignment
 - ✅ Delete group — cascade: `Z_3STUDENTS`, `Z_3YEARS`, grades, performances, courses for that group in the year, then `ZGROUP`
 - ✅ `GroupGateway.deleteGroupInSchoolYear` invalid SQL fixed (rewrote invalid `DELETE … INNER JOIN` as subquery-based deletes)
 
@@ -75,6 +77,8 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 - ✅ Update course — updates `ZGROUP`, `ZSUBJECT`, `ZDAYS`, increments `Z_OPT`
 - ✅ Delete course — cascade: ZGRADE (subquery via ZPERFORMANCE) → ZPERFORMANCE → Z_1STUDENTS → ZCOURSE, inside a transaction
 - ✅ Assign student to course — inserts `Z_1STUDENTS` + blank `ZGRADE` rows for every existing performance, inside a transaction
+- ✅ `[P2]` **Course → group cascade** — `assignStudentToCourse` now also adds the `Z_3STUDENTS` group link for the course's group (granular: only that course is enrolled, not the group's other courses), so students added from the course side also appear as group members. Uses `INSERT OR IGNORE` and skips performances the student already has a grade for
+- ✅ `[P2]` **Grade uniqueness constraint** — migration v4 dedupes existing `ZGRADE` rows and adds a unique index on `ZGRADE(ZPERFORMANCE, ZSTUDENT)` (also in `initial-schema.sql`); prevents duplicate grades when both assignment flows touch the same student
 - ✅ Unassign student from course — deletes student's `ZGRADE` rows for the course's performances, then removes `Z_1STUDENTS` link, inside a transaction
 - ✅ `[P1]` **Create default performances on course creation** — after inserting `ZCOURSE`, call the shared sub-procedure to insert default performance rows and empty grades for all enrolled students (see REQUIREMENTS §4 and §5)
 

@@ -28,6 +28,7 @@ vi.mock("@/store/Database", () => ({
     execute: mockedExecute,
   },
   nextPrimaryKey: mockedNextPrimaryKey,
+  withTransaction: async (fn: () => Promise<unknown>) => fn(),
 }));
 
 const schoolYear = { id: 1, start: undefined, end: undefined, firstSemester: undefined, secondSemester: undefined };
@@ -175,8 +176,8 @@ describe("createPerformance", () => {
 
     await createPerformance(performance, students);
 
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Performance");
-    expect(mockedNextPrimaryKey).toHaveBeenCalledWith("Grade");
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZPERFORMANCE);
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZGRADE);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZPERFORMANCE"),
       [99, Z_ENT.ZPERFORMANCE, 1, 1, 0, 6, 5, expect.any(Number), 0.5, "KA1"],
@@ -189,9 +190,6 @@ describe("createPerformance", () => {
       expect.stringContaining("INSERT INTO ZGRADE"),
       [202, Z_ENT.ZGRADE, 1, 99, 11],
     );
-    const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
-    expect(calls[calls.length - 1]).toContain("COMMIT");
   });
 });
 
@@ -246,8 +244,6 @@ describe("deletePerformance", () => {
       [1],
     );
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
-    expect(calls[0]).toContain("BEGIN");
-    expect(calls.at(-1)).toContain("COMMIT");
     const gradeIdx = calls.findIndex((s) => s.includes("DELETE FROM ZGRADE"));
     const perfIdx = calls.findIndex((s) => s.includes("DELETE FROM ZPERFORMANCE"));
     expect(gradeIdx).toBeLessThan(perfIdx);

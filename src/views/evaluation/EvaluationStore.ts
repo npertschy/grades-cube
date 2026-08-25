@@ -84,21 +84,13 @@ async function loadPerformancesForCourse(course: Course) {
 
 async function createPerformance(
   newPerformance: Performance,
-  existingPerformances: Performance[],
   students: EvaluatedStudent[],
 ) {
   await runSafeWithThrow(async () => {
-    const newWeight = 1 / (existingPerformances.length + 1);
-    newPerformance.weight = newWeight;
     await gatewayCreatePerformance(
       newPerformance,
       students.map((student) => student.student),
     );
-
-    for (const performance of existingPerformances) {
-      performance.weight = newWeight;
-      await gatewayUpdatePerformance(performance);
-    }
   }, "Leistung konnte nicht angelegt werden.");
 }
 

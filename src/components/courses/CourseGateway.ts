@@ -9,7 +9,7 @@ import type { Student } from "@/components/students/Student";
 import type { StudentEntity } from "@/components/students/StudentEntity";
 import type { Subject } from "@/components/subjects/Subject";
 import type { SubjectEntity } from "@/components/subjects/SubjectEntity";
-import { db, nextPrimaryKey } from "@/store/Database";
+import { db, nextPrimaryKey, withTransaction } from "@/store/Database";
 import { Z_ENT } from "@/store/EntityId";
 
 export async function loadCoursesBySchoolYearAndSemester(
@@ -109,9 +109,8 @@ export async function loadAvailableSubjectsBySchoolYear(schoolYear: SchoolYear):
 }
 
 export async function createCourse(course: Course, schoolYear: SchoolYear, semester: Semester) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
-    const id = await nextPrimaryKey("Course");
+  await withTransaction(async () => {
+    const id = await nextPrimaryKey(Z_ENT.ZCOURSE);
     await db.execute(
       `
       INSERT INTO ZCOURSE (Z_PK, Z_ENT, Z_OPT, ZGROUP, ZSUBJECT, ZSEMESTER, ZYEAR, ZDAYS)
@@ -120,11 +119,7 @@ export async function createCourse(course: Course, schoolYear: SchoolYear, semes
       [id, Z_ENT.ZCOURSE, 1, course.group!.id, course.subject!.id, semester.id, schoolYear.id, course.days ?? null],
     );
     await insertDefaultPerformancesWithGrades(id, course.group?.type, []);
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function updateCourse(course: Course) {
@@ -139,8 +134,7 @@ export async function updateCourse(course: Course) {
 }
 
 export async function deleteCourseInSchoolYear(course: Course) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM ZGRADE
@@ -173,31 +167,39 @@ export async function deleteCourseInSchoolYear(course: Course) {
       `,
       [course.id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function assignStudentToCourse(student: Student, course: Course) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
-      INSERT INTO Z_1STUDENTS (Z_1COURSES, Z_6STUDENTS)
+      INSERT OR IGNORE INTO Z_1STUDENTS (Z_1COURSES, Z_6STUDENTS)
       VALUES ($1, $2)
+      `,
+      [course.id, student.id],
+    );
+
+    // Cascade to the group: the student becomes a member of the course's group.
+    await db.execute(
+      `
+      INSERT OR IGNORE INTO Z_3STUDENTS (Z_3GROUPS2, Z_6STUDENTS1)
+      SELECT ZGROUP, $2 FROM ZCOURSE WHERE Z_PK = $1
       `,
       [course.id, student.id],
     );
 
     type PerformanceRow = { Z_PK: number };
     const performances: PerformanceRow[] = await db.select(
-      `SELECT Z_PK FROM ZPERFORMANCE WHERE ZCOURSE = $1`,
-      [course.id],
+      `
+      SELECT Z_PK FROM ZPERFORMANCE
+      WHERE ZCOURSE = $1
+      AND Z_PK NOT IN (SELECT ZPERFORMANCE FROM ZGRADE WHERE ZSTUDENT = $2)
+      `,
+      [course.id, student.id],
     );
     for (const performance of performances) {
-      const gradeId = await nextPrimaryKey("Grade");
+      const gradeId = await nextPrimaryKey(Z_ENT.ZGRADE);
       await db.execute(
         `
         INSERT INTO ZGRADE (Z_PK, Z_ENT, Z_OPT, ZPERFORMANCE, ZSTUDENT)
@@ -206,16 +208,11 @@ export async function assignStudentToCourse(student: Student, course: Course) {
         [gradeId, Z_ENT.ZGRADE, 1, performance.Z_PK, student.id],
       );
     }
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }
 
 export async function unassignStudentFromCourse(student: Student, course: Course) {
-  await db.execute("BEGIN EXCLUSIVE TRANSACTION");
-  try {
+  await withTransaction(async () => {
     await db.execute(
       `
       DELETE FROM ZGRADE
@@ -234,9 +231,5 @@ export async function unassignStudentFromCourse(student: Student, course: Course
       `,
       [course.id, student.id],
     );
-    await db.execute("COMMIT TRANSACTION");
-  } catch (error) {
-    await db.execute("ROLLBACK TRANSACTION");
-    throw error;
-  }
+  });
 }

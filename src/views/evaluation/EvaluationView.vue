@@ -169,12 +169,13 @@ async function handleSavePerformance() {
         performanceId: undefined,
         weight: 0,
       };
-      await createPerformance(performance, existingPerformances, students.value);
+      await createPerformance(performance, students.value);
+      showWeightsManagement.value = true;
     }
     openAddPerformanceDialog.value = false;
     titleOfPerformance.value = "";
     typeOfNewPerformance.value = undefined;
-    reloadCourse();
+    await reloadCourse();
   });
 }
 
@@ -188,6 +189,8 @@ async function handleDeletePerformance() {
     async () => {
       await deletePerformance(performance);
       selectedColumn.value = undefined;
+      await reloadCourse();
+      showWeightsManagement.value = true;
     },
   );
 }
