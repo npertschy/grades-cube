@@ -3,11 +3,6 @@
 
 use tauri_plugin_sql::{Migration, MigrationKind};
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 fn main() {
     let migrations = vec![
         Migration {
@@ -31,7 +26,6 @@ fn main() {
                 .add_migrations("sqlite:db/Notenwuerfel.sqlite", migrations)
                 .build(),
         )
-        .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
