@@ -9,6 +9,7 @@ import ToastService from "primevue/toastservice";
 import ConfirmationService from "primevue/confirmationservice";
 import Ripple from "primevue/ripple";
 import KeyFilter from "primevue/keyfilter";
+import Tooltip from "primevue/tooltip";
 import { config } from "@/PrimeVueConfig";
 
 const app = createApp(App);
@@ -19,5 +20,6 @@ app.use(ToastService);
 app.use(ConfirmationService);
 app.directive("ripple", Ripple);
 app.directive("keyfilter", KeyFilter);
+app.directive("tooltip", Tooltip);
 
 app.mount("#app");

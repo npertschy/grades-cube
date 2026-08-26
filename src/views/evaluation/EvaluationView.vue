@@ -287,6 +287,7 @@ const hideWeightsManagementDisabled = ref(false);
         <h3>{{ tableTitle }}</h3>
         <div>
           <p-button
+            v-tooltip.bottom="'Neue mündliche Leistung anlegen'"
             severity="secondary"
             class="new-oral-performance"
             style="color: var(--p-performance-oral-text)"
@@ -299,6 +300,7 @@ const hideWeightsManagementDisabled = ref(false);
             <i class="pi pi-comment" />
           </p-button>
           <p-button
+            v-tooltip.bottom="'Neue besondere Leistung anlegen'"
             severity="secondary"
             class="new-special-performance"
             style="color: var(--p-performance-special-text)"
@@ -311,6 +313,7 @@ const hideWeightsManagementDisabled = ref(false);
             <i class="pi pi-star" />
           </p-button>
           <p-button
+            v-tooltip.bottom="'Neue schriftliche Leistung anlegen'"
             severity="secondary"
             class="new-test-performance"
             style="color: var(--p-performance-test-text)"
@@ -325,6 +328,7 @@ const hideWeightsManagementDisabled = ref(false);
         </div>
         <div>
           <p-button
+            v-tooltip.bottom="'Leistung bearbeiten'"
             icon="pi pi-pencil"
             severity="secondary"
             :disabled="selectedColumn === undefined"
@@ -334,6 +338,7 @@ const hideWeightsManagementDisabled = ref(false);
             "
           />
           <p-button
+            v-tooltip.bottom="'Leistung löschen'"
             icon="pi pi-trash"
             severity="secondary"
             :disabled="selectedColumn === undefined"
@@ -343,12 +348,14 @@ const hideWeightsManagementDisabled = ref(false);
       </template>
       <template #icons>
         <p-button
+          v-tooltip.bottom="'Notenspiegel'"
           icon="pi pi-chart-bar"
           severity="secondary"
           :style="showChartForPerformanceButtonStyle"
           @click="showChartForPerformance = !showChartForPerformance"
         />
         <p-button
+          v-tooltip.bottom="'Gewichtungen verwalten'"
           icon="pi pi-percentage"
           severity="secondary"
           :style="showWeightsManagementButtonStyle"
@@ -359,6 +366,7 @@ const hideWeightsManagementDisabled = ref(false);
           "
         />
         <p-button
+          v-tooltip.bottom="'Testnotenrechner'"
           icon="pi pi-calculator"
           severity="secondary"
           :style="showCalculatorButtonStyle"

@@ -251,17 +251,20 @@ function equalWeights(performances: Performance[]) {
         <div style="display: grid; justify-content: end">
           <div>
             <p-button
+              v-tooltip.bottom="'Gewichte angleichen'"
               icon="pi pi-equals"
               severity="secondary"
               @click="equalWeights(localSpecial)"
             />
             <p-button
+              v-tooltip.bottom="'Gewichte speichern'"
               icon="pi pi-save"
               severity="secondary"
               :disabled="!specialWeightsTotalValid"
               @click="saveSpecialWeights"
             />
             <p-button
+              v-tooltip.bottom="'Gewichte zurücksetzen'"
               icon="pi pi-undo"
               severity="secondary"
               @click="cleanSetSpecialPerformances"
@@ -327,17 +330,20 @@ function equalWeights(performances: Performance[]) {
         <div style="display: grid; justify-content: end">
           <div>
             <p-button
+              v-tooltip.bottom="'Gewichte angleichen'"
               icon="pi pi-equals"
               severity="secondary"
               @click="equalWeights(localWritten)"
             />
             <p-button
+              v-tooltip.bottom="'Gewichte speichern'"
               icon="pi pi-save"
               severity="secondary"
               :disabled="!writtenWeightsTotalValid"
               @click="saveWrittenWeights"
             />
             <p-button
+              v-tooltip.bottom="'Gewichte zurücksetzen'"
               icon="pi pi-undo"
               severity="secondary"
               @click="cleanSetWrittenPerformances"

@@ -35,6 +35,14 @@ const customPreset = definePreset(Aura, {
         focusRing: {
           color: "color-mix(in srgb, {primary.500}, transparent 70%)",
         },
+        list: {
+          option: {
+            selectedBackground: "{highlight.focusBackground}",
+            selectedFocusBackground: "{highlight.focusBackground}",
+            selectedColor: "{highlight.focusColor}",
+            selectedFocusColor: "{highlight.focusColor}",
+          },
+        },
         performance: {
           oral: {
             color: "white",
@@ -73,6 +81,14 @@ const customPreset = definePreset(Aura, {
         focusRing: {
           color: "color-mix(in srgb, {primary.400}, transparent 70%)",
         },
+        list: {
+          option: {
+            selectedBackground: "{highlight.focusBackground}",
+            selectedFocusBackground: "{highlight.focusBackground}",
+            selectedColor: "{highlight.focusColor}",
+            selectedFocusColor: "{highlight.focusColor}",
+          },
+        },
         performance: {
           oral: {
             color: "white",
@@ -93,6 +109,17 @@ const customPreset = definePreset(Aura, {
             text: "{red.600}",
           },
         },
+      },
+    },
+  },
+  components: {
+    tree: {
+      node: {
+        selectedBackground: "{highlight.focusBackground}",
+        selectedColor: "{highlight.focusColor}",
+      },
+      nodeIcon: {
+        selectedColor: "{highlight.focusColor}",
       },
     },
   },
