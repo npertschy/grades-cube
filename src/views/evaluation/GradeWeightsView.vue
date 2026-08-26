@@ -18,6 +18,7 @@ const { performances } = defineProps<{
 }>();
 const emit = defineEmits<{
   (e: "update-performances", performances: Performance[]): void;
+  (e: "on-invalid-weights", invalid: boolean): void;
 }>();
 
 const specialPerformances = computed(() =>
@@ -96,22 +97,22 @@ watch(
 
 function handleOralInput(value: number) {
   oralOverallWeight.value = value;
-  specialOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
+  specialOverallWeight.value = (SCALE - value * SCALE) / SCALE;
 }
 
 function handleSpecialInput(value: number) {
   specialOverallWeight.value = value;
-  oralOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
+  oralOverallWeight.value = (SCALE - value * SCALE) / SCALE;
 }
 
 function handleAtInput(value: number) {
   atOverallWeight.value = value;
-  writtenOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
+  writtenOverallWeight.value = (SCALE - value * SCALE) / SCALE;
 }
 
 function handleWrittenInput(value: number) {
   writtenOverallWeight.value = value;
-  atOverallWeight.value = (SCALE - ( value * SCALE )) / SCALE;
+  atOverallWeight.value = (SCALE - value * SCALE) / SCALE;
 }
 
 function commitOralSpecialWeights() {
@@ -165,6 +166,22 @@ function handleWrittenInputChange(value: number) {
   handleWrittenInput(value);
   commitAtWrittenWeights();
 }
+
+const specialSumStyle = computed(() => {
+  return specialWeightsTotalValid.value ? {} : { color: "var(--p-message-error-simple-color)" };
+});
+
+const writtenSumStyle = computed(() => {
+  return writtenWeightsTotalValid.value ? {} : { color: "var(--p-message-error-simple-color)" };
+});
+
+watch(
+  [specialWeightsTotalValid, writtenWeightsTotalValid],
+  ([specialValid, writtenValid]) => {
+    emit("on-invalid-weights", !specialValid || !writtenValid);
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -212,14 +229,23 @@ function handleWrittenInputChange(value: number) {
             <p-column
               footer="Summe"
               :colspan="1"
+              :footer-style="specialSumStyle"
             />
-            <p-column :footer="specialWeightsTotal" />
+            <p-column
+              :footer="specialWeightsTotal"
+              :footer-style="specialSumStyle"
+            />
           </p-row>
         </p-column-group>
       </p-datatable>
       <template #footer>
         <div style="display: grid; justify-content: end">
           <div>
+            <p-button
+              icon="pi pi-equals"
+              severity="secondary"
+              @click=""
+            />
             <p-button
               icon="pi pi-save"
               severity="secondary"
@@ -279,14 +305,23 @@ function handleWrittenInputChange(value: number) {
             <p-column
               footer="Summe"
               :colspan="1"
+              :footer-style="writtenSumStyle"
             />
-            <p-column :footer="writtenWeightsTotal" />
+            <p-column
+              :footer="writtenWeightsTotal"
+              :footer-style="writtenSumStyle"
+            />
           </p-row>
         </p-column-group>
       </p-datatable>
       <template #footer>
         <div style="display: grid; justify-content: end">
           <div>
+            <p-button
+              icon="pi pi-equals"
+              severity="secondary"
+              @click=""
+            />
             <p-button
               icon="pi pi-save"
               severity="secondary"

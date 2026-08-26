@@ -258,6 +258,8 @@ function sidePanelButtonStyle(selected: boolean) {
 const showChartForPerformanceButtonStyle = computed(() => sidePanelButtonStyle(showChartForPerformance.value));
 const showWeightsManagementButtonStyle = computed(() => sidePanelButtonStyle(showWeightsManagement.value));
 const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalculator.value));
+
+const hideWeightsManagementDisabled = ref(false);
 </script>
 
 <template>
@@ -321,21 +323,23 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
             <i class="pi pi-file" />
           </p-button>
         </div>
-        <p-button
-          icon="pi pi-pencil"
-          severity="secondary"
-          :disabled="selectedColumn === undefined"
-          @click="
-            titleOfPerformance = performances.find((performance) => performance.id === selectedColumn)?.title!;
-            openAddPerformanceDialog = true;
-          "
-        />
-        <p-button
-          icon="pi pi-trash"
-          severity="secondary"
-          :disabled="selectedColumn === undefined"
-          @click="handleDeletePerformance"
-        />
+        <div>
+          <p-button
+            icon="pi pi-pencil"
+            severity="secondary"
+            :disabled="selectedColumn === undefined"
+            @click="
+              titleOfPerformance = performances.find((performance) => performance.id === selectedColumn)?.title!;
+              openAddPerformanceDialog = true;
+            "
+          />
+          <p-button
+            icon="pi pi-trash"
+            severity="secondary"
+            :disabled="selectedColumn === undefined"
+            @click="handleDeletePerformance"
+          />
+        </div>
       </template>
       <template #icons>
         <p-button
@@ -348,6 +352,7 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
           icon="pi pi-percentage"
           severity="secondary"
           :style="showWeightsManagementButtonStyle"
+          :disabled="showWeightsManagement && hideWeightsManagementDisabled"
           @click="
             showWeightsManagement = !showWeightsManagement;
             if (showWeightsManagement) showCalculator = false;
@@ -384,6 +389,7 @@ const showCalculatorButtonStyle = computed(() => sidePanelButtonStyle(showCalcul
           v-if="showWeightsManagement"
           :performances="performances"
           @update-performances="handleUpdatePerformances"
+          @on-invalid-weights="(invalid) => (hideWeightsManagementDisabled = invalid)"
         />
         <test-grade-calculator v-if="showCalculator" />
       </div>
