@@ -168,11 +168,11 @@ function handleWrittenInputChange(value: number) {
 }
 
 const specialSumStyle = computed(() => {
-  return specialWeightsTotalValid.value ? {} : { color: "var(--p-message-error-simple-color)" };
+  return specialWeightsTotalValid.value ? {} : { color: "var(--p-error-text-color)" };
 });
 
 const writtenSumStyle = computed(() => {
-  return writtenWeightsTotalValid.value ? {} : { color: "var(--p-message-error-simple-color)" };
+  return writtenWeightsTotalValid.value ? {} : { color: "var(--p-error-text-color)" };
 });
 
 watch(

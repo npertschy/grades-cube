@@ -35,6 +35,9 @@ const customPreset = definePreset(Aura, {
         focusRing: {
           color: "color-mix(in srgb, {primary.500}, transparent 70%)",
         },
+        errorText: {
+          color: "{red.600}",
+        },
         list: {
           option: {
             selectedBackground: "{highlight.focusBackground}",
@@ -80,6 +83,9 @@ const customPreset = definePreset(Aura, {
         },
         focusRing: {
           color: "color-mix(in srgb, {primary.400}, transparent 70%)",
+        },
+        errorText: {
+          color: "{red.500}",
         },
         list: {
           option: {
