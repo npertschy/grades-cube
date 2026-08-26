@@ -182,7 +182,7 @@ async function handleSavePerformance() {
 
 async function handleDeletePerformance() {
   if (!selectedColumn.value) return;
-  const performance = performances.value.at(selectedColumn.value);
+  const performance = performances.value.find((p) => p.id === selectedColumn.value);
   if (!performance) return;
   confirmAction(
     "Leistung löschen",
