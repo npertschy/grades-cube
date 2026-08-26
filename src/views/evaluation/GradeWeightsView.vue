@@ -182,6 +182,15 @@ watch(
   },
   { immediate: true },
 );
+
+function equalWeights(performances: Performance[]) {
+  const equalWeight = SCALE / performances.length;
+  const isInfinite = Math.trunc(equalWeight) !== equalWeight;
+  performances.forEach((performance, index) => {
+    const adjustment = isInfinite && index === 0 ? 1 : 0;
+    performance.weight = (Math.trunc(equalWeight) + adjustment) / SCALE;
+  });
+}
 </script>
 
 <template>
@@ -244,7 +253,7 @@ watch(
             <p-button
               icon="pi pi-equals"
               severity="secondary"
-              @click=""
+              @click="equalWeights(localSpecial)"
             />
             <p-button
               icon="pi pi-save"
@@ -320,7 +329,7 @@ watch(
             <p-button
               icon="pi pi-equals"
               severity="secondary"
-              @click=""
+              @click="equalWeights(localWritten)"
             />
             <p-button
               icon="pi pi-save"
