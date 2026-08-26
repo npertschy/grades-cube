@@ -55,6 +55,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
+  const successMessage = selectedCourse.value?.id ? "Kurs erfolgreich bearbeitet" : "Kurs erfolgreich angelegt";
   await runSafeWithToast(async () => {
     if (selectedCourse.value?.id) {
       const course: Course = {
@@ -85,7 +86,7 @@ async function handleSave() {
         selectedCourse.value = undefined;
       });
     }
-  });
+  }, successMessage);
 }
 
 watch(selectedCourse, (current) => loadCourse(current));
@@ -116,6 +117,7 @@ function handleRemove() {
   confirmAction(
     "Kurs löschen",
     `Soll "${formatCourse(course)}" wirklich gelöscht werden? Alle zugehörigen Leistungen und Noten werden ebenfalls gelöscht.`,
+    "Kurs erfolgreich gelöscht",
     async () => {
       await removeCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
         resetInputs();
@@ -129,13 +131,14 @@ async function handleAddingStudent(student: Student) {
   await runSafeWithToast(async () => {
     await addStudentToCourse(student, selectedCourse.value!);
     await loadCourse(selectedCourse.value);
-  });
+  }, `Schüler "${student.firstName} ${student.lastName}" erfolgreich zum Kurs hinzugefügt`);
 }
 
 async function handleRemovingStudent(student: Student) {
   confirmAction(
     "Schüler aus Kurs entfernen",
     `Soll "${student.firstName} ${student.lastName}" wirklich aus dem Kurs "${formatCourse(selectedCourse.value!)}" entfernt werden?`,
+    `Schüler "${student.firstName} ${student.lastName}" erfolgreich aus dem Kurs entfernt`,
     async () => {
       await removeStudentFromCourse(student, selectedCourse.value!);
       await loadCourse(selectedCourse.value);

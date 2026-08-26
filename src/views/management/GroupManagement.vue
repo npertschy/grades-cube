@@ -43,6 +43,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
+  const successMessage = selectedGroup.value?.id ? "Klasse erfolgreich bearbeitet" : "Klasse erfolgreich angelegt";
   await runSafeWithToast(async () => {
     if (selectedGroup.value?.id) {
       const group = {
@@ -71,7 +72,7 @@ async function handleSave() {
         selectedGroup.value = undefined;
       });
     }
-  });
+  }, successMessage);
 }
 
 watch(selectedGroup, (current) => loadGroup(current));
@@ -97,25 +98,31 @@ function formatGroup(item: Group) {
 function handleRemove() {
   if (!selectedGroup.value) return;
   const group = selectedGroup.value;
-  confirmAction("Klasse löschen", `Soll "${formatGroup(group)}" wirklich gelöscht werden?`, async () => {
-    await removeGroup(group, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedGroup.value = undefined;
-    });
-  });
+  confirmAction(
+    "Klasse löschen",
+    `Soll "${formatGroup(group)}" wirklich gelöscht werden?`,
+    "Klasse erfolgreich gelöscht",
+    async () => {
+      await removeGroup(group, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedGroup.value = undefined;
+      });
+    },
+  );
 }
 
 async function handleAddingStudent(student: Student) {
   await runSafeWithToast(async () => {
     await addStudentToGroup(student, selectedGroup.value!);
     await loadGroup(selectedGroup.value);
-  });
+  }, `Schüler "${student.firstName} ${student.lastName}" erfolgreich zur Klasse hinzugefügt`);
 }
 
 async function handleRemovingStudent(student: Student) {
   confirmAction(
     "Schüler aus Klasse entfernen",
     `Soll "${student.firstName} ${student.lastName}" wirklich aus der Klasse entfernt werden?`,
+    `Schüler "${student.firstName} ${student.lastName}" erfolgreich aus der Klasse entfernt`,
     async () => {
       await removeStudentFromGroup(student, selectedGroup.value!);
       await loadGroup(selectedGroup.value);

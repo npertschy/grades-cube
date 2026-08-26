@@ -80,6 +80,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
+  const successMessage = selectedStudent.value?.id ? "Schüler erfolgreich bearbeitet" : "Schüler erfolgreich angelegt";
   await runSafeWithToast(async () => {
     if (selectedStudent.value?.id) {
       const student = {
@@ -107,7 +108,7 @@ async function handleSave() {
         selectedStudent.value = undefined;
       });
     }
-  });
+  }, successMessage);
 }
 
 watch(selectedStudent, (current) => loadStudent(current));
@@ -131,12 +132,17 @@ async function loadStudent(item: Student | undefined) {
 function handleRemove() {
   if (!selectedStudent.value) return;
   const student = selectedStudent.value;
-  confirmAction("Schüler löschen", `Soll "${formatStudent(student)}" wirklich gelöscht werden?`, async () => {
-    await removeStudent(student, selectedSchoolYear.value!, () => {
-      resetInputs();
-      selectedStudent.value = undefined;
-    });
-  });
+  confirmAction(
+    "Schüler löschen",
+    `Soll "${formatStudent(student)}" wirklich gelöscht werden?`,
+    `Schüler ${formatStudent(student)} erfolgreich gelöscht`,
+    async () => {
+      await removeStudent(student, selectedSchoolYear.value!, () => {
+        resetInputs();
+        selectedStudent.value = undefined;
+      });
+    },
+  );
 }
 
 function toggleGroupSelection(group: Group) {
@@ -154,7 +160,7 @@ async function handleAddGroup() {
     await addGroupToStudent(selectedStudent.value!, selectedGroup.value!);
     await loadStudent(selectedStudent.value);
     selectedGroup.value = undefined;
-  });
+  }, `Schüler "${selectedStudent.value.firstName} ${selectedStudent.value.lastName}" gehört nun zur Klasse "${selectedGroup.value.name}"`);
 }
 
 async function handleRemoveGroup(group: Group) {
@@ -163,7 +169,7 @@ async function handleRemoveGroup(group: Group) {
   await runSafeWithToast(async () => {
     await removeGroupFromStudent(selectedStudent.value!, group);
     await loadStudent(selectedStudent.value);
-  });
+  }, `Schüler "${selectedStudent.value.firstName} ${selectedStudent.value.lastName}" gehört nun nicht mehr zur Klasse "${group.name}"`);
 }
 
 function toggleCourseSelection(course: Course) {
@@ -177,20 +183,26 @@ function toggleCourseSelection(course: Course) {
 async function handleAddCourse() {
   if (!selectedCourse.value || !selectedStudent.value) return;
 
-  await runSafeWithToast(async () => {
-    await addCourseToStudent(selectedStudent.value!, selectedCourse.value!);
-    await loadStudent(selectedStudent.value);
-    selectedCourse.value = undefined;
-  });
+  await runSafeWithToast(
+    async () => {
+      await addCourseToStudent(selectedStudent.value!, selectedCourse.value!);
+      await loadStudent(selectedStudent.value);
+      selectedCourse.value = undefined;
+    },
+    `Schüler "${selectedStudent.value.firstName} ${selectedStudent.value.lastName}" ist nun im Kurs "${formatCourse(selectedCourse.value)}" angemeldet`,
+  );
 }
 
 async function handleRemoveCourse(course: Course) {
   if (!selectedStudent.value) return;
 
-  await runSafeWithToast(async () => {
-    await removeCourseFromStudent(selectedStudent.value!, course);
-    await loadStudent(selectedStudent.value);
-  });
+  await runSafeWithToast(
+    async () => {
+      await removeCourseFromStudent(selectedStudent.value!, course);
+      await loadStudent(selectedStudent.value);
+    },
+    `Schüler "${selectedStudent.value.firstName} ${selectedStudent.value.lastName}" ist nun vom Kurs "${formatCourse(course)}" abgemeldet`,
+  );
 }
 
 function formatCourse(course: Course) {

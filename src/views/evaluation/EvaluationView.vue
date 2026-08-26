@@ -146,6 +146,7 @@ const addPerformanceTitle = computed(() => {
 const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
 async function handleSavePerformance() {
+  const successMessage = selectedColumn.value ? "Leistung erfolgreich bearbeitet" : "Leistung erfolgreich angelegt";
   await runSafeWithToast(async () => {
     if (selectedColumn.value) {
       const performance = performances.value.find((performance) => performance.id === selectedColumn.value);
@@ -170,13 +171,13 @@ async function handleSavePerformance() {
         weight: 0,
       };
       await createPerformance(performance, students.value);
-      showWeightsManagement.value = true;
+      showWeightsManagement.value = typeOfNewPerformance.value !== PerformanceType.ORAL;
     }
     openAddPerformanceDialog.value = false;
     titleOfPerformance.value = "";
     typeOfNewPerformance.value = undefined;
     await reloadCourse();
-  });
+  }, successMessage);
 }
 
 async function handleDeletePerformance() {
@@ -186,11 +187,12 @@ async function handleDeletePerformance() {
   confirmAction(
     "Leistung löschen",
     `Soll die Leistung ${performance?.title} wirklich gelöscht werden? Alle zugehörigen Noten werden ebenfalls gelöscht.`,
+    `Leistung ${performance?.title} erfolgreich gelöscht`,
     async () => {
       await deletePerformance(performance);
       selectedColumn.value = undefined;
       await reloadCourse();
-      showWeightsManagement.value = true;
+      showWeightsManagement.value = performance.type !== PerformanceType.ORAL;
     },
   );
 }
@@ -203,7 +205,7 @@ async function handleUpdatePerformances(updatedPerformances: Performance[]) {
 
     const type = updatedPerformances[0].type;
     await Promise.all(students.value.map((student) => cascadeGradeChanges(student, type)));
-  });
+  }, "Leistungen erfolgreich aktualisiert");
 }
 
 async function handleGradeChanged(grade: Grade, studentIndex: number) {
@@ -213,7 +215,7 @@ async function handleGradeChanged(grade: Grade, studentIndex: number) {
     const performanceType = grade.performanceType;
 
     await cascadeGradeChanges(student, performanceType);
-  });
+  }, "Note erfolgreich aktualisiert");
 }
 
 async function cascadeGradeChanges(student: EvaluatedStudent, performanceType: PerformanceType) {

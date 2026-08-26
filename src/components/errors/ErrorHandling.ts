@@ -4,27 +4,32 @@ export function useUiErrorHandling() {
   const toast = useToast();
   const confirm = useConfirm();
 
-  async function runSafeWithToast(action: () => void | Promise<void>) {
+  async function runSafeWithToast(action: () => void | Promise<void>, message: string) {
     try {
       await action();
+      displaySuccess(message);
     } catch (e) {
       displayError(e as Error);
     }
+  }
+
+  function displaySuccess(message: string) {
+    toast.add({ severity: "success", summary: "Erfolg", detail: message, life: 5000 });
   }
 
   function displayError(e: Error) {
     toast.add({ severity: "error", summary: "Fehler", detail: e.message, life: 5000 });
   }
 
-  function confirmAction(header: string, message: string, action: () => void | Promise<void>) {
+  function confirmAction(title: string, info: string, successMessage: string, action: () => void | Promise<void>) {
     confirm.require({
-      header: header,
-      message: message,
+      header: title,
+      message: info,
       icon: "pi pi-exclamation-triangle",
       rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
       acceptProps: { label: "Löschen", severity: "danger" },
       accept: async () => {
-        await runSafeWithToast(action);
+        await runSafeWithToast(action, successMessage);
       },
     });
   }

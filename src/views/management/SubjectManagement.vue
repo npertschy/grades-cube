@@ -34,6 +34,7 @@ onMounted(async () => {
 });
 
 async function handleSave() {
+  const successMessage = selectedSubject.value?.id ? "Fach erfolgreich bearbeitet" : "Fach erfolgreich angelegt";
   await runSafeWithToast(async () => {
     if (selectedSubject.value?.id) {
       const subject: Subject = {
@@ -57,7 +58,7 @@ async function handleSave() {
     }
 
     allSubjects.value = await loadAllSubjects();
-  });
+  }, successMessage);
 }
 
 watch(selectedSubject, (current) => loadSubject(current));
@@ -76,12 +77,17 @@ function loadSubject(item: Subject | undefined) {
 function handleRemove() {
   if (!selectedSubject.value) return;
   const subject = selectedSubject.value;
-  confirmAction("Fach löschen", `Soll "${formatSubject(subject)}" wirklich gelöscht werden?`, async () => {
-    await removeSubject(subject, selectedSchoolYear.value!, () => {
-      selectedSubject.value = undefined;
-      resetInputs();
-    });
-  });
+  confirmAction(
+    "Fach löschen",
+    `Soll "${formatSubject(subject)}" wirklich gelöscht werden?`,
+    `Fach ${formatSubject(subject)} erfolgreich gelöscht`,
+    async () => {
+      await removeSubject(subject, selectedSchoolYear.value!, () => {
+        selectedSubject.value = undefined;
+        resetInputs();
+      });
+    },
+  );
 }
 
 watch(selectedSchoolYear, async (current) => {

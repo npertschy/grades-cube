@@ -42,6 +42,9 @@ if (route.query["index"]) {
 const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
 async function handleSave() {
+  const successMessage = selectedSchoolYear.value?.id
+    ? "Schuljahr erfolgreich bearbeitet"
+    : "Schuljahr erfolgreich angelegt";
   await runSafeWithToast(async () => {
     if (selectedSchoolYear.value?.id) {
       const schoolYear: SchoolYear = {
@@ -90,7 +93,7 @@ async function handleSave() {
         selectedSchoolYear.value = undefined;
       });
     }
-  });
+  }, successMessage);
 }
 
 watch(selectedSchoolYear, (current) => loadSchoolYear(current));
@@ -118,6 +121,7 @@ function handleRemove() {
   confirmAction(
     "Schuljahr löschen",
     `Soll "${formatSchoolYear(schoolYear)}" wirklich gelöscht werden? Alle zugehörigen Kurse, Leistungen und Noten werden ebenfalls gelöscht.`,
+    `Schuljahr ${formatSchoolYear(schoolYear)} erfolgreich gelöscht`,
     async () => {
       await removeSchoolYear(schoolYear);
       resetDates();

@@ -7,7 +7,7 @@ import PConfirmDialog from "primevue/confirmdialog";
 
 <template>
   <div>
-    <p-toast />
+    <p-toast position="bottom-center" />
     <p-confirm-dialog />
     <global-toolbar />
     <main class="mt-2">
