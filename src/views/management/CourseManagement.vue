@@ -8,6 +8,7 @@ import ContentEditingPanel from "@/components/layout/ContentEditingPanel.vue";
 import SchoolYearSelectionContainer from "@/components/schoolYears/SchoolYearSelectionContainer.vue";
 import AssignedStudentList from "@/components/layout/AssignedStudentList.vue";
 import PDivider from "primevue/divider";
+import PRadioButton from "primevue/radiobutton";
 import { onMounted, ref, watch } from "vue";
 import type { Student } from "@/components/students/Student";
 import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelection";
@@ -28,9 +29,11 @@ const {
   removeCourse,
   addStudentToCourse,
   removeStudentFromCourse,
+  formatCourse,
 } = useCourses();
 const group = ref<Group>();
 const subject = ref<Subject>();
+const courseLevel = ref<number>(0);
 const studentsOfCourse = ref<Student[]>([]);
 
 const { runSafeWithToast, confirmAction } = useUiErrorHandling();
@@ -65,6 +68,8 @@ async function handleSave() {
         schoolYear: selectedCourse.value.schoolYear,
         semester: selectedCourse.value.semester,
         days: selectedCourse.value.days,
+        level: selectedCourse.value.level,
+        ordinal: selectedCourse.value.ordinal,
       };
 
       await editCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
@@ -79,6 +84,8 @@ async function handleSave() {
         schoolYear: selectedSchoolYear.value!,
         semester: selectedSemester.value!,
         days: [],
+        level: courseLevel.value,
+        ordinal: undefined,
       };
 
       await addCourse(course, selectedSchoolYear.value!, selectedSemester.value!, () => {
@@ -95,6 +102,7 @@ function resetInputs() {
   group.value = undefined;
   subject.value = undefined;
   studentsOfCourse.value = [];
+  courseLevel.value = 0;
 }
 
 async function loadCourse(item: Course | undefined) {
@@ -104,11 +112,8 @@ async function loadCourse(item: Course | undefined) {
     group.value = item?.group;
     subject.value = item?.subject;
     studentsOfCourse.value = students;
+    courseLevel.value = item.level!;
   }
-}
-
-function formatCourse(item: Course) {
-  return item.id === 0 ? "Neuen Kurs anlegen" : `${item.group?.name} - ${item.subject?.name}`;
 }
 
 function handleRemove() {
@@ -193,6 +198,40 @@ watch([selectedSchoolYear, selectedSemester], async ([currentSchoolYear, current
                   :option="(subject: Subject) => subject.name!"
                   class="mt-2"
                 />
+                <div
+                  v-show="group?.type === 1"
+                  class="mt-2"
+                  style="display: grid; grid-template-columns: repeat(2, 1fr)"
+                >
+                  <div>
+                    <p-radio-button
+                      v-model="courseLevel"
+                      input-id="gk"
+                      name="level"
+                      :value="1"
+                    />
+                    <label
+                      for="gk"
+                      class="font-semibold"
+                    >
+                      GK
+                    </label>
+                  </div>
+                  <div>
+                    <p-radio-button
+                      v-model="courseLevel"
+                      input-id="lk"
+                      name="level"
+                      :value="2"
+                    />
+                    <label
+                      for="lk"
+                      class="font-semibold"
+                    >
+                      LK
+                    </label>
+                  </div>
+                </div>
                 <save-and-delete-buttons
                   :show-delete-when-defined="selectedCourse"
                   :save-action="handleSave"

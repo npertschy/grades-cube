@@ -7,11 +7,14 @@ export type CourseEntity = {
   ZSUBJECT: number;
   ZYEAR: number;
   ZDAYS: object;
+  ZLEVEL: number;
+  ZORDINAL: number;
 };
 
 export type FullCourseEntity = CourseEntity & {
   GROUPID: number;
   GROUPNAME: string;
+  GROUPTYPE: number;
   SUBJECTID: number;
   SUBJECTNAME: string;
 };

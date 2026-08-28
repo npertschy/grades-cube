@@ -46,13 +46,26 @@ const schoolYear: SchoolYear = {
 
 const semester: Semester = { id: 2, type: 1, start: undefined, end: undefined };
 
-const course: Course = {
+const sek1Course: Course = {
   id: 5,
-  group: { id: 3, name: "5A", sortingName: "5A", type: 1, students: [] },
+  group: { id: 3, name: "5A", sortingName: "5A", type: 0, students: [] },
   subject: { id: 7, name: "Deutsch" },
   semester,
   schoolYear,
   days: {},
+  level: 1,
+  ordinal: 0,
+};
+
+const sek2Course: Course = {
+  id: 6,
+  group: { id: 3, name: "Abi", sortingName: "Abi", type: 1, students: [] },
+  subject: { id: 7, name: "Deutsch" },
+  semester,
+  schoolYear,
+  days: {},
+  level: 1,
+  ordinal: 0,
 };
 
 const student: Student = { id: 20, firstName: "Max", lastName: "Muster", groups: [], courses: [] };
@@ -92,7 +105,7 @@ describe("loadStudentsByCourse", () => {
       { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster" },
     ]);
 
-    const result = await loadStudentsByCourse(course);
+    const result = await loadStudentsByCourse(sek1Course);
 
     expect(mockedSelect).toHaveBeenCalledOnce();
     expect(result).toEqual([
@@ -128,17 +141,37 @@ describe("loadAvailableSubjectsBySchoolYear", () => {
 });
 
 describe("createCourse", () => {
-  it("inserts a course and calls insertDefaultPerformancesWithGrades inside a transaction", async () => {
+  it("inserts a sek1 course and calls insertDefaultPerformancesWithGrades inside a transaction", async () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(99);
     mockedExecute.mockResolvedValue({});
     mockedInsertDefaultPerformances.mockResolvedValue(undefined);
 
-    await createCourse(course, schoolYear, semester);
+    await createCourse(sek1Course, schoolYear, semester);
 
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZCOURSE);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZCOURSE"),
-      [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}],
+      [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}, 1, 0],
+    );
+    expect(mockedInsertDefaultPerformances).toHaveBeenCalledWith(99, 0, []);
+  });
+
+  it("inserts a sek2 course and calls insertDefaultPerformancesWithGrades inside a transaction", async () => {
+    mockedNextPrimaryKey.mockResolvedValueOnce(99);
+    mockedSelect.mockResolvedValueOnce([{ maxOrdianl: 0 }]);
+    mockedExecute.mockResolvedValue({});
+    mockedInsertDefaultPerformances.mockResolvedValue(undefined);
+
+    await createCourse(sek2Course, schoolYear, semester);
+
+    expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZCOURSE);
+        expect(mockedSelect).toHaveBeenCalledWith(
+        expect.stringContaining("SELECT MAX(ZORDINAL)"),
+        [1, 7, 1],
+      );
+    expect(mockedExecute).toHaveBeenCalledWith(
+      expect.stringContaining("INSERT INTO ZCOURSE"),
+      [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}, 1, 1],
     );
     expect(mockedInsertDefaultPerformances).toHaveBeenCalledWith(99, 1, []);
   });
@@ -148,7 +181,7 @@ describe("createCourse", () => {
     mockedExecute.mockResolvedValue({});
     mockedInsertDefaultPerformances.mockRejectedValueOnce(new Error("constraint"));
 
-    await expect(createCourse(course, schoolYear, semester)).rejects.toThrow("constraint");
+    await expect(createCourse(sek1Course, schoolYear, semester)).rejects.toThrow("constraint");
   });
 
   it("rethrows when ZCOURSE insert fails", async () => {
@@ -156,7 +189,7 @@ describe("createCourse", () => {
     mockedExecute.mockRejectedValueOnce(new Error("constraint"));
     mockedExecute.mockResolvedValue({});
 
-    await expect(createCourse(course, schoolYear, semester)).rejects.toThrow("constraint");
+    await expect(createCourse(sek1Course, schoolYear, semester)).rejects.toThrow("constraint");
   });
 });
 
@@ -164,7 +197,7 @@ describe("updateCourse", () => {
   it("updates group, subject, days, and increments Z_OPT", async () => {
     mockedExecute.mockResolvedValueOnce({});
 
-    await updateCourse(course);
+    await updateCourse(sek1Course);
 
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("Z_OPT = Z_OPT + 1"),
@@ -177,7 +210,7 @@ describe("deleteCourseInSchoolYear", () => {
   it("deletes grades, performances, student assignments and the course inside a transaction", async () => {
     mockedExecute.mockResolvedValue({});
 
-    await deleteCourseInSchoolYear(course);
+    await deleteCourseInSchoolYear(sek1Course);
 
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
     expect(calls.some((s) => s.includes("DELETE FROM ZGRADE"))).toBe(true);
@@ -191,7 +224,7 @@ describe("deleteCourseInSchoolYear", () => {
     mockedExecute.mockRejectedValueOnce(new Error("db error"));
     mockedExecute.mockResolvedValue({});
 
-    await expect(deleteCourseInSchoolYear(course)).rejects.toThrow("db error");
+    await expect(deleteCourseInSchoolYear(sek1Course)).rejects.toThrow("db error");
   });
 });
 
@@ -202,7 +235,7 @@ describe("assignStudentToCourse", () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(201);
     mockedNextPrimaryKey.mockResolvedValueOnce(202);
 
-    await assignStudentToCourse(student, course);
+    await assignStudentToCourse(student, sek1Course);
 
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT OR IGNORE INTO Z_1STUDENTS"),
@@ -226,7 +259,7 @@ describe("assignStudentToCourse", () => {
     mockedExecute.mockResolvedValue({});
     mockedSelect.mockResolvedValueOnce([]);
 
-    await assignStudentToCourse(student, course);
+    await assignStudentToCourse(student, sek1Course);
 
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
     expect(calls.some((s) => s.includes("INSERT OR IGNORE INTO Z_1STUDENTS"))).toBe(true);
@@ -239,7 +272,7 @@ describe("unassignStudentFromCourse", () => {
   it("deletes the student's grades and the student-course mapping inside a transaction", async () => {
     mockedExecute.mockResolvedValue({});
 
-    await unassignStudentFromCourse(student, course);
+    await unassignStudentFromCourse(student, sek1Course);
 
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("DELETE FROM ZGRADE"),

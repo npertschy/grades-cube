@@ -17,8 +17,10 @@ import type { Performance } from "@/components/evaluations/Performance";
 import type { TreeNode } from "primevue/treenode";
 import { ref } from "vue";
 import { useStoreErrorHandling } from "@/components/errors/ErrorHandling";
+import { useCourses } from "@/components/courses/CourseStore";
 
 const { runSafeWithThrow } = useStoreErrorHandling();
+const { formatCourse } = useCourses();
 
 const treeItems = ref<TreeNode[]>([]);
 
@@ -29,16 +31,17 @@ async function loadTreeItems(schoolYear: SchoolYear, semester: Semester) {
 
   groupings.forEach((coursesOfGroup) => {
     const courseItems: TreeNode[] = [];
+    const group = coursesOfGroup[0].group;
     coursesOfGroup.forEach((course: Course) => {
+      const label = group?.type === 0 ? course.subject?.name : formatCourse(course);
       courseItems.push({
-        key: `${course.id!}`,
-        label: course.subject!.name!,
+        key: `${group!.id! - course.id!}`,
+        label: label,
         data: course,
         type: "course",
       });
     });
 
-    const group = coursesOfGroup[0].group;
     const groupItem: TreeNode = {
       key: `${group!.id!}`,
       label: group!.name!,
@@ -82,10 +85,7 @@ async function loadPerformancesForCourse(course: Course) {
   return await gatewayLoadPerformancesForCourse(course);
 }
 
-async function createPerformance(
-  newPerformance: Performance,
-  students: EvaluatedStudent[],
-) {
+async function createPerformance(newPerformance: Performance, students: EvaluatedStudent[]) {
   await runSafeWithThrow(async () => {
     await gatewayCreatePerformance(
       newPerformance,

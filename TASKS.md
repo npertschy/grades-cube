@@ -84,12 +84,11 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 
 ### 2.6 Course level (GK/LK) — Sek II
 
-- ❓ `[P3]` **`ZORDINAL` assignment**: free integer the teacher sets vs. auto `max+1` per (year, subject, level). Decision pending.
-- ⬜ `[P2]` **Add `ZCOURSE.ZLEVEL`** (`0=n/a, 1=GK, 2=LK`) and **`ZCOURSE.ZORDINAL`** (parallel-course number) via migration (ARCHITECTURE §2.3).
-- ⬜ `[P2]` Extend `CourseGateway` create/update to read/write `ZLEVEL` + `ZORDINAL`.
-- ⬜ `[P2]` `CourseManagement`: when the selected group's `ZTYPE = 2` (Sek II), show a GK/LK selector + ordinal input; otherwise hide (defaults to `0`/null).
-- ⬜ `[P2]` Course display-name helper: `8b Englisch` (Sek I) vs `GK 1 Geschichte` (Sek II). Reuse everywhere courses are listed (Course/Evaluation/Student views).
-- ⬜ `[P3]` UI soft-uniqueness check on (year, subject, level, ordinal).
+- ✅ `[P3]` **`ZORDINAL` assignment**:  auto `max+1` per (year, subject, level).
+- ✅ `[P2]` **Add `ZCOURSE.ZLEVEL`** (`0=n/a, 1=GK, 2=LK`) and **`ZCOURSE.ZORDINAL`** (parallel-course number) via migration (ARCHITECTURE §2.3).
+- ✅ `[P2]` Extend `CourseGateway` create/update to read/write `ZLEVEL` + `ZORDINAL`.
+- ✅ `[P2]` `CourseManagement`: when the selected group's `ZTYPE = 2` (Sek II), show a GK/LK selector + ordinal input; otherwise hide (defaults to `0`/null).
+- ✅ `[P2]` formatCourse display-name helper in CourseStore: `8b Englisch` (Sek I) vs `GK 1 Geschichte` (Sek II). Reuse everywhere courses are listed (Course/Evaluation/Student views).
 
 ---
 

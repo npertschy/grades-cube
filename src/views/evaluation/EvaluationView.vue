@@ -16,6 +16,7 @@ import GradeWeightsView from "./GradeWeightsView.vue";
 import TestGradeCalculator from "./TestGradeCalculator.vue";
 import HistogramPanel from "./HistogramPanel.vue";
 import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
+import { useCourses } from "@/components/courses/CourseStore";
 
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
 const {
@@ -31,6 +32,8 @@ const {
 } = useEvaluations();
 
 const { computeOralSuggestion, computeWeightedOverall, computeATOverall, computeFinalOverall } = useGradeCalculation();
+
+const { formatCourse } = useCourses();
 
 const expandedKeys: TreeExpandedKeys = ref({});
 const selectedItem: TreeSelectionKeys = ref();
@@ -107,7 +110,7 @@ const tableTitle = computed(() => {
   if (selectedNode.value) {
     return selectedNode.value?.type === "group"
       ? selectedNode.value.data.name
-      : `${selectedNode.value?.data.group.name} ${selectedNode.value?.data.subject.name}`;
+      : formatCourse(selectedNode.value.data);
   } else {
     return "";
   }

@@ -11,6 +11,7 @@ import type { Semester } from "@/components/schoolYears/Semester";
 
 type FullCourse = CourseEntity & {
   GROUPNAME: string;
+  GROUPTYPE: number;
   SUBJECTNAME: string;
 };
 
@@ -57,7 +58,10 @@ export async function loadGroupsAndCoursesForStudent(
       ZCOURSE.Z_PK,
       ZCOURSE.ZSUBJECT,
       ZCOURSE.ZGROUP,
+      ZCOURSE.ZLEVEL,
+      ZCOURSE.ZORDINAL,
       ZGROUP.ZNAME AS GROUPNAME,
+      ZGROUP.ZTYPE AS GROUPTYPE,
       ZSUBJECT.ZNAME AS SUBJECTNAME
     FROM ZCOURSE
       INNER JOIN Z_1STUDENTS ON ZCOURSE.Z_PK = Z_1STUDENTS.Z_1COURSES
@@ -80,7 +84,7 @@ export async function loadGroupsAndCoursesForStudent(
         name: item.ZNAME,
         sortingName: item.ZSORTINGNAME,
         students: undefined,
-        type: undefined,
+        type: item.ZTYPE,
       };
     }),
     courses: courseEntities.map((item): Course => {
@@ -91,7 +95,7 @@ export async function loadGroupsAndCoursesForStudent(
           name: item.GROUPNAME,
           sortingName: undefined,
           students: undefined,
-          type: undefined,
+          type: item.GROUPTYPE,
         },
         semester: semester,
         subject: {
@@ -100,6 +104,8 @@ export async function loadGroupsAndCoursesForStudent(
         },
         schoolYear: schoolYear,
         days: undefined,
+        level: item.ZLEVEL,
+        ordinal: item.ZORDINAL,
       };
     }),
   };
@@ -195,7 +201,10 @@ export async function loadCoursesBySchoolYearAndSemester(
       ZCOURSE.Z_PK,
       ZCOURSE.ZSUBJECT,
       ZCOURSE.ZGROUP,
+      ZCOURSE.ZLEVEL,
+      ZCOURSE.ZORDINAL,
       ZGROUP.ZNAME AS GROUPNAME,
+      ZGROUP.ZTYPE AS GROUPTYPE,
       ZSUBJECT.ZNAME AS SUBJECTNAME
     FROM ZCOURSE
     INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK
@@ -213,7 +222,7 @@ export async function loadCoursesBySchoolYearAndSemester(
         name: course.GROUPNAME,
         sortingName: undefined,
         students: undefined,
-        type: undefined,
+        type: course.GROUPTYPE,
       },
       semester: semester,
       subject: {
@@ -222,6 +231,8 @@ export async function loadCoursesBySchoolYearAndSemester(
       },
       schoolYear: schoolYear,
       days: undefined,
+      level: course.ZLEVEL,
+      ordinal: course.ZORDINAL,
     };
   });
 }

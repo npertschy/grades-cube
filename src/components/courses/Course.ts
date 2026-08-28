@@ -10,4 +10,6 @@ export type Course = {
     subject: Subject | undefined
     schoolYear: SchoolYear | undefined
     days: object | undefined
+    level: number | undefined
+    ordinal: number | undefined
 }

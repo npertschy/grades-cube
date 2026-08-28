@@ -40,6 +40,8 @@ const course: Course = {
   semester,
   schoolYear,
   days: undefined,
+  level: undefined,
+  ordinal: undefined,
 };
 const group: Group = { id: 3, name: "5A", sortingName: "5A", type: 0, students: [] };
 
@@ -70,8 +72,24 @@ describe("loadCoursesForSchoolYearAndSemester", () => {
 describe("loadStudentsForCourse", () => {
   it("groups flat rows into students with a grades array", async () => {
     mockedSelect.mockResolvedValueOnce([
-      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADEID: 10, GRADEVALUE: "2", PERFORMANCETITLE: "Test", PERFORMANCETYPE: 6 },
-      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADEID: 11, GRADEVALUE: "+", PERFORMANCETITLE: "Oral", PERFORMANCETYPE: 0 },
+      {
+        Z_PK: 20,
+        ZFIRSTNAME: "Max",
+        ZLASTNAME: "Muster",
+        GRADEID: 10,
+        GRADEVALUE: "2",
+        PERFORMANCETITLE: "Test",
+        PERFORMANCETYPE: 6,
+      },
+      {
+        Z_PK: 20,
+        ZFIRSTNAME: "Max",
+        ZLASTNAME: "Muster",
+        GRADEID: 11,
+        GRADEVALUE: "+",
+        PERFORMANCETITLE: "Oral",
+        PERFORMANCETYPE: 0,
+      },
     ]);
 
     const result = await loadStudentsForCourse(course);
@@ -95,7 +113,15 @@ describe("loadStudentsForCourse", () => {
 
   it("handles students with no grades (null GRADEID)", async () => {
     mockedSelect.mockResolvedValueOnce([
-      { Z_PK: 20, ZFIRSTNAME: "Max", ZLASTNAME: "Muster", GRADEID: null, GRADEVALUE: null, PERFORMANCETITLE: null, PERFORMANCETYPE: null },
+      {
+        Z_PK: 20,
+        ZFIRSTNAME: "Max",
+        ZLASTNAME: "Muster",
+        GRADEID: null,
+        GRADEVALUE: null,
+        PERFORMANCETITLE: null,
+        PERFORMANCETYPE: null,
+      },
     ]);
 
     const result = await loadStudentsForCourse(course);
@@ -178,18 +204,32 @@ describe("createPerformance", () => {
 
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZPERFORMANCE);
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZGRADE);
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO ZPERFORMANCE"),
-      [99, Z_ENT.ZPERFORMANCE, 1, 1, 0, 6, 5, expect.any(Number), 0.5, "KA1"],
-    );
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO ZGRADE"),
-      [201, Z_ENT.ZGRADE, 1, 99, 10],
-    );
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO ZGRADE"),
-      [202, Z_ENT.ZGRADE, 1, 99, 11],
-    );
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO ZPERFORMANCE"), [
+      99,
+      Z_ENT.ZPERFORMANCE,
+      1,
+      1,
+      0,
+      6,
+      5,
+      expect.any(Number),
+      0.5,
+      "KA1",
+    ]);
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO ZGRADE"), [
+      201,
+      Z_ENT.ZGRADE,
+      1,
+      99,
+      10,
+    ]);
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("INSERT INTO ZGRADE"), [
+      202,
+      Z_ENT.ZGRADE,
+      1,
+      99,
+      11,
+    ]);
   });
 });
 
@@ -198,16 +238,20 @@ describe("updatePerformance", () => {
     mockedExecute.mockResolvedValueOnce({});
 
     const performance: Performance = {
-      id: 1, performanceId: "1", editable: true, sortOrder: 0,
-      type: 6, courseId: 5, date: coreDataToUnix(0), weight: 0.25, title: "KA2",
+      id: 1,
+      performanceId: "1",
+      editable: true,
+      sortOrder: 0,
+      type: 6,
+      courseId: 5,
+      date: coreDataToUnix(0),
+      weight: 0.25,
+      title: "KA2",
     };
 
     await updatePerformance(performance);
 
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE ZPERFORMANCE"),
-      [0.25, "KA2", 1],
-    );
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("UPDATE ZPERFORMANCE"), [0.25, "KA2", 1]);
   });
 });
 
@@ -217,10 +261,7 @@ describe("updateGrade", () => {
 
     await updateGrade({ id: 10, value: "3", performanceTitle: "KA1", performanceType: 6 });
 
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("UPDATE ZGRADE"),
-      ["3", 10],
-    );
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("UPDATE ZGRADE"), ["3", 10]);
   });
 });
 
@@ -229,20 +270,21 @@ describe("deletePerformance", () => {
     mockedExecute.mockResolvedValue({});
 
     const performance: Performance = {
-      id: 1, performanceId: "1", editable: true, sortOrder: 0,
-      type: 6, courseId: 5, date: coreDataToUnix(0), weight: 0.5, title: "KA1",
+      id: 1,
+      performanceId: "1",
+      editable: true,
+      sortOrder: 0,
+      type: 6,
+      courseId: 5,
+      date: coreDataToUnix(0),
+      weight: 0.5,
+      title: "KA1",
     };
 
     await deletePerformance(performance);
 
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("DELETE FROM ZGRADE"),
-      [1],
-    );
-    expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("DELETE FROM ZPERFORMANCE"),
-      [1],
-    );
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("DELETE FROM ZGRADE"), [1]);
+    expect(mockedExecute).toHaveBeenCalledWith(expect.stringContaining("DELETE FROM ZPERFORMANCE"), [1]);
     const calls = mockedExecute.mock.calls.map((c) => c[0] as string);
     const gradeIdx = calls.findIndex((s) => s.includes("DELETE FROM ZGRADE"));
     const perfIdx = calls.findIndex((s) => s.includes("DELETE FROM ZPERFORMANCE"));

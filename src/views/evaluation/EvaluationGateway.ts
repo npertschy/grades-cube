@@ -19,7 +19,17 @@ export async function loadCoursesForSchoolYearAndSemester(
 ): Promise<Course[]> {
   const courses: FullCourseEntity[] = await db.select(
     `
-	SELECT ZCOURSE.Z_PK, ZCOURSE.ZDAYS, ZGROUP.Z_PK AS GROUPID, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.Z_PK AS SUBJECTID, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE
+	SELECT 
+        ZCOURSE.Z_PK,
+        ZCOURSE.ZDAYS,
+        ZCOURSE.ZLEVEL,
+        ZCOURSE.ZORDINAL,
+        ZGROUP.Z_PK AS GROUPID,
+        ZGROUP.ZNAME AS GROUPNAME,
+        ZGROUP.ZTYPE AS GROUPTYPE,
+        ZSUBJECT.Z_PK AS SUBJECTID,
+        ZSUBJECT.ZNAME AS SUBJECTNAME
+    FROM ZCOURSE
 	INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK
 	INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK
 	WHERE ZYEAR = $1
@@ -35,7 +45,7 @@ export async function loadCoursesForSchoolYearAndSemester(
         id: course.GROUPID,
         name: course.GROUPNAME,
         sortingName: undefined,
-        type: undefined,
+        type: course.GROUPTYPE,
         students: [],
       },
       subject: {
@@ -45,6 +55,8 @@ export async function loadCoursesForSchoolYearAndSemester(
       semester: semester,
       schoolYear: schoolYear,
       days: course.ZDAYS,
+      level: course.ZLEVEL,
+      ordinal: course.ZORDINAL,
     };
   });
 }
@@ -203,13 +215,7 @@ export async function updateGrade(grade: Grade): Promise<void> {
 
 export async function deletePerformance(performance: Performance): Promise<void> {
   await withTransaction(async () => {
-    await db.execute(
-      `DELETE FROM ZGRADE WHERE ZPERFORMANCE = $1`,
-      [performance.id],
-    );
-    await db.execute(
-      `DELETE FROM ZPERFORMANCE WHERE Z_PK = $1`,
-      [performance.id],
-    );
+    await db.execute(`DELETE FROM ZGRADE WHERE ZPERFORMANCE = $1`, [performance.id]);
+    await db.execute(`DELETE FROM ZPERFORMANCE WHERE Z_PK = $1`, [performance.id]);
   });
 }

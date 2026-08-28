@@ -34,6 +34,13 @@ fn main() {
                   ON ZGRADE (ZPERFORMANCE, ZSTUDENT);",
             kind: MigrationKind::Up,
         },
+        Migration {
+            version: 5,
+            description: "add course level and ordinal",
+            sql: "ALTER TABLE ZCOURSE ADD COLUMN ZLEVEL INTEGER DEFAULT 0; \
+                  ALTER TABLE ZCOURSE ADD COLUMN ZORDINAL INTEGER DEFAULT 0;",
+            kind: MigrationKind::Up,
+        }
     ];
 
     tauri::Builder::default()

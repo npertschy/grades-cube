@@ -31,6 +31,8 @@ async function loadAllCoursesForSchoolYearAndSemester(schoolYear: SchoolYear, se
       semester: undefined,
       schoolYear: undefined,
       days: undefined,
+      level: undefined,
+      ordinal: undefined,
     },
     ...all,
   );
@@ -84,6 +86,19 @@ async function removeStudentFromCourse(student: Student, course: Course) {
   }, "Schüler konnte nicht aus dem Kurs entfernt werden.");
 }
 
+function formatCourse(course: Course): string {
+    if (course.id === 0) {
+        return "Neuen Kurs anlegen";
+    }
+
+    if (course.group?.type === 0) {
+        return `${course.group?.name} - ${course.subject?.name}`;
+    } else {
+        const level = course.level === 1 ? "GK" : "LK";
+        return `${level} ${course.ordinal} - ${course.subject?.name}`;
+    }
+}
+
 export function useCourses() {
   return {
     courses,
@@ -96,5 +111,6 @@ export function useCourses() {
     removeCourse,
     addStudentToCourse,
     removeStudentFromCourse,
+    formatCourse,
   };
 }

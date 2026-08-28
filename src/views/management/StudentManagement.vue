@@ -18,6 +18,7 @@ import { useSchoolYearSelection } from "@/components/schoolYears/SchoolYearSelec
 import type { Group } from "@/components/groups/Group";
 import type { Course } from "@/components/courses/Course";
 import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
+import { useCourses } from "@/components/courses/CourseStore";
 
 const firstName = ref<string>();
 const lastName = ref<string>();
@@ -38,6 +39,8 @@ const {
   removeCourseFromStudent,
 } = useStudents();
 const { selectedSchoolYear, selectedSemester } = useSchoolYearSelection();
+
+const { formatCourse } = useCourses();
 
 const { runSafeWithToast, confirmAction } = useUiErrorHandling();
 
@@ -60,11 +63,7 @@ const courseList = computed<Course[]>(() => {
   if (courseQuery.value === "") {
     return [...availableCourses.value];
   }
-  return availableCourses.value.filter(
-    (c) =>
-      c.group?.name?.toLowerCase().includes(courseQuery.value.toLowerCase()) ||
-      c.subject?.name?.toLowerCase().includes(courseQuery.value.toLowerCase()),
-  );
+  return availableCourses.value.filter((c) => formatCourse(c).toLowerCase().includes(courseQuery.value.toLowerCase()));
 });
 
 onMounted(async () => {
@@ -203,10 +202,6 @@ async function handleRemoveCourse(course: Course) {
     },
     `Schüler "${selectedStudent.value.firstName} ${selectedStudent.value.lastName}" ist nun vom Kurs "${formatCourse(course)}" abgemeldet`,
   );
-}
-
-function formatCourse(course: Course) {
-  return course.group?.name + " " + course.subject?.name;
 }
 
 watch(selectedSchoolYear, async (current) => {

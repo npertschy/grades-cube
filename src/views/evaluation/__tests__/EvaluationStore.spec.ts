@@ -35,6 +35,8 @@ function makeCourse(id: number, groupId: number, groupName: string, subjectName:
     semester,
     schoolYear,
     days: undefined,
+    level: undefined,
+    ordinal: undefined,
   };
 }
 

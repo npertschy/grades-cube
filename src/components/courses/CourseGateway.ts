@@ -18,7 +18,17 @@ export async function loadCoursesBySchoolYearAndSemester(
 ): Promise<Course[]> {
   const courses: FullCourseEntity[] = await db.select(
     `
-        SELECT ZCOURSE.Z_PK, ZCOURSE.ZDAYS, ZGROUP.Z_PK AS GROUPID, ZGROUP.ZNAME AS GROUPNAME, ZSUBJECT.Z_PK AS SUBJECTID, ZSUBJECT.ZNAME AS SUBJECTNAME FROM ZCOURSE
+        SELECT 
+            ZCOURSE.Z_PK,
+            ZCOURSE.ZDAYS,
+            ZCOURSE.ZLEVEL,
+            ZCOURSE.ZORDINAL,
+            ZGROUP.Z_PK AS GROUPID,
+            ZGROUP.ZNAME AS GROUPNAME,
+            ZGROUP.ZTYPE AS GROUPTYPE,
+            ZSUBJECT.Z_PK AS SUBJECTID,
+            ZSUBJECT.ZNAME AS SUBJECTNAME
+        FROM ZCOURSE
         INNER JOIN ZGROUP ON ZCOURSE.ZGROUP = ZGROUP.Z_PK
         INNER JOIN ZSUBJECT ON ZCOURSE.ZSUBJECT = ZSUBJECT.Z_PK
         WHERE ZYEAR = $1
@@ -34,7 +44,7 @@ export async function loadCoursesBySchoolYearAndSemester(
         id: course.GROUPID,
         name: course.GROUPNAME,
         sortingName: undefined,
-        type: undefined,
+        type: course.GROUPTYPE,
         students: [],
       },
       subject: {
@@ -44,6 +54,8 @@ export async function loadCoursesBySchoolYearAndSemester(
       semester: semester,
       schoolYear: schoolYear,
       days: course.ZDAYS,
+      level: course.ZLEVEL,
+      ordinal: course.ZORDINAL,
     };
   });
 }
@@ -111,12 +123,25 @@ export async function loadAvailableSubjectsBySchoolYear(schoolYear: SchoolYear):
 export async function createCourse(course: Course, schoolYear: SchoolYear, semester: Semester) {
   await withTransaction(async () => {
     const id = await nextPrimaryKey(Z_ENT.ZCOURSE);
+    const type = course.group?.type ?? 0;
+    const ordinal = type === 1 ? await getNextOrdinal(schoolYear, course.subject!, course.level!) : 0;
     await db.execute(
       `
-      INSERT INTO ZCOURSE (Z_PK, Z_ENT, Z_OPT, ZGROUP, ZSUBJECT, ZSEMESTER, ZYEAR, ZDAYS)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO ZCOURSE (Z_PK, Z_ENT, Z_OPT, ZGROUP, ZSUBJECT, ZSEMESTER, ZYEAR, ZDAYS, ZLEVEL, ZORDINAL)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       `,
-      [id, Z_ENT.ZCOURSE, 1, course.group!.id, course.subject!.id, semester.id, schoolYear.id, course.days ?? null],
+      [
+        id,
+        Z_ENT.ZCOURSE,
+        1,
+        course.group!.id,
+        course.subject!.id,
+        semester.id,
+        schoolYear.id,
+        course.days ?? null,
+        course.level ?? null,
+        ordinal,
+      ],
     );
     await insertDefaultPerformancesWithGrades(id, course.group?.type, []);
   });
@@ -232,4 +257,20 @@ export async function unassignStudentFromCourse(student: Student, course: Course
       [course.id, student.id],
     );
   });
+}
+
+async function getNextOrdinal(schoolYear: SchoolYear, subject: Subject, level: number): Promise<number> {
+  type ResultRow = { maxOrdinal: number | null };
+  const result: ResultRow[] = await db.select(
+    `
+        SELECT MAX(ZORDINAL) AS maxOrdinal
+        FROM ZCOURSE
+        WHERE ZYEAR = $1 AND ZSUBJECT = $2 AND ZLEVEL = $3
+        `,
+    [schoolYear.id, subject.id, level],
+  );
+
+  const maxOrdinal = result[0]?.maxOrdinal ?? 0;
+
+  return maxOrdinal + 1;
 }
