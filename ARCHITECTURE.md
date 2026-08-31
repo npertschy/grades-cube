@@ -84,6 +84,8 @@ Gateways are feature-scoped (one gateway per view/feature) and own the operation
 
 Atoms are extracted when reused across files. Sequences stay local when only used in one gateway.
 
+School-year migration reuses the exported `GroupGateway.insertGroup`, `CourseGateway.insertCourse`, `CourseGateway.getNextOrdinal`, and `SubjectGateway.linkSubjectToSchoolYear` atoms. `MigrationGateway.migrateSchoolYear` owns the serialized operation boundary and creates fresh default performances and grades for each migrated course.
+
 ### 3.3 Error handling
 
 Two-layer strategy:

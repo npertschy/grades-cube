@@ -71,7 +71,7 @@ describe("createSubjectForSchoolYear", () => {
       [42, 7, 1, "Deutsch"],
     );
     expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO Z_7YEARS"),
+      expect.stringContaining("INSERT OR IGNORE INTO Z_7YEARS"),
       [42, 1],
     );
   });
@@ -90,7 +90,7 @@ describe("createSubjectForSchoolYear", () => {
 
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZSUBJECT);
     expect(mockedExecute).toHaveBeenCalledWith(
-      expect.stringContaining("INSERT INTO Z_7YEARS"),
+      expect.stringContaining("INSERT OR IGNORE INTO Z_7YEARS"),
       [7, 1],
     );
   });

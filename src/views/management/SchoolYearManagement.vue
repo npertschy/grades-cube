@@ -12,6 +12,8 @@ import { useSchoolYears } from "@/components/schoolYears/SchoolYearStore";
 import { useRoute } from "vue-router";
 import { useSchoolYearValidation } from "@/components/schoolYears/SchoolYearValidation";
 import { useUiErrorHandling } from "@/components/errors/ErrorHandling";
+import SchoolYearMigrationDialog from "@/components/schoolYears/SchoolYearMigrationDialog.vue";
+import { useConfirm } from "primevue";
 
 const route = useRoute();
 
@@ -40,6 +42,10 @@ if (route.query["index"]) {
 }
 
 const { runSafeWithToast, confirmAction } = useUiErrorHandling();
+const confirm = useConfirm();
+const migrationDialogVisible = ref(false);
+const migrationSourceYear = ref<SchoolYear>();
+const migrationTargetYear = ref<SchoolYear>();
 
 async function handleSave() {
   const successMessage = selectedSchoolYear.value?.id
@@ -88,12 +94,33 @@ async function handleSave() {
         },
       };
 
-      await addSchoolYear(schoolYear, () => {
+      const createdYear = await addSchoolYear(schoolYear, () => {
         resetDates();
         selectedSchoolYear.value = undefined;
       });
+      if (createdYear) promptForMigration(createdYear);
     }
   }, successMessage);
+}
+
+function promptForMigration(createdYear: SchoolYear): void {
+  const previousYear = schoolYears.value
+    .filter((year) => year.id && year.id !== createdYear.id && year.start && year.start < createdYear.start!)
+    .sort((a, b) => b.start!.getTime() - a.start!.getTime())[0];
+  if (!previousYear) return;
+
+  migrationSourceYear.value = previousYear;
+  migrationTargetYear.value = createdYear;
+  confirm.require({
+    header: "Vorheriges Schuljahr übernehmen",
+    message: `Sollen Gruppen, Schüler und Kurse aus ${formatSchoolYear(previousYear)} übernommen werden?`,
+    icon: "pi pi-copy",
+    rejectProps: { label: "Nein", severity: "secondary", outlined: true },
+    acceptProps: { label: "Migration starten" },
+    accept: () => {
+      migrationDialogVisible.value = true;
+    },
+  });
 }
 
 watch(selectedSchoolYear, (current) => loadSchoolYear(current));
@@ -158,6 +185,7 @@ const allDatesSet = computed(() => {
 </script>
 
 <template>
+    <div>
   <management-panel header="Schuljahre verwalten">
     <template #list>
       <div>
@@ -210,6 +238,13 @@ const allDatesSet = computed(() => {
       </custom-transition>
     </template>
   </management-panel>
+  <school-year-migration-dialog
+    v-model:visible="migrationDialogVisible"
+    :source-year="migrationSourceYear"
+    :target-year="migrationTargetYear"
+    @migrated="loadAllSchoolYears"
+  />
+    </div>
 </template>
 
 <style scoped>

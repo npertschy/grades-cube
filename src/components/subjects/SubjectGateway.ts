@@ -41,20 +41,18 @@ export async function createSubjectForSchoolYear(subject: Subject, schoolYear: S
       subjectId = existing[0].Z_PK;
     }
 
-    const linkExists: CountResult[] = await db.select(
-      `SELECT COUNT(*) FROM Z_7YEARS WHERE Z_7SUBJECTS = $1 AND Z_8YEARS2 = $2`,
-      [subjectId, schoolYear.id],
-    );
-    if (linkExists[0]["COUNT(*)"] === 0) {
-      await db.execute(
-        `
-        INSERT INTO Z_7YEARS (Z_7SUBJECTS, Z_8YEARS2)
-        VALUES ($1, $2)
-        `,
-        [subjectId, schoolYear.id],
-      );
-    }
+    await linkSubjectToSchoolYear(subjectId, schoolYear.id!);
   });
+}
+
+export async function linkSubjectToSchoolYear(subjectId: number, schoolYearId: number): Promise<void> {
+  await db.execute(
+    `
+    INSERT OR IGNORE INTO Z_7YEARS (Z_7SUBJECTS, Z_8YEARS2)
+    VALUES ($1, $2)
+    `,
+    [subjectId, schoolYearId],
+  );
 }
 
 export async function deleteSubjectFromSchoolYear(subject: Subject, schoolYear: SchoolYear): Promise<void> {

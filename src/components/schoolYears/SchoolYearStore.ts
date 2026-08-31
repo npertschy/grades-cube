@@ -24,11 +24,13 @@ async function loadAllSchoolYears() {
 }
 
 async function addSchoolYear(schoolYearToAdd: SchoolYear, cleanup: () => void) {
+  let created: SchoolYear | undefined;
   await runSafeWithThrow(async () => {
-    await createSchoolYear(schoolYearToAdd);
+    created = await createSchoolYear(schoolYearToAdd);
     await loadAllSchoolYears();
     cleanup();
   }, "Schuljahr konnte nicht gespeichert werden.");
+  return created;
 }
 
 function formatSchoolYear(item: SchoolYear) {

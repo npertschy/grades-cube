@@ -14,8 +14,8 @@ const DEFAULT_PERFORMANCE_DEFS: DefaultPerformanceDef[] = [
   { type: 1, title: "Tendenz",               editable: 0, weight: () => 0 },
   { type: 2, title: "Gesamtnote Mündlich",   editable: 1, weight: () => 0.7 },
   { type: 4, title: "Gesamtnote Sonstige",   editable: 0, weight: () => 0.3 },
-  { type: 5, title: "Gesamtnote AT",          editable: 0, weight: (gt) => gt === 2 ? 0.5 : 0.7 },
-  { type: 7, title: "Gesamtnote Klausuren",  editable: 0, weight: (gt) => gt === 2 ? 0.5 : 0.3 },
+  { type: 5, title: "Gesamtnote AT",          editable: 0, weight: (gt) => gt === 1 ? 0.5 : 0.7 },
+  { type: 7, title: "Gesamtnote Klausuren",  editable: 0, weight: (gt) => gt === 1 ? 0.5 : 0.3 },
   { type: 8, title: "Endnote",               editable: 0, weight: () => 0 },
 ];
 
@@ -26,7 +26,7 @@ const DEFAULT_PERFORMANCE_DEFS: DefaultPerformanceDef[] = [
  * Must be called inside a `withTransaction(...)` block — this function does not
  * manage the operation boundary itself.
  *
- * Weights for types 5 and 7 depend on groupType (1 = Sek I, 2 = Sek II).
+ * Weights for types 5 and 7 depend on groupType (0 = Sek I, 1 = Sek II).
  */
 export async function insertDefaultPerformancesWithGrades(
   courseId: number,

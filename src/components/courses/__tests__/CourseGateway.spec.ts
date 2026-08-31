@@ -53,8 +53,8 @@ const sek1Course: Course = {
   semester,
   schoolYear,
   days: {},
-  level: 1,
-  ordinal: 0,
+  level: 0,
+  ordinal: undefined,
 };
 
 const sek2Course: Course = {
@@ -151,7 +151,7 @@ describe("createCourse", () => {
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZCOURSE);
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("INSERT INTO ZCOURSE"),
-      [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}, 1, 0],
+      [99, Z_ENT.ZCOURSE, 1, 3, 7, 2, 1, {}, 0, null],
     );
     expect(mockedInsertDefaultPerformances).toHaveBeenCalledWith(99, 0, []);
   });
@@ -201,8 +201,9 @@ describe("updateCourse", () => {
 
     expect(mockedExecute).toHaveBeenCalledWith(
       expect.stringContaining("Z_OPT = Z_OPT + 1"),
-      [3, 7, {}, 5],
+      [3, 7, {}, 0, 5],
     );
+    expect(mockedExecute.mock.calls[0][0]).not.toContain("ZORDINAL =");
   });
 });
 

@@ -41,8 +41,8 @@ export async function loadAll(): Promise<SchoolYear[]> {
   return schoolYears;
 }
 
-export async function createSchoolYear(schoolYear: SchoolYear) {
-  await withTransaction(async () => {
+export async function createSchoolYear(schoolYear: SchoolYear): Promise<SchoolYear> {
+  return await withTransaction(async () => {
     const schoolYearStart = dateToCoreData(schoolYear.start!);
     const schoolYearEnd = dateToCoreData(schoolYear.end!);
     const yearId = await nextPrimaryKey(Z_ENT.ZYEAR);
@@ -54,12 +54,18 @@ export async function createSchoolYear(schoolYear: SchoolYear) {
       [yearId, Z_ENT.ZYEAR, 1, schoolYearEnd, schoolYearStart],
     );
 
-    await createSemester(schoolYear.firstSemester!, yearId);
-    await createSemester(schoolYear.secondSemester!, yearId);
+    const firstSemesterId = await createSemester(schoolYear.firstSemester!, yearId);
+    const secondSemesterId = await createSemester(schoolYear.secondSemester!, yearId);
+    return {
+      ...schoolYear,
+      id: yearId,
+      firstSemester: { ...schoolYear.firstSemester!, id: firstSemesterId },
+      secondSemester: { ...schoolYear.secondSemester!, id: secondSemesterId },
+    };
   });
 }
 
-async function createSemester(semester: Semester, schoolYearId: number) {
+async function createSemester(semester: Semester, schoolYearId: number): Promise<number> {
   const semesterStart = dateToCoreData(semester.start!);
   const semesterEnd = dateToCoreData(semester.end!);
   const semesterId = await nextPrimaryKey(Z_ENT.ZSEMESTER);
@@ -70,6 +76,7 @@ async function createSemester(semester: Semester, schoolYearId: number) {
     `,
     [semesterId, Z_ENT.ZSEMESTER, 1, semester.type, schoolYearId, semesterEnd, semesterStart],
   );
+  return semesterId;
 }
 
 export async function updateSchoolYear(schoolYear: SchoolYear) {

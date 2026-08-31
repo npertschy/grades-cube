@@ -164,11 +164,11 @@ See [REQUIREMENTS.md](./REQUIREMENTS.md) for domain rules and business invariant
 
 See REQUIREMENTS §2 for the full design.
 
-- ⬜ `[P2]` After school year creation, detect whether a previous school year exists
-- ⬜ `[P2]` Prompt the user to migrate base structure from the previous year
-- ⬜ `[P2]` Step 1 UI: group selection with rename inputs and per-group student adjustment
-- ⬜ `[P2]` Step 2 UI: course migration preview applying new group names and adjusted student lists
-- ⬜ `[P2]` Implement `MigrationGateway` (or extend `SchoolYearGateway`) with a transaction that: links groups, rebuilds student memberships, links subjects, and creates new `ZCOURSE` rows — without copying performances or grades
+- ✅ `[P2]` After school year creation, detect whether a previous school year exists
+- ✅ `[P2]` Prompt the user to migrate base structure from the previous year
+- ✅ `[P2]` Step 1 UI: group selection with rename inputs and per-group student adjustment
+- ✅ `[P2]` Step 2 UI: course migration preview applying new group names and adjusted student lists
+- ✅ `[P2]` Implement `MigrationGateway` with a serialized operation boundary that links groups, rebuilds student memberships, links subjects, and creates new `ZCOURSE` rows with fresh default performances and grades
 
 ### 4.2 Student Grade Summary
 

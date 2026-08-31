@@ -34,10 +34,12 @@ const semesters = computed(() => {
 const router = useRouter();
 
 watch(selectedSchoolYear, async (current) => {
-  if (current && current.id === 0) {
+  if (current === undefined) return;
+
+  if (current.id === 0) {
     router.push({ name: "schoolYearManagement", query: { index: 0 } });
     selectedSchoolYear.value = undefined;
-  } else if (current && selectedSemester.value == undefined) {
+  } else {
     selectedSemester.value = current.firstSemester;
     await store.set("selectedSchoolYear", current.id);
     await store.set("selectedSemester", selectedSemester.value?.type);

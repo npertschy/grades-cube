@@ -24,6 +24,12 @@ vi.mock("@/views/evaluation/EvaluationGateway", () => ({
   updateGrade: vi.fn(),
 }));
 
+vi.mock("@/components/courses/CourseStore", () => ({
+  useCourses: () => ({
+    formatCourse: (course: Course) => `${course.subject?.name}`,
+  }),
+}));
+
 const schoolYear = { id: 1, start: undefined, end: undefined, firstSemester: undefined, secondSemester: undefined };
 const semester = { id: 2, type: 1, start: undefined, end: undefined };
 

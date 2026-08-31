@@ -44,7 +44,7 @@ The migration is a **modal stepper** overlaying the School Year Management view.
 
 - The stepper manages its own ephemeral state (selected groups, renames, student adjustments).
 - The user can abort at any time; all in-progress migration state is discarded.
-- On final confirmation, a single atomic transaction writes all links and new rows.
+- On final confirmation, one serialized migration operation writes all links and new rows without interleaving with other app writes (see ARCHITECTURE §3.4 for the plugin transaction limitation).
 - No persistence of intermediate migration state — if the user navigates away, the wizard resets.
 
 ---

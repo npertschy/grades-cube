@@ -122,39 +122,63 @@ export async function loadAvailableSubjectsBySchoolYear(schoolYear: SchoolYear):
 
 export async function createCourse(course: Course, schoolYear: SchoolYear, semester: Semester) {
   await withTransaction(async () => {
-    const id = await nextPrimaryKey(Z_ENT.ZCOURSE);
     const type = course.group?.type ?? 0;
-    const ordinal = type === 1 ? await getNextOrdinal(schoolYear, course.subject!, course.level!) : 0;
-    await db.execute(
-      `
-      INSERT INTO ZCOURSE (Z_PK, Z_ENT, Z_OPT, ZGROUP, ZSUBJECT, ZSEMESTER, ZYEAR, ZDAYS, ZLEVEL, ZORDINAL)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      `,
-      [
-        id,
-        Z_ENT.ZCOURSE,
-        1,
-        course.group!.id,
-        course.subject!.id,
-        semester.id,
-        schoolYear.id,
-        course.days ?? null,
-        course.level ?? null,
-        ordinal,
-      ],
-    );
+    const level = type === 1 ? (course.level ?? 1) : 0;
+    const ordinal = type === 1 ? await getNextOrdinal(schoolYear, course.subject!, level) : null;
+    const id = await insertCourse({
+      groupId: course.group!.id!,
+      subjectId: course.subject!.id!,
+      semesterId: semester.id!,
+      schoolYearId: schoolYear.id!,
+      days: course.days,
+      level,
+      ordinal,
+    });
     await insertDefaultPerformancesWithGrades(id, course.group?.type, []);
   });
+}
+
+export type InsertCourseParams = {
+  groupId: number;
+  subjectId: number;
+  semesterId: number;
+  schoolYearId: number;
+  days: object | undefined;
+  level: number;
+  ordinal: number | null;
+};
+
+export async function insertCourse(params: InsertCourseParams): Promise<number> {
+  const id = await nextPrimaryKey(Z_ENT.ZCOURSE);
+  await db.execute(
+    `
+    INSERT INTO ZCOURSE (Z_PK, Z_ENT, Z_OPT, ZGROUP, ZSUBJECT, ZSEMESTER, ZYEAR, ZDAYS, ZLEVEL, ZORDINAL)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `,
+    [
+      id,
+      Z_ENT.ZCOURSE,
+      1,
+      params.groupId,
+      params.subjectId,
+      params.semesterId,
+      params.schoolYearId,
+      params.days ?? null,
+      params.level,
+      params.ordinal,
+    ],
+  );
+  return id;
 }
 
 export async function updateCourse(course: Course) {
   await db.execute(
     `
     UPDATE ZCOURSE
-    SET ZGROUP = $1, ZSUBJECT = $2, ZDAYS = $3, Z_OPT = Z_OPT + 1
-    WHERE Z_PK = $4
+    SET ZGROUP = $1, ZSUBJECT = $2, ZDAYS = $3, ZLEVEL = $4, Z_OPT = Z_OPT + 1
+    WHERE Z_PK = $5
     `,
-    [course.group!.id, course.subject!.id, course.days ?? null, course.id],
+    [course.group!.id, course.subject!.id, course.days ?? null, course.level ?? 0, course.id],
   );
 }
 
@@ -259,7 +283,7 @@ export async function unassignStudentFromCourse(student: Student, course: Course
   });
 }
 
-async function getNextOrdinal(schoolYear: SchoolYear, subject: Subject, level: number): Promise<number> {
+export async function getNextOrdinal(schoolYear: SchoolYear, subject: Subject, level: number): Promise<number> {
   type ResultRow = { maxOrdinal: number | null };
   const result: ResultRow[] = await db.select(
     `

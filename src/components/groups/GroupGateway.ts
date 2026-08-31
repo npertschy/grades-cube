@@ -63,24 +63,30 @@ export async function createGroup(group: Group, schoolYear: SchoolYear) {
   }
 
   await withTransaction(async () => {
-    const id = await nextPrimaryKey(Z_ENT.ZGROUP);
-    const sortingName = group.name?.match(/^\d/) ? `0${group.name}` : group.name;
-    await db.execute(
-      `
+    await insertGroup(group, schoolYear);
+  });
+}
+
+export async function insertGroup(group: Group, schoolYear: SchoolYear): Promise<number> {
+  const id = await nextPrimaryKey(Z_ENT.ZGROUP);
+  const sortingName = group.name?.match(/^\d/) ? `0${group.name}` : group.name;
+  await db.execute(
+    `
       INSERT INTO ZGROUP (Z_PK, Z_ENT, Z_OPT, ZNAME, ZTYPE, ZSORTINGNAME)
       VALUES ($1, $2, $3, $4, $5, $6)
       `,
-      [id, Z_ENT.ZGROUP, 1, group.name, group.type, sortingName],
-    );
+    [id, Z_ENT.ZGROUP, 1, group.name, group.type, sortingName],
+  );
 
-    await db.execute(
-      `
+  await db.execute(
+    `
       INSERT INTO Z_3YEARS (Z_8YEARS, Z_3GROUPS1)
       VALUES ($1, $2)
       `,
-      [schoolYear.id, id],
-    );
-  });
+    [schoolYear.id, id],
+  );
+
+  return id;
 }
 
 export async function deleteGroupInSchoolYear(group: Group, schoolYear: SchoolYear) {

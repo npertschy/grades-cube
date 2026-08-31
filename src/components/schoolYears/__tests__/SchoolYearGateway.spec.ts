@@ -68,7 +68,7 @@ describe("createSchoolYear", () => {
     mockedNextPrimaryKey.mockResolvedValueOnce(11);
     mockedExecute.mockResolvedValue({});
 
-    await createSchoolYear(schoolYear);
+    const result = await createSchoolYear(schoolYear);
 
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZYEAR);
     expect(mockedNextPrimaryKey).toHaveBeenCalledWith(Z_ENT.ZSEMESTER);
@@ -84,6 +84,7 @@ describe("createSchoolYear", () => {
       expect.stringContaining("INSERT INTO ZSEMESTER"),
       [11, Z_ENT.ZSEMESTER, 1, 2, 1, expect.any(Number), expect.any(Number)],
     );
+    expect(result).toMatchObject({ id: 1, firstSemester: { id: 10 }, secondSemester: { id: 11 } });
   });
 
   it("rethrows on error", async () => {

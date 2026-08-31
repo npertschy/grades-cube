@@ -91,8 +91,8 @@ describe("insertDefaultPerformancesWithGrades", () => {
     expect(editableByType[8]).toBe(0);
   });
 
-  it("applies Sek I weights (AT=70, written=30) for groupType 1", async () => {
-    await insertDefaultPerformancesWithGrades(COURSE_ID, 1, []);
+  it("applies Sek I weights (AT=70, written=30) for groupType 0", async () => {
+    await insertDefaultPerformancesWithGrades(COURSE_ID, 0, []);
 
     const performanceCalls = mockedExecute.mock.calls.filter(
       ([sql]) => (sql as string).includes("INSERT INTO ZPERFORMANCE"),
@@ -108,8 +108,8 @@ describe("insertDefaultPerformancesWithGrades", () => {
     expect(weightByType[7]).toBe(0.3);  // written weight in final
   });
 
-  it("applies Sek II weights (AT=50, written=50) for groupType 2", async () => {
-    await insertDefaultPerformancesWithGrades(COURSE_ID, 2, []);
+  it("applies Sek II weights (AT=50, written=50) for groupType 1", async () => {
+    await insertDefaultPerformancesWithGrades(COURSE_ID, 1, []);
 
     const performanceCalls = mockedExecute.mock.calls.filter(
       ([sql]) => (sql as string).includes("INSERT INTO ZPERFORMANCE"),
