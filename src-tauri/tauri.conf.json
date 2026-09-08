@@ -34,7 +34,7 @@
     },
     "plugins": {
         "updater": {
-            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDZBMTFEOTMyODU0RDE4QUUKUldTdUdFMkZNdGtSYXNvd3VLQkRxMDMrTndlOGZIMU43emUxSDF1YnkycysvVUErNGxvSGJOdysK",
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk5MkZFODRDMjQzREVCQTgKUldTbzZ6MGtUT2d2bWVLTzV4dzBGUlFMUFFpRFRBWC80VnRIeDlTME5BUnpRNVhkZWRVbVZvSXYK",
             "endpoints": [
                 "https://github.com/npertschy/grades-cube/releases/latest/download/latest.json"
             ]
