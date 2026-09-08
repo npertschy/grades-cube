@@ -1,34 +1,43 @@
 {
-  "productName": "Notenwürfel",
-  "version": "0.0.0",
-  "identifier": "com.tauri.dev",
-  "build": {
-    "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist"
-  },
-  "app": {
-    "windows": [
-      {
-        "title": "Notenwürfel",
-        "width": 1800,
-        "height": 900
-      }
-    ],
-    "security": {
-      "csp": null
+    "productName": "Notenwürfel",
+    "version": "0.1.0",
+    "identifier": "npertschy.grades-cube",
+    "build": {
+        "beforeDevCommand": "npm run dev",
+        "devUrl": "http://localhost:1420",
+        "beforeBuildCommand": "npm run build",
+        "frontendDist": "../dist"
+    },
+    "app": {
+        "windows": [
+            {
+                "title": "Notenwürfel",
+                "width": 1800,
+                "height": 900
+            }
+        ],
+        "security": {
+            "csp": null
+        }
+    },
+    "bundle": {
+        "active": true,
+        "targets": "all",
+        "icon": [
+            "icons/32x32.png",
+            "icons/128x128.png",
+            "icons/128x128@2x.png",
+            "icons/icon.icns",
+            "icons/icon.ico"
+        ],
+        "createUpdaterArtifacts": true
+    },
+    "plugins": {
+        "updater": {
+            "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVERjEyNDUzNkM0RDc0RTIKUldUaWRFMXNVeVR4WFluMktVVDhOWDZ1SEtJcDN4L0FVVEl5V2R3L1VyS25VR2pIQ2dISlVZYnkK",
+            "endpoints": [
+                "https://github.com/npertschy/grades-cube/releases/latest/download/latest.json"
+            ]
+        }
     }
-  },
-  "bundle": {
-    "active": true,
-    "targets": "all",
-    "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
-    ]
-  }
 }

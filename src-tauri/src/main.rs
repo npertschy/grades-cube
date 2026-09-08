@@ -44,6 +44,8 @@ fn main() {
     ];
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let app_config_dir = app.path().app_config_dir()?;
             let db_dir = app_config_dir.join("db");

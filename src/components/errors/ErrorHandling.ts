@@ -21,13 +21,20 @@ export function useUiErrorHandling() {
     toast.add({ severity: "error", summary: "Fehler", detail: e.message, life: 5000 });
   }
 
-  function confirmAction(title: string, info: string, successMessage: string, action: () => void | Promise<void>) {
+  function confirmAction(
+    title: string,
+    info: string,
+    successMessage: string,
+    action: () => void | Promise<void>,
+    acceptLabel: string = "Löschen",
+    rejectLabel: string = "Abbrechen",
+  ) {
     confirm.require({
       header: title,
       message: info,
       icon: "pi pi-exclamation-triangle",
-      rejectProps: { label: "Abbrechen", severity: "secondary", outlined: true },
-      acceptProps: { label: "Löschen", severity: "danger" },
+      rejectProps: { label: rejectLabel, severity: "secondary", outlined: true },
+      acceptProps: { label: acceptLabel, severity: "danger" },
       accept: async () => {
         await runSafeWithToast(action, successMessage);
       },
